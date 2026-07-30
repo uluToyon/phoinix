@@ -11,17 +11,34 @@ NOT the `archinstall` tool. Full control over partitioning, mkinitcpio, bootload
 ## Repo layout
 
 ```
-base/        stage1/2/3 install scripts      <- Arch-specific
+base/        stage1/2/3/4 install scripts    <- Arch-specific
 packages/    grouped .txt lists, pacman + AUR separately
 system/      /etc bits, systemd units, udev rules   <- Arch-specific
-dotfiles/    chezmoi                                <- distro-agnostic
+dotfiles/    shell config                           <- distro-agnostic
 hosts/       per-machine config (desktop/, laptop/)
+  <host>/home/   captured user config, mirroring its destination paths
+plasma/      scripting-interface templates for stage 4
 scripts/     thin glue
 ```
 
 The `dotfiles/` + `system/` split is the point: when hopping to another distro,
 dotfiles apply unchanged and most of `system/` is just a package-manager rename.
 Only `base/` and `packages/` are truly Arch-bound.
+
+**`hosts/<host>/home/` mirrors the destination paths 1:1** — a file's location
+in the repo tells you where it lands in `$HOME`. It holds the captured user
+config that is bound to *this* machine: `kwinoutputconfig.json` (keyed to four
+specific monitors by EDID hash), `kwinrc`, `kdeglobals`, the PipeWire drop-in
+and the wireplumber state. Distro-agnostic shell config goes to `dotfiles/`
+instead, because it is the part that survives a hop.
+
+**Rule: captured config is imported curated, never wholesale.** Two things
+found on the first real import, both of which would have been carried forever
+by a blind copy: a `pipewire.conf` in `~/.config/` that was a verbatim copy of
+the packaged 1.6.7 file and therefore silently shadowed every later update to
+it, and a `disabled-forceclock.bak/` directory of switched-off debugging
+leftovers. Neither is in the repo. Every imported file must answer what it
+changes relative to the package default.
 
 ---
 
@@ -121,7 +138,19 @@ Most of "record all the settings" is capture, not authorship:
   package lists. Curate into groups; ungrouped dumps rot and you stop trusting them.
 - **`chezmoi`** for dotfiles — chosen over stow for templating, which handles
   the differing usernames across machines (`ulutoyon` on desktop,
-  a different username on the Fedora laptop).
+  a different username on the Fedora laptop). STILL UNDECIDED, and no longer
+  blocking: the shell config now sits in `dotfiles/` as plain files that
+  stage 3 installs directly. chezmoi is therefore only a question of *how*
+  those two files are managed, not *whether* they are in the repo at all.
+
+**Captured config belongs IN the repo, never in an external backup.** Stage 3
+originally restored all of it from `/mnt/Downloads/backup-.../` — a dated,
+one-off directory on a data disk. Worse than the coupling was the guard:
+`if [[ -d "$BACKUP" ]]` meant a missing disk skipped the whole block without a
+word, exit code 0, monitor fix included. A machine rebuilt without that disk
+would have run stage 3 cleanly and then gone black at the first login — the
+exact bug this repo was written to prevent. A source that is missing is now a
+hard error. If something is needed to rebuild the machine, it is versioned.
 
 **Method:** the repo is the source of truth, written as we go. Do NOT plan to
 mine a Claude Code transcript into a script afterwards — that yields

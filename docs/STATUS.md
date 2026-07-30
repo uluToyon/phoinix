@@ -33,9 +33,9 @@ that need a running shell go into `base/stage4.sh` (see DESIGN.md).
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
   dotfiles; **custom KDE keybindings** (ulu will adjust, incl. Spectacle) —
   capture `~/.config/kglobalshortcutsrc` once configured.
-- **Re-capture `kwinoutputconfig.json`** once ulu is done tuning the monitor
-  settings — the file currently in the repo/backup is the old system's state,
-  and a reinstall would restore that instead of the final layout.
+- **chezmoi: still undecided, no longer blocking.** The shell config lives in
+  `dotfiles/` as plain files stage 3 installs directly, so the question is now
+  only *how* those two files are managed — not whether the repo is complete.
 - **Mount-path legacy: DECIDED — clean re-wiring, no compat symlinks.**
   Restored configs get new /mnt/<Label> paths written in during capture;
   manual checklist: Steam "add library folder" → /mnt/Games/SteamLibrary,
@@ -144,16 +144,20 @@ Still open:
   and a retrain is a black flash the kernel never logs. Watch for a few days.
   **No flash → confirmed**, and a certified DP cable should buy 170Hz back.
   **Flash returns → not bandwidth**, next step is DRM debug logging.
-  Baked into stage 2 as a kernel arg already (ulu's call, marked PROVISIONAL
-  in the script) — but see the `kwinoutputconfig.json` item above: the
-  in-session mode still comes from the old capture, so a reinstall today would
-  still produce 170Hz. Also unresolved: the portrait monitor (DP-3) threw a
+  Baked in both places now: kernel arg in stage 2 (console phase) and the
+  captured `kwinoutputconfig.json` in `hosts/desktop/home/` (Plasma session),
+  both marked PROVISIONAL. Also unresolved: the portrait monitor (DP-3) threw a
   real hotplug on the same evening, cause unknown — a hotplug on any output
   re-applies all four, so it is a second, independent source of flashes.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 - Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe` (exit code
   still 0). Harmless today, brittle under `pipefail` — worth a look.
+- **Live-system cleanup, not yet done:** `~/.config/pipewire/pipewire.conf` is
+  a verbatim copy of the packaged 1.6.7 config and shadows the installed 1.6.8
+  one. Deleting it restores the package default; the real setting lives in the
+  `10-clock.conf` drop-in and is unaffected. Deliberately left to ulu — the
+  repo import already excludes it, so a reinstall comes up clean either way.
 
 ## Next steps
 

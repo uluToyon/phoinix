@@ -1,0 +1,11 @@
+[default-routes]
+alsa_card.usb-NXP_SEMICONDUCTORS_Teufel_CONCEPT_12-00:output:analog-output={"mute":false, "latencyOffsetNsec":0, "channelMap":["FL", "FR", "RL", "RR", "FC", "LFE"], "channelVolumes":[0.068923, 0.068923, 0.068923, 0.068923, 0.068923, 0.068923]}
+alsa_card.usb-NXP_SEMICONDUCTORS_Teufel_CONCEPT_12-00:profile:output:analog-surround-51=["analog-output"]
+alsa_card.pci-0000_0b_00.1:output:hdmi-output-0={"channelMap":["FL", "FR"], "iec958Codecs":["PCM"], "mute":false, "channelVolumes":[0.091123, 0.091123], "latencyOffsetNsec":0}
+alsa_card.pci-0000_0b_00.1:profile:output:hdmi-stereo=["hdmi-output-0"]
+alsa_card.usb-Generic_USB_Audio-00:output:\oOut\c\sSPDIF={"latencyOffsetNsec":0, "channelMap":["FL", "FR"], "channelVolumes":[0.063997, 0.063997], "mute":false}
+alsa_card.usb-Generic_USB_Audio-00:profile:HiFi=["[Out] SPDIF"]
+alsa_card.usb-Focusrite_Scarlett_Solo_4th_Gen_S14FV35350760F-00:output:\oOut\c\sLine1={"channelVolumes":[1.000000, 1.000000], "mute":false, "latencyOffsetNsec":0, "channelMap":["FL", "FR"]}
+alsa_card.usb-Focusrite_Scarlett_Solo_4th_Gen_S14FV35350760F-00:profile:HiFi\s(Line1,\sLine2,\sMic1,\sMic2)=["[Out] Line1"]
+alsa_card.pci-0000_0b_00.1:output:hdmi-output-3={"iec958Codecs":["PCM", "DTS", "AC3", "EAC3", "TrueHD", "DTS-HD"], "channelMap":["FL", "FR"], "mute":false, "latencyOffsetNsec":0, "channelVolumes":[1.000000, 1.000000]}
+alsa_card.pci-0000_0b_00.1:profile:output:hdmi-stereo-extra3=["hdmi-output-3"]

@@ -63,19 +63,40 @@ if [[ ! -e "$HOME/Applications/dzgui/dzgui" ]]; then
 fi
 
 # ------------------------------------------------- 5. captured configs
-# Restores live only where a capture source exists; the monitor fix MUST be
-# in place before the first graphical login (black-screen bug, docs/LOG.md).
-BACKUP="/mnt/Downloads/backup-nvme1n1-20260730/home/ulutoyon"
-if [[ -d "$BACKUP" ]]; then
-    install -Dm644 "$BACKUP/.config/kwinoutputconfig.json" "$HOME/.config/kwinoutputconfig.json"
-    install -Dm644 "$BACKUP/.config/kwinrc"                "$HOME/.config/kwinrc"
-    install -Dm644 "$BACKUP/.config/kdeglobals"            "$HOME/.config/kdeglobals"
-    mkdir -p "$HOME/.local/state" "$HOME/.config"
-    cp -r "$BACKUP/.local/state/wireplumber" "$HOME/.local/state/" 2>/dev/null || true
-    cp -r "$BACKUP/.config/pipewire"         "$HOME/.config/"      2>/dev/null || true
-    install -m644 "$BACKUP/.zshrc"   "$HOME/.zshrc"
-    install -m644 "$BACKUP/.p10k.zsh" "$HOME/.p10k.zsh"
-fi
+# Source is the REPO, not the old system's backup on the Downloads disk.
+# That backup made this entire block depend on a data disk, and the guard
+# around it (`if [[ -d $BACKUP ]]`) skipped everything IN SILENCE when the
+# disk was absent — monitor fix included, i.e. a clean stage-3 run followed by
+# a black first login. The failure mode phoinix exists to prevent.
+# See docs/LOG.md 2026-07-31. A missing source is a hard error now.
+#
+# hosts/<host>/home/ mirrors the destination paths 1:1, so where a file lands
+# is readable from where it sits. Host-specific by nature: kwinoutputconfig
+# is keyed to these four monitors' EDID hashes.
+CFG="$REPO_DIR/hosts/$HOST/home"
+[[ -d "$CFG" ]] || { echo "ERROR: no captured configs at $CFG"; exit 1; }
+
+install -Dm644 "$CFG/.config/kwinoutputconfig.json" "$HOME/.config/kwinoutputconfig.json"
+install -Dm644 "$CFG/.config/kwinrc"                "$HOME/.config/kwinrc"
+install -Dm644 "$CFG/.config/kdeglobals"            "$HOME/.config/kdeglobals"
+
+# Only the drop-in, never a copy of pipewire.conf itself: a file in
+# ~/.config/pipewire/ shadows the packaged one completely, so a stale copy
+# silently freezes out every future update to it (found exactly that on the
+# live system — a verbatim 1.6.7 copy still shadowing 1.6.8).
+install -Dm644 "$CFG/.config/pipewire/pipewire.conf.d/10-clock.conf" \
+               "$HOME/.config/pipewire/pipewire.conf.d/10-clock.conf"
+
+# wireplumber state: the analog-surround-51 pin and the -26dB route fix.
+for f in default-profile default-routes default-nodes stream-properties; do
+    install -Dm644 "$CFG/.local/state/wireplumber/$f" "$HOME/.local/state/wireplumber/$f"
+done
+
+# Distro-agnostic shell config (see DESIGN.md's dotfiles/ vs system/ split).
+# The phoinix alias block is deliberately NOT in this file — section 6 owns it,
+# so there is exactly one place where those aliases are defined.
+install -Dm644 "$REPO_DIR/dotfiles/zshrc"    "$HOME/.zshrc"
+install -Dm644 "$REPO_DIR/dotfiles/p10k.zsh" "$HOME/.p10k.zsh"
 
 # The login greeter runs its own mini-Plasma with its own config — the
 # monitor fix must land there too, or the FIRST login screen goes black.

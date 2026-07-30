@@ -1,0 +1,7 @@
+[default-nodes]
+default.configured.audio.source=alsa_input.usb-Focusrite_Scarlett_Solo_4th_Gen_S14FV35350760F-00.HiFi__Mic2__source
+default.configured.audio.sink=alsa_output.usb-NXP_SEMICONDUCTORS_Teufel_CONCEPT_12-00.analog-surround-51
+default.configured.audio.sink.0=alsa_output.usb-NXP_SEMICONDUCTORS_Teufel_CONCEPT_12-00.analog-stereo
+default.configured.audio.sink.1=alsa_output.pci-0000_0b_00.1.hdmi-stereo-extra3
+default.configured.audio.sink.2=alsa_output.usb-Focusrite_Scarlett_Solo_4th_Gen_S14FV35350760F-00.HiFi__Line1__sink
+default.configured.audio.sink.3=alsa_output.pci-0000_0b_00.1.hdmi-stereo

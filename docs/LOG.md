@@ -531,3 +531,54 @@ marked PROVISIONAL there). The in-session mode is **not** covered by that — it
 comes from `kwinoutputconfig.json`, which stage 3 restores from the backup on
 the Downloads disk, i.e. from outside the repo. Until that file is re-captured
 the scripted result of a reinstall is still 170Hz.
+
+## 2026-07-31 — Captured config moved into the repo (and a silent killer found)
+
+Chasing the 144Hz into the scripts turned up something worse than a stale
+file. Stage 3's config section restored **seven** things — `kwinoutputconfig`,
+`kwinrc`, `kdeglobals`, the PipeWire tree, the wireplumber state (the −26dB
+soundbar fix), `.zshrc`, `.p10k.zsh` — all from
+`/mnt/Downloads/backup-nvme1n1-20260730/`, a dated one-off directory on a data
+disk. None of it was in the repo.
+
+**The guard was the real problem:**
+
+```bash
+if [[ -d "$BACKUP" ]]; then
+```
+
+No disk, no restore, **no message, exit code 0**. The monitor fix sits inside
+that block. A machine rebuilt without the Downloads disk attached would have
+run stage 3 to a clean finish and then gone black at the first graphical login
+— precisely the bug phoinix was written to prevent, hidden behind a successful
+run. Same failure class the locale work guarded against ("silently degrades to
+C"), sitting at the most critical spot in the repo.
+
+Two things turned out better than feared:
+
+- **No drift.** The backup's monitor config differed from the live one by
+  exactly two lines — `refreshRate 170000 → 144000` and a mode flag — i.e. only
+  by the change made an hour earlier. The re-capture STATUS.md had been
+  deferring for days was a two-line diff.
+- **Publishable.** All seven scanned clean for real name and company domain
+  (the one hit was an upstream p10k comment containing the placeholder
+  `x@y.com`). `kwinoutputconfig.json` carries EDID *hashes*, no plaintext
+  serials or model strings.
+
+**Curation, not a blind copy** — and it earned its keep immediately:
+`~/.config/pipewire/pipewire.conf` turned out to be a verbatim copy of the
+packaged config from PipeWire **1.6.7**, differing from the installed 1.6.8
+only in the version comment. Since a file there shadows the packaged one
+completely, that copy had been quietly freezing out every upstream change to
+it. Not imported; only the real customisation, the `10-clock.conf` drop-in,
+is. Same for `disabled-forceclock.bak/`, switched-off debugging leftovers.
+
+New layout: `hosts/desktop/home/` mirrors destination paths 1:1, so where a
+file sits says where it lands. `dotfiles/` takes the two shell files. Stage 3
+installs from the repo and **hard-fails on a missing source**. The `.zshrc`
+went in *without* the phoinix alias block — stage 3 section 6 appends it and
+stays its single owner, so the aliases have exactly one definition site.
+
+Side effect worth naming: this unblocks the chezmoi question without answering
+it. It is now only about *how* two shell files are managed, not whether the
+repo contains what it needs to rebuild the machine.
