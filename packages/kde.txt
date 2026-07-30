@@ -1,0 +1,14 @@
+# Plasma core — hand-picked, every entry justified (no plasma-meta).
+# Deliberately absent: discover (pacman/yay instead), plasma-firewall,
+# plasma-thunderbolt, accessibility extras. Add back only when missed.
+plasma-desktop
+plasma-pa
+plasma-nm
+powerdevil
+kscreen
+bluedevil
+breeze-gtk
+kde-gtk-config
+xdg-desktop-portal-kde
+kwalletmanager
+plasma-login-manager

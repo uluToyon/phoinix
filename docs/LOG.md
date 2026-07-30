@@ -105,3 +105,17 @@ Downloads=10015c7b…, FilesMusic=eaa964b8…
   alias). Not installed on the target → gone after install.
 - Recommendation for ulu (manual): update BIOS (3.08, 2024-09 → current) for
   MT7925 connectivity fixes.
+
+## 2026-07-30 — Package review rounds (everything justifies itself)
+
+Ground rule from ulu: nothing is carried over 1:1 from the old system;
+every package is discussed individually or it's out.
+
+- **Plasma core: hand-picked** (packages/kde.txt) instead of plasma-meta —
+  11 packages, each with an inline justification. Discover, firewall GUI,
+  thunderbolt, accessibility extras deliberately absent.
+- **Login: plasma-login-manager** (KDE's SDDM successor, versioned with
+  Plasma, already ran fine on the old system) over sddm+sddm-kcm.
+- dzgui is NOT an AUR package (verified: 0 hits) — it ships upstream via
+  script/git (aclist/dztui). Becomes its own stage-3 install step; config
+  at ~/.config/dztui/ goes on the capture list.
