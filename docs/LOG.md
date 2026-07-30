@@ -374,3 +374,31 @@ Three things worth remembering, each learned the hard way here:
 Verified on the live desktop: stage 4 wiped the hand-built panels and
 reproduced all four correctly (main and TV pixel-identical in the launcher
 area, both clock strips in place).
+
+## 2026-07-31 — Regional formats: English UI, German everything else
+
+The panel clocks showed "12:01 AM / 7/31/26" — the system had only
+en_US.UTF-8 generated, no German locale existed at all. ulu wants the full
+regional package, not just a 24-hour clock.
+
+Split: `LOCALE` stays the UI language, new `FORMAT_LOCALE=de_DE.UTF-8` drives
+dates, numbers, currency, measurements, paper. Stage 2 now generates a LIST
+of locales — a format locale that locale-gen never built silently degrades to
+C, which is the failure mode worth guarding against.
+
+Two files, deliberately, with different jobs (stage 3 writes both):
+- `~/.config/environment.d/10-phoinix-locale.conf` — the one that ACTS.
+  systemd's user manager exports it into the session. Chosen as the effective
+  path because it is a documented, verifiable mechanism; grepping for who
+  actually consumes plasma-localerc turned up nothing conclusive.
+- `~/.config/plasma-localerc` — the one that DISPLAYS, so the Region &
+  Language module does not claim "American English" while the session runs on
+  German formats.
+
+Left out on purpose: `LC_MESSAGES` (would translate the UI, which ulu does
+not want) and `LC_COLLATE` (German sort order changes shell globs and `sort`
+output — a bad trade in a repo made of scripts).
+
+locale-gen needs root and this session's sudo has no password: ulu ran the
+two commands himself, `de_DE.utf8` confirmed present. Takes effect on the
+next login.

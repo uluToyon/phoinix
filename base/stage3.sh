@@ -100,12 +100,49 @@ alias yay='paru'
 EOF
 fi
 
-# ------------------------------------------------- 7. defaults & services
+# ------------------------------------------------- 7. regional formats
+# English UI, German formats. Two files on purpose, with different jobs:
+#
+#   environment.d — the one that ACTS. systemd's user manager reads it and
+#     exports the variables into the session, so every process Plasma starts
+#     inherits them. This mechanism is documented and verifiable.
+#   plasma-localerc — the one that DISPLAYS. It is what the Region & Language
+#     module reads back; without it the GUI would claim "American English"
+#     while the session runs on German formats.
+#
+# LC_MESSAGES is deliberately absent — that would translate the interface.
+# LC_COLLATE too: German sort order changes shell globs and `sort` output,
+# which is a poor trade for a subtly different file listing.
+install -d "$HOME/.config/environment.d"
+cat > "$HOME/.config/environment.d/10-phoinix-locale.conf" << EOF
+# Written by phoinix stage3 — regional formats (UI language stays $LOCALE)
+LANG=$LOCALE
+LC_TIME=$FORMAT_LOCALE
+LC_NUMERIC=$FORMAT_LOCALE
+LC_MONETARY=$FORMAT_LOCALE
+LC_MEASUREMENT=$FORMAT_LOCALE
+LC_PAPER=$FORMAT_LOCALE
+LC_ADDRESS=$FORMAT_LOCALE
+LC_NAME=$FORMAT_LOCALE
+LC_TELEPHONE=$FORMAT_LOCALE
+EOF
+
+cat > "$HOME/.config/plasma-localerc" << EOF
+[Formats]
+LANG=$LOCALE
+LC_TIME=$FORMAT_LOCALE
+LC_NUMERIC=$FORMAT_LOCALE
+LC_MONETARY=$FORMAT_LOCALE
+LC_MEASUREMENT=$FORMAT_LOCALE
+useDetailed=true
+EOF
+
+# ------------------------------------------------- 8. defaults & services
 xdg-mime default brave-browser.desktop application/pdf || true
 
 sudo systemctl enable bluetooth cups power-profiles-daemon
 
-# ------------------------------------------------- 8. arm stage 4 (post-login)
+# ------------------------------------------------- 9. arm stage 4 (post-login)
 # Plasma settings that can only be made while its shell runs — see stage4.sh.
 # Enabled by symlink instead of `systemctl --user enable`: stage 3 runs from a
 # TTY where a user bus is not guaranteed, and the symlink is what enable does.

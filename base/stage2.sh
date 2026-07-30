@@ -21,7 +21,10 @@ exec > >(tee -a /var/log/stage2.log) 2>&1
 ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
 hwclock --systohc
 
-sed -i "s|^#\(${LOCALE//./\\.} UTF-8\)|\1|" /etc/locale.gen
+# More than one: the UI language and the German format locale (see config.sh).
+for loc in "${LOCALES[@]}"; do
+    sed -i "s|^#\(${loc//./\\.} UTF-8\)|\1|" /etc/locale.gen
+done
 locale-gen
 echo "LANG=$LOCALE" > /etc/locale.conf
 echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
