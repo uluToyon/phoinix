@@ -57,13 +57,17 @@ done
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 440 /etc/sudoers.d/10-wheel
 
-# Minimal global zshrc so the shell is civilized before the dotfiles arrive
-# (suppresses the zsh-newuser-install wizard between stage 2 and stage 3).
+# Minimal global zshrc so the shell is civilized before the dotfiles arrive.
 cat > /etc/zsh/zshrc << 'EOF'
 autoload -Uz compinit && compinit
 HISTFILE=~/.histfile HISTSIZE=10000 SAVEHIST=10000
 bindkey -e
 EOF
+# The zsh-newuser-install wizard checks for USER config files (a global zshrc
+# does not suppress it — learned on first boot). An empty ~/.zshrc does;
+# the real one arrives with the dotfiles in stage 3.
+[[ -e "/home/$USERNAME/.zshrc" ]] || \
+    install -m644 -o "$USERNAME" -g "$USERNAME" /dev/null "/home/$USERNAME/.zshrc"
 
 # SSH access for the laptop (public key lives in the repo — it's public)
 install -d -m700 -o "$USERNAME" -g "$USERNAME" "/home/$USERNAME/.ssh"
