@@ -32,10 +32,15 @@ mapfile -t PKGS < <(read_list "$REPO_DIR"/packages/{kde,gaming,audio,cli,apps}.t
 sudo pacman -S --needed --noconfirm "${PKGS[@]}"
 
 # ------------------------------------------------- 2. paru bootstrap
-if ! command -v paru &>/dev/null; then
+# Built from SOURCE on purpose: paru links libalpm, and the prebuilt paru-bin
+# breaks whenever Arch bumps the libalpm soname (bit us on first run).
+# The --version probe also catches an installed-but-broken helper.
+if ! paru --version &>/dev/null; then
+    pacman -Qq paru-bin &>/dev/null && \
+        sudo pacman -Rns --noconfirm paru-bin paru-bin-debug 2>/dev/null || true
     tmp="$(mktemp -d)"
-    git clone --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin"
-    ( cd "$tmp/paru-bin" && makepkg -si --noconfirm )
+    git clone --depth 1 https://aur.archlinux.org/paru.git "$tmp/paru"
+    ( cd "$tmp/paru" && makepkg -si --noconfirm )
     rm -rf "$tmp"
 fi
 
