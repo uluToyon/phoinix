@@ -25,11 +25,21 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
   dotfiles; **custom KDE keybindings** (ulu will adjust, incl. Spectacle) —
   capture `~/.config/kglobalshortcutsrc` once configured.
+- **Old mount path `/mnt/nvme0n1` is baked into existing setups** (7th Heaven
+  .desktop, MateriaForge prefix paths, likely Steam library + XIVLauncher
+  configs). New scheme is /mnt/Games. To decide: compat symlink vs. clean
+  re-wiring after install.
 
 ## Decided this session
 
 - Kernel: `linux-zen` only. Editor: `micro` only (vim banned, nano not
   installed). Login shell: zsh (in pacstrap so stage 2 can set it at useradd).
+
+## Stage-2 requirements collected so far
+
+- Enable `[multilib]` in pacman.conf (lib32 gaming packages).
+- Set zsh as ulu's login shell at useradd (zsh is in pacstrap).
+- Ship a minimal global zsh config so first login has no setup wizard.
 
 ## Next steps
 

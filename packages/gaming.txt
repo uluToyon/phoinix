@@ -1,0 +1,19 @@
+# Gaming stack — one review round each (docs/LOG.md).
+# lib32-* packages come from [multilib], which stage 2 enables in pacman.conf.
+
+# GPU driver foundation (inseparable sextet; RADV is Valve's optimized path)
+mesa
+vulkan-radeon
+vulkan-icd-loader
+lib32-mesa
+lib32-vulkan-radeon
+lib32-vulkan-icd-loader
+
+# Per-game performance switching (governor, priorities, no screen dimming).
+# Steam: gamemoderun %command% per game; XIVLauncher has its own toggle.
+# Idea parked: scripts/steam-gamemode-all.sh to mass-set launch options.
+gamemode
+lib32-gamemode
+# mangohud rejected for now — Steam's built-in FPS counter + FFXIV addon suffice
+# wine-staging/winetricks/faudio rejected — evidence: 7th Heaven runs via
+# MateriaForge inside the FF7 Proton prefix (compatdata/3837340); no system wine user left
