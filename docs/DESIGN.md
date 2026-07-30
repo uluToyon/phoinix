@@ -94,7 +94,7 @@ Most of "record all the settings" is capture, not authorship:
   package lists. Curate into groups; ungrouped dumps rot and you stop trusting them.
 - **`chezmoi`** for dotfiles — chosen over stow for templating, which handles
   the differing usernames across machines (`ulutoyon` on desktop,
-  `ulu` on the Fedora laptop).
+  a different username on the Fedora laptop).
 
 **Method:** the repo is the source of truth, written as we go. Do NOT plan to
 mine a Claude Code transcript into a script afterwards — that yields

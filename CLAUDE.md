@@ -19,6 +19,7 @@ steps are performed, never reconstructed later from memory.
 ## Working agreements
 
 - Communicate with ulu in German; repo content stays in English.
+- In repo files, always call the human "ulu" — never a real name, on any machine.
 - Discuss before acting: decisions get talked through first, files/actions after.
 - **One topic at a time.** Even when ulu raises several points in one
   message, work through them strictly one after another — close a topic
@@ -34,5 +35,5 @@ steps are performed, never reconstructed later from memory.
 
 - **desktop** (`hosts/desktop/`): Ryzen 7 7800X3D, 30 GB RAM, Radeon RX 7900 XT,
   UEFI, target disk Samsung 980 1TB. Gaming is the primary use case.
-- **laptop**: Fedora, user `ulu` — where this project started; sessions
+- **laptop**: Fedora — where this project started; sessions
   may run from either machine.
