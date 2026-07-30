@@ -154,6 +154,12 @@ sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
 ln -sf ../phoinix-stage4.service \
     "$USER_UNIT_DIR/plasma-workspace.target.wants/phoinix-stage4.service"
 
+# Drop-in against the 40s shutdown hang (plasmashell outlives its compositor
+# and never processes SIGTERM) — rationale in the file itself.
+install -d "$USER_UNIT_DIR/plasma-plasmashell.service.d"
+install -m644 "$REPO_DIR/system/user/plasma-plasmashell.service.d/phoinix-shutdown.conf" \
+    "$USER_UNIT_DIR/plasma-plasmashell.service.d/phoinix-shutdown.conf"
+
 # Graphical login LAST — everything above (esp. the monitor fix) must exist
 # before PLM ever starts. Look only in systemd/system/ — the package also
 # ships a D-Bus .service file that a naive grep matches first (bit us once).
