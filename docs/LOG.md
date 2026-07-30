@@ -84,3 +84,10 @@ Downloads=10015c7b…, FilesMusic=eaa964b8…
   useradd time; `bash-completion` dropped (bash itself stays via `base`).
 - Open item parked in STATUS.md: a monitor-related bug on the desktop, to be
   discussed BEFORE the install runs on the PC.
+
+## 2026-07-30 — Base list finalized
+
+- `tmux` and `htop` deliberately kept OUT of pacstrap: tmux only matters for
+  this one-off SSH session (the ISO ships it; future runs are local on the
+  target), htop is comfort — both go on the stage-3 list. Base stays at 17
+  packages, each with an installation-time justification.

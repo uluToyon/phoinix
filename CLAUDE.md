@@ -24,6 +24,9 @@ steps are performed, never reconstructed later from memory.
 - **One topic at a time.** Even when ulu raises several points in one
   message, work through them strictly one after another — close a topic
   (one question, one decision) before opening the next.
+- **No clickable question prompts (AskUserQuestion).** Present choices in
+  prose: each option with rationale, pros and cons, and a recommendation —
+  thorough but compact. End with an open question.
 - Destructive steps (partitioning, overwriting) need explicit go-ahead each time.
 - Never store secrets in the repo (see DESIGN.md "Never in the repo").
 - Never encode discovered identifiers (device names, ALSA card indices) — use
