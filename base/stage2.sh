@@ -26,6 +26,19 @@ locale-gen
 echo "LANG=$LOCALE" > /etc/locale.conf
 echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
 
+# The GRAPHICAL session has its own layout — vconsole alone leaves KDE in
+# English (bit us on first login). KWin/Wayland reads this X11 fallback file;
+# localectl can't run in a chroot, so write it directly.
+install -d /etc/X11/xorg.conf.d
+cat > /etc/X11/xorg.conf.d/00-keyboard.conf << EOF
+# Written by phoinix stage2 (equivalent of: localectl set-x11-keymap $KEYMAP)
+Section "InputClass"
+        Identifier "system-keyboard"
+        MatchIsKeyboard "on"
+        Option "XkbLayout" "$KEYMAP"
+EndSection
+EOF
+
 # ----------------------------------------------------------------- identity
 echo "$HOSTNAME" > /etc/hostname
 cat > /etc/hosts << EOF
