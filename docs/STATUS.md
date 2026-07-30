@@ -1,6 +1,17 @@
 # STATUS
 
-_Last updated: 2026-07-30 (session 1, from the laptop)_
+_Last updated: 2026-07-30 late evening (session 1 ending — HANDOVER to the desktop)_
+
+## Session handover (desktop takes over from here)
+
+The system is INSTALLED and boots into Plasma. Session 1 ran from the laptop
+via SSH; from now on work happens on the desktop in `~/phoinix`.
+First moves for the desktop session:
+1. Work through "Post-install manual steps" below with ulu.
+2. The OUTSTANDING 4-monitor PLM test (see below) — ask before the next reboot.
+3. Then begin the config-capture phase (KDE settings etc.); the chezmoi
+   question from DESIGN.md is still undecided — discuss before capturing.
+Old-system Claude data was restored to ~/.claude; project memory was ported.
 
 ## Where we are
 
