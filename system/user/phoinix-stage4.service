@@ -1,0 +1,24 @@
+# Template — stage 3 installs this with @REPO_DIR@ and @HOST@ substituted.
+# Runs the Plasma personalisation ONCE, on the first graphical login.
+#
+# ConditionPathExists on the marker is what makes it single-shot: systemd
+# skips the unit entirely on every later login, so nothing ulu changes by
+# hand in the GUI is ever reset underneath him. Delete the marker to re-arm.
+
+[Unit]
+Description=phoinix stage 4 — Plasma personalisation (first login only)
+Documentation=file://@REPO_DIR@/base/stage4.sh
+After=plasma-plasmashell.service
+Requires=plasma-plasmashell.service
+PartOf=graphical-session.target
+ConditionPathExists=!%S/phoinix/stage4.done
+
+[Service]
+Type=oneshot
+ExecStart=@REPO_DIR@/base/stage4.sh @HOST@
+# The script polls for the scripting interface itself; this is only a
+# backstop against a session that never finishes coming up.
+TimeoutStartSec=180
+
+[Install]
+WantedBy=plasma-workspace.target

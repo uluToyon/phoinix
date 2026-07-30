@@ -25,13 +25,14 @@ Only `base/` and `packages/` are truly Arch-bound.
 
 ---
 
-## Three stages (the chroot is a hard boundary)
+## Four stages (two hard boundaries: the chroot, and the running Plasma shell)
 
 | Stage | Runs where | Does |
 |-------|-----------|------|
 | `stage1.sh` | on the ISO | partition, mkfs, mount, pacstrap, genfstab |
 | `stage2.sh` | in the chroot | locale, hostname, mkinitcpio, users, bootloader, services |
 | `stage3.sh` | first boot, as user | AUR helper, user packages, dotfiles, desktop config |
+| `stage4.sh` | inside the Plasma session | panel, widgets — anything Plasma only accepts while its shell runs |
 
 Stage 1 hands off:
 
@@ -44,8 +45,34 @@ Sequencing gotcha: an AUR helper refuses to build as root, so the order is
 user must exist -> reboot -> build AUR -> install user packages. That is why
 stage 3 exists separately and runs unprivileged.
 
+**Why stage 4 is its own boundary.** Stage 3 runs *before* the first graphical
+login, and a live Plasma is a second kind of "not yet there": the panel, its
+applets and the activity do not exist until the shell has started, and their
+config groups are keyed by applet ids and an activity UUID that are generated
+fresh on every installation. A file deposited by stage 3 would therefore be
+either ignored or attached to the wrong widget. Stage 4 talks to the running
+shell over its scripting D-Bus interface instead, and — the standing rule for
+that file — addresses widgets **by type, never by id**.
+
+Stage 3 arms it: it renders `system/user/phoinix-stage4.service` (a template,
+`@REPO_DIR@`/`@HOST@` substituted) into the user's systemd directory and
+symlinks it into `plasma-workspace.target.wants` — a symlink rather than
+`systemctl --user enable`, because stage 3 runs from a TTY where a user bus is
+not guaranteed. The unit is ordered `After=plasma-plasmashell.service`; since
+systemd calls a service started as soon as its process exists, stage 4 still
+polls for the scripting interface before touching anything.
+
+**It fires exactly once**, guarded by `ConditionPathExists=!` on a marker in
+`~/.local/state/phoinix/`. Decided deliberately (ulu, session 2): the repo
+stays the source of truth and gets enforced when a machine is rebuilt, but it
+does not re-assert itself at every login — otherwise every GUI tweak not yet
+carried into the repo would silently vanish on the next boot, which is
+untenable while settings are still being collected. Re-arm by deleting the
+marker; running `stage4.sh` by hand works at any time.
+
 **Idempotency:** don't chase it in stage 1 — partitioning is destructive and
-one-shot. Stages 2 and 3 must be re-runnable; that's where the iteration happens.
+one-shot. Stages 2, 3 and 4 must be re-runnable; that's where the iteration
+happens.
 
 ---
 

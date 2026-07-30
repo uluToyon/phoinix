@@ -105,6 +105,18 @@ xdg-mime default brave-browser.desktop application/pdf || true
 
 sudo systemctl enable bluetooth cups power-profiles-daemon
 
+# ------------------------------------------------- 8. arm stage 4 (post-login)
+# Plasma settings that can only be made while its shell runs — see stage4.sh.
+# Enabled by symlink instead of `systemctl --user enable`: stage 3 runs from a
+# TTY where a user bus is not guaranteed, and the symlink is what enable does.
+USER_UNIT_DIR="$HOME/.config/systemd/user"
+install -d "$USER_UNIT_DIR/plasma-workspace.target.wants"
+sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
+    "$REPO_DIR/system/user/phoinix-stage4.service" \
+    > "$USER_UNIT_DIR/phoinix-stage4.service"
+ln -sf ../phoinix-stage4.service \
+    "$USER_UNIT_DIR/plasma-workspace.target.wants/phoinix-stage4.service"
+
 # Graphical login LAST — everything above (esp. the monitor fix) must exist
 # before PLM ever starts. Look only in systemd/system/ — the package also
 # ships a D-Bus .service file that a naive grep matches first (bit us once).

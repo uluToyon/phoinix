@@ -20,6 +20,12 @@ _Last updated: 2026-07-30 night (session 2 — running ON the desktop)_
   the GitHub noreply address, author name `uluToyon`). Rule: curated config
   imports + secret scan before pushing anything captured from a live system.
 
+## Working mode (session 2 onwards)
+
+ulu names an app or a setting; it gets applied on the live system and written
+into the scripts in the same step — no big capture at the end. Plasma settings
+that need a running shell go into `base/stage4.sh` (see DESIGN.md).
+
 ## In discussion (not yet decided) — one topic at a time, per ulu
 
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
@@ -113,6 +119,11 @@ Verified on the desktop (session 2):
 
 Still open:
 
+- **Stage 4 firing at a real first login.** `stage4.sh` is verified (produces
+  the intended state; runs once and is skipped afterwards when started through
+  systemd), but the unit has never actually triggered from a login — it was
+  installed after the fact on an already-personalised system. Test it by
+  deleting `~/.local/state/phoinix/stage4.done` and rebooting.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 

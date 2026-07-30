@@ -288,3 +288,44 @@ Cosmetic: `ksecretd` fails to register with the host portal ("Connection
 already associated with an application ID"). Known noise on PAM-started
 sessions, no functional impact — only worth chasing if an app turns out not
 to retain its passwords.
+
+## 2026-07-30 — Stage 4: Plasma settings that need a running shell
+
+New working mode agreed with ulu: he names an app or a setting, it gets fixed
+on the live system AND written into the scripts in the same breath, instead of
+one big capture at the end. First item flushed out a structural gap.
+
+**The item.** A launcher with a broken generic icon sat in the panel next to
+Dolphin: `org.kde.discover.desktop`, a package manager ulu will never use and
+that phoinix deliberately does not install. It came from neither the panel
+layout template nor any config file — the icons-only task manager had no
+`launchers` key at all and was showing its built-in default, which lives
+compressed inside the applet's Qt resource (hence unfindable by grep and
+unpatchable). Writing the key explicitly retires the default. A second, hidden
+instance of the same problem sat in `kactivitymanagerd-statsrc`: Plasma's
+default Kickoff favourites list ships Discover *and* Kontact, neither
+installed. Not visible in the menu (Kickoff hides unresolvable entries) but
+still dead weight — cleaned along with it.
+
+**The gap.** Neither fix can be made by stage 3, which runs before the first
+graphical login: panel and favourites do not exist yet, and their config
+groups are keyed by applet ids and an activity UUID that are regenerated on
+every install. Deposited files would land on the wrong widget or nowhere.
+
+**The decision: a fourth stage.** `base/stage4.sh` runs inside the live Plasma
+session and drives it through the plasmashell scripting interface, addressing
+widgets by type and looking ids up at runtime. Stage 3 arms it as a systemd
+user unit (`system/user/phoinix-stage4.service`, a template) ordered after
+plasma-plasmashell.service.
+
+Single-shot vs. every-login was put to ulu explicitly. Chosen: **single-shot**,
+via `ConditionPathExists=!` on a marker file. Every-login would be the purer
+"repo is truth" reading, but it would also wipe any GUI change not yet carried
+into the repo — unworkable during the phase where settings are still being
+discovered. Rationale kept in DESIGN.md.
+
+Verified on the live desktop: stage4.sh produces exactly the hand-made state;
+run through systemd it executes once (`Result=success`) and is skipped on the
+second attempt (`ConditionResult=no`). Still untested: the unit actually
+firing at a real first login — that needs a fresh install, or a marker delete
+plus reboot.
