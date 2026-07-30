@@ -91,6 +91,10 @@ this topology — until proven, the cap stays.
 
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
+- Plasma monitor layout: arrangement correct? Ultrawide (DP-1) at 170Hz,
+  TCL 27" capped at 144Hz, HDR states as configured?
+- Shell restore: does Konsole greet with the old p10k prompt? (zinit
+  self-installs its plugins on first shell start — takes a moment.)
 
 ## Next steps
 

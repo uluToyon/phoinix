@@ -13,3 +13,4 @@ jdownloader2          # filehoster download manager; niche unmatched. Capture co
 mpc-qt                # video player; mpv engine in the beloved MPC-HC shape.
                       # TODO before script finalization: ulu wants to evaluate haruna as alternative
 splix                 # Samsung printer driver (SCX-4300); dropped from official repos
+claude-code           # the co-author of this repo; updates via paru like everything else
