@@ -1,6 +1,7 @@
 # Plasma core — hand-picked, every entry justified (no plasma-meta).
 # Deliberately absent: discover (pacman/yay instead), plasma-firewall,
 # plasma-thunderbolt, accessibility extras. Add back only when missed.
+# okular rejected — PDFs open in the browser (mimeapps: brave), documents in libreoffice.
 plasma-desktop
 plasma-pa
 plasma-nm
@@ -12,3 +13,14 @@ kde-gtk-config
 xdg-desktop-portal-kde
 kwalletmanager
 plasma-login-manager
+
+# KDE apps — one review round each (docs/LOG.md)
+dolphin               # file manager; KIO integration, config in ~/.config/dolphinrc
+konsole               # terminal emulator; KDE theming + dolphin F4 integration
+ark                   # archive GUI in dolphin context menu — ulu: ALL formats, never the terminal
+p7zip                 # ark backend: 7z
+unrar                 # ark backend: rar (proprietary format, only reliable extractor)
+spectacle             # screenshots/recording; the reliable path under Wayland
+gwenview              # image viewer; the "double-click a picture" default
+plasma-systemmonitor  # GUI task manager; only Qt-native option (GTK avoided per ulu)
+isoimagewriter        # ISO → USB stick; distro-hopper essential, Qt-native

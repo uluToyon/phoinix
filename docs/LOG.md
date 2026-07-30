@@ -119,3 +119,16 @@ every package is discussed individually or it's out.
 - dzgui is NOT an AUR package (verified: 0 hits) — it ships upstream via
   script/git (aclist/dztui). Becomes its own stage-3 install step; config
   at ~/.config/dztui/ goes on the capture list.
+
+## 2026-07-30 — KDE app rounds (one package per round)
+
+In: dolphin, konsole, ark+p7zip+unrar (ulu's rule: every archive format via
+Dolphin context menu, never the terminal), spectacle (note: custom keybindings
+planned → capture kglobalshortcutsrc later), gwenview, plasma-systemmonitor,
+isoimagewriter.
+Out: okular — PDFs open in the browser, documents in LibreOffice (new
+candidate for the app rounds); mission-center/resources/gnome-system-monitor
+rejected as GTK.
+**New standing rule from ulu: avoid GNOME/GTK apps wherever possible — prefer
+Qt/KDE-native; GTK only when no usable Qt alternative exists (say so openly).**
+Stage-3 note: xdg-mime default for PDF → brave.

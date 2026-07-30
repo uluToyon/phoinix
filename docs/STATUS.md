@@ -23,7 +23,8 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
   install runs on the PC, in case setup can already work around it. Details
   not yet collected.
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
-  dotfiles.
+  dotfiles; **custom KDE keybindings** (ulu will adjust, incl. Spectacle) —
+  capture `~/.config/kglobalshortcutsrc` once configured.
 
 ## Decided this session
 
