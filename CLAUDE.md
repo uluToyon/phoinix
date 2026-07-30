@@ -11,6 +11,9 @@ personal settings — so distro-hopping away and back is cheap.
    Never re-litigate a decision recorded there without being asked.
 3. `docs/DESIGN.md` holds the architecture rationale (stages, guard rails,
    capture tooling). Follow it.
+4. `docs/SETTINGS.md` is the inventory: every setting phoinix applies, where
+   it is written, and whether it was carried over or decided. Consult it when
+   a setting is in question — and keep it current when adding one.
 
 At the end of a work session: update `STATUS.md`, append to `LOG.md`,
 commit. Repo content is English only; conversation with ulu is German. The repo is the source of truth — scripts are written/updated live as

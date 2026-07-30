@@ -160,6 +160,11 @@ Still open:
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 - Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe` (exit code
   still 0). Harmless today, brittle under `pipefail` — worth a look.
+- **Live system is behind the repo on one point:** the boot entry on disk still
+  reads `video=DP-2:...` only. The DP-1 cap was added to `stage2.sh` but stage 2
+  has not been re-run, so the kernel arg is not active. Irrelevant for the
+  running test (KWin holds 144Hz in-session) — it matters at the next reinstall,
+  where it will be applied from the script anyway.
 - **Live-system cleanup, not yet done:** `~/.config/pipewire/pipewire.conf` is
   a verbatim copy of the packaged 1.6.7 config and shadows the installed 1.6.8
   one. Deleting it restores the package default; the real setting lives in the
