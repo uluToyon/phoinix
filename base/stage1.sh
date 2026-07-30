@@ -97,9 +97,11 @@ genfstab -U /mnt >> /mnt/etc/fstab
 # Data disks must never block booting when one dies or is unplugged.
 # genfstab writes real option strings (rw,relatime,...), so append per field,
 # matching the mountpoint column exactly.
+# Timeout 30s, NOT less: SATA spinning disks need 10-20s to be probed at boot —
+# 5s silently dropped all three on first boot (learned 2026-07-30).
 labels_re="$(IFS='|'; echo "${DATA_LABELS[*]}")"
 awk -v re="^/mnt/(${labels_re})$" '
-    $1 !~ /^#/ && $2 ~ re { $4 = $4 ",nofail,x-systemd.device-timeout=5s" }
+    $1 !~ /^#/ && $2 ~ re { $4 = $4 ",nofail,x-systemd.device-timeout=30s" }
     { print }
 ' /mnt/etc/fstab > /mnt/etc/fstab.new && mv /mnt/etc/fstab.new /mnt/etc/fstab
 
