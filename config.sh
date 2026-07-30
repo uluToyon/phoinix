@@ -7,6 +7,12 @@ USERNAME="ulutoyon"
 TIMEZONE="Europe/Berlin"
 KEYMAP="de"
 
+# X11/Wayland layout variant. Kept separate from KEYMAP on purpose: KEYMAP is
+# also the vconsole keymap, where the no-dead-keys variant is a different
+# keymap NAME (de-latin1-nodeadkeys), not a variant — folding them into one
+# value would produce an invalid XkbLayout. Empty means "no variant".
+KEYMAP_VARIANT="nodeadkeys"
+
 # Interface language stays English; regional FORMATS are German (ulu sits in
 # Germany but runs his system in English). Both locales must be generated —
 # a format locale that locale-gen never built silently falls back to C.

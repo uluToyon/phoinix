@@ -111,7 +111,43 @@ for greeter_user in plasmalogin sddm; do
     fi
 done
 
-# ------------------------------------------------- 6. shell aliases (idempotent)
+# ------------------------------------------------- 6. Plasma settings (explicit)
+# Written key by key rather than captured as whole files: each of these is a
+# deliberate decision, and a kwriteconfig line can carry the reason next to it
+# in a way a file snapshot never can. Also idempotent, and it merges instead of
+# clobbering whatever else KDE stores in the same file.
+# All of them are read at session start, so pre-first-login is early enough —
+# unlike the panel work, none of this needs a running shell (that's stage 4).
+
+# No screen locking at all: home desktop, the lock screen was only ever in the
+# way. Autolock alone does not do it — the timeout has to go too, or the KCM
+# keeps displaying a value that is not in effect.
+kwriteconfig6 --file kscreenlockerrc --group Daemon --key Autolock false
+kwriteconfig6 --file kscreenlockerrc --group Daemon --key Timeout 0
+
+# German WITHOUT dead keys. `Use=true` is the switch that makes Plasma apply
+# its own layout at all instead of deferring to the X11 system config from
+# stage 2 — both carry the variant, so greeter and session agree.
+kwriteconfig6 --file kxkbrc --group Layout --key Use true
+kwriteconfig6 --file kxkbrc --group Layout --key LayoutList "$KEYMAP"
+kwriteconfig6 --file kxkbrc --group Layout --key VariantList "$KEYMAP_VARIANT"
+
+# NumLock on at session start (0 = on; enum confirmed against the GUI).
+kwriteconfig6 --file kcminputrc --group Keyboard --key NumLock 0
+
+# A desktop that never dims, never blanks, never suspends. The -1 timeouts are
+# not decoration: leaving them at their defaults makes the KCM show idle times
+# that no longer apply. Values are passed with `--` because they start with a
+# dash and would otherwise be parsed as options.
+kwriteconfig6 --file powerdevilrc --group AC --group Display --key DimDisplayWhenIdle false
+kwriteconfig6 --file powerdevilrc --group AC --group Display --key DimDisplayIdleTimeoutSec -- -1
+kwriteconfig6 --file powerdevilrc --group AC --group Display --key TurnOffDisplayWhenIdle false
+kwriteconfig6 --file powerdevilrc --group AC --group Display --key TurnOffDisplayIdleTimeoutSec -- -1
+kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key AutoSuspendAction 0
+# 8 = shut down (enum confirmed against the GUI; KDE compiles it in).
+kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key PowerButtonAction 8
+
+# ------------------------------------------------- 7. shell aliases (idempotent)
 if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
     cat >> "$HOME/.zshrc" << 'EOF'
 
@@ -121,7 +157,7 @@ alias yay='paru'
 EOF
 fi
 
-# ------------------------------------------------- 7. regional formats
+# ------------------------------------------------- 8. regional formats
 # English UI, German formats. Two files on purpose, with different jobs:
 #
 #   environment.d — the one that ACTS. systemd's user manager reads it and
@@ -158,12 +194,12 @@ LC_MEASUREMENT=$FORMAT_LOCALE
 useDetailed=true
 EOF
 
-# ------------------------------------------------- 8. defaults & services
+# ------------------------------------------------- 9. defaults & services
 xdg-mime default brave-browser.desktop application/pdf || true
 
 sudo systemctl enable bluetooth cups power-profiles-daemon
 
-# ------------------------------------------------- 9. arm stage 4 (post-login)
+# ------------------------------------------------- 10. arm stage 4 (post-login)
 # Plasma settings that can only be made while its shell runs — see stage4.sh.
 # Enabled by symlink instead of `systemctl --user enable`: stage 3 runs from a
 # TTY where a user bus is not guaranteed, and the symlink is what enable does.

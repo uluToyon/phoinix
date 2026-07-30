@@ -582,3 +582,51 @@ stays its single owner, so the aliases have exactly one definition site.
 Side effect worth naming: this unblocks the chezmoi question without answering
 it. It is now only about *how* two shell files are managed, not whether the
 repo contains what it needs to rebuild the machine.
+
+## 2026-07-31 — General Plasma settings: written, not captured
+
+Method agreed first, because it decides how every following setting is
+recorded: **deliberate decisions get written key by key; only opaque blobs get
+captured.** A `kwriteconfig6` line carries its rationale in a comment right
+next to it, produces a readable diff, is idempotent, and merges instead of
+clobbering whatever else KDE stores in the same file. Whole-file snapshots
+stay reserved for what cannot reasonably be authored by hand —
+`kwinoutputconfig.json` with its EDID keys, the wireplumber state, `p10k.zsh`.
+
+Working method for the round itself: snapshot `~/.config` first, let ulu click
+through the system settings, then diff. Same approach that worked for the
+panels, and it beats asking anyone to recall what they changed.
+
+Five files came back changed. One was noise: `kglobalshortcutsrc` had only
+gained friendly-name strings for two keyboard-layout shortcuts, a side effect
+of opening the KCM, not a decision. The other four are now in stage 3:
+
+- **Screen locking off** (`kscreenlockerrc`): `Autolock=false` *and*
+  `Timeout=0`. The timeout is not redundant — left at its default the KCM goes
+  on displaying an idle time that no longer applies.
+- **German without dead keys** (`kxkbrc`): `LayoutList=de`,
+  `VariantList=nodeadkeys`, `Use=true`. This one reached beyond stage 3: the
+  login greeter has no user `kxkbrc` and falls back to the X11 system config,
+  so stage 2 now writes the variant too. Otherwise ulu would type his password
+  on a dead-key layout and land in a session without one. New config variable
+  `KEYMAP_VARIANT`, deliberately separate from `KEYMAP`: on the vconsole the
+  no-dead-key layout is a different keymap *name*
+  (`de-latin1-nodeadkeys`), not a variant, so folding both into one value would
+  emit an invalid `XkbLayout`.
+- **NumLock on at start** (`kcminputrc`): `NumLock=0`.
+- **Never dim, never blank, never suspend** (`powerdevilrc`), power button
+  shuts down.
+
+Two enum values could not be decoded from the system — KDE compiles them in,
+and both had several plausible readings. Resolved by asking ulu what he had
+just selected in the GUI, which beats guessing at a number: `NumLock=0` is
+*on*, `PowerButtonAction=8` is *shut down*. Recorded here because the next
+person to read those files will have the same question.
+
+Verified rather than assumed: the twelve `kwriteconfig6` calls were run against
+the live system and the four files compared against ulu's hand-made state —
+**byte-identical**, all four.
+
+Closes a gap on the way past: `kscreenlockerrc` was backed up on 2026-07-30 but
+appeared in no restore line of stage 3. It was captured and never deployed.
+Now it is written explicitly, so the gap cannot reopen.

@@ -32,15 +32,24 @@ echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
 # The GRAPHICAL session has its own layout — vconsole alone leaves KDE in
 # English (bit us on first login). KWin/Wayland reads this X11 fallback file;
 # localectl can't run in a chroot, so write it directly.
+# The variant matters here too, not just in the user session: the login
+# greeter has no user kxkbrc and falls back to THIS file. Without it ulu would
+# type his password on a dead-key layout and land in a no-dead-key session.
 install -d /etc/X11/xorg.conf.d
-cat > /etc/X11/xorg.conf.d/00-keyboard.conf << EOF
-# Written by phoinix stage2 (equivalent of: localectl set-x11-keymap $KEYMAP)
+{
+    cat << EOF
+# Written by phoinix stage2
+# (equivalent of: localectl set-x11-keymap $KEYMAP "" ${KEYMAP_VARIANT:-})
 Section "InputClass"
         Identifier "system-keyboard"
         MatchIsKeyboard "on"
         Option "XkbLayout" "$KEYMAP"
-EndSection
 EOF
+    if [[ -n "${KEYMAP_VARIANT:-}" ]]; then
+        echo "        Option \"XkbVariant\" \"$KEYMAP_VARIANT\""
+    fi
+    echo 'EndSection'
+} > /etc/X11/xorg.conf.d/00-keyboard.conf
 
 # ----------------------------------------------------------------- identity
 echo "$HOSTNAME" > /etc/hostname

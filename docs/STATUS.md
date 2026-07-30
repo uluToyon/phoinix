@@ -28,6 +28,13 @@ ulu names an app or a setting; it gets applied on the live system and written
 into the scripts in the same step — no big capture at the end. Plasma settings
 that need a running shell go into `base/stage4.sh` (see DESIGN.md).
 
+**How a setting is recorded (decided 2026-07-31):** deliberate decisions are
+written key by key with `kwriteconfig6` in stage 3, each with its reason in a
+comment. Whole-file capture into `hosts/<host>/home/` is reserved for what
+cannot sensibly be authored by hand — `kwinoutputconfig.json`, the wireplumber
+state, `p10k.zsh`. For a click-through round: snapshot `~/.config`, let ulu
+change things, then diff.
+
 ## In discussion (not yet decided) — one topic at a time, per ulu
 
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
