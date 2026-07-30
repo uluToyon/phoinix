@@ -402,3 +402,10 @@ output — a bad trade in a repo made of scripts).
 locale-gen needs root and this session's sudo has no password: ulu ran the
 two commands himself, `de_DE.utf8` confirmed present. Takes effect on the
 next login.
+
+**Verified after that login: PASS.** The systemd user manager exports the nine
+format variables, `date` prints `Fr 31. Jul`, and the panel clocks read
+`00:16` / `31.07.2026`. Worth recording because it settles an open question:
+the Plasma clock takes its format from `LC_TIME` rather than storing one of
+its own, so the environment.d file alone is the whole fix — no clock format
+has to be written into `plasma/panels.js`.

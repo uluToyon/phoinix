@@ -1,6 +1,6 @@
 # STATUS
 
-_Last updated: 2026-07-30 night (session 2 — running ON the desktop)_
+_Last updated: 2026-07-31 (session 2 — running ON the desktop)_
 
 ## Where we are
 
@@ -116,6 +116,12 @@ Verified on the desktop (session 2):
   Cosmetic leftover: `ksecretd` logs a failed portal registration
   ("Connection already associated with an application ID") on PAM start.
   Harmless; revisit only if an app stops remembering its passwords.
+- **Regional formats: PASS** (verified after a real re-login). The session
+  exports `LANG=en_US.UTF-8` with all nine `LC_*` format variables on
+  `de_DE.UTF-8`; `LC_MESSAGES`/`LC_COLLATE` stay English by design. `date`
+  prints the German form, and the panel clocks show `00:16` / `31.07.2026`
+  — so the Plasma clock honours `LC_TIME` and needs no per-widget format,
+  i.e. nothing extra to script in `plasma/panels.js`.
 
 Still open:
 
