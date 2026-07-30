@@ -4,13 +4,12 @@ discord               # official client; ulu uses voice+chat only — vesktop is
 qbittorrent           # torrent client; Qt-native, config in ~/.config/qBittorrent (paths touch the mount-path topic)
 strawberry            # music player; HARD requirement: stereo→5.1 upmix ONLY for music (player-internal,
                       # never system-wide — games/movies keep native channels). Dated layout accepted.
-mpc-qt                # video player; mpv engine in the beloved MPC-HC shape.
-                      # TODO before script finalization: ulu wants to evaluate haruna as alternative
+# mpc-qt moved to aur.txt — not in official repos (learned during stage 3)
 keepassxc             # password vault ("denk"); database lives on FilesMusic and survives reinstalls
 networkmanager-openvpn # ProtonVPN via .ovpn files (on FilesMusic) in the plasma-nm applet; official
                       # Proton app rejected (GTK). Later option: switch to WireGuard configs (built-in nm)
 cups                  # printing daemon; printer: Samsung SCX-4300 (USB), print only — no scan stack
-splix                 # Samsung printer driver, required for the SCX-4300
+# splix moved to aur.txt — dropped from official repos (learned during stage 3)
 print-manager         # KDE printing UI (settings + job viewer)
 libreoffice-fresh     # office suite (documents; PDFs stay in the browser); fresh = the rolling-release-fitting branch
 hunspell-de           # spellcheck dictionary German (documents are German, UI is en_US)

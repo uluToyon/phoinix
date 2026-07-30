@@ -10,3 +10,6 @@ xivlauncher-rb        # FFXIV launcher (RB fork) via umu; game data on /mnt/Game
                       # ~/.xlcore is capture material; paths join the mount-path topic
 jdownloader2          # filehoster download manager; niche unmatched. Capture config selectively
                       # (hoster logins are secrets — never into the repo)
+mpc-qt                # video player; mpv engine in the beloved MPC-HC shape.
+                      # TODO before script finalization: ulu wants to evaluate haruna as alternative
+splix                 # Samsung printer driver (SCX-4300); dropped from official repos
