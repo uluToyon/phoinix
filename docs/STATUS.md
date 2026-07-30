@@ -72,6 +72,12 @@ this topology — until proven, the cap stays.
 
 ## Post-install test points
 
+- **IMPORTANT, ask ulu on the desktop:** the first PLM boot looked good, but
+  2 of the 4 monitors were switched to the laptop input at the time — the
+  full 4-monitor black-screen test is still OUTSTANDING. When the session
+  has moved to the desktop and a reboot is due: remind ulu to have ALL four
+  monitors active on the PC, then verify PLM comes up clean.
+
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 
