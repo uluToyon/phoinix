@@ -459,3 +459,75 @@ With this, every stage of phoinix has now run in the mode it was designed for.
 Cosmetic leftover, noted not fixed: the run logs `sed: couldn't flush stdout:
 Broken pipe` — a `sed` whose reader closes early. Exit code was 0, but under
 `pipefail` that class of thing is brittle; worth a look on its own.
+
+## 2026-07-31 — The black flash on the main monitor, finally characterised
+
+ulu has chased a sporadic short black flash on the ultrawide (DP-1) for years,
+across distros, never reproducible, never found. One occurred mid-session, so
+the journal was still warm. What came out is worth recording in full, because
+almost every intuition about it was wrong.
+
+**The monitor that flashes is not the one that causes trouble.** At 00:36:03 a
+DRM hotplug (`action=change, hotplug=1`) hit connector 400 = `card1-DP-3`, the
+*portrait* monitor: gone at 00:36:04, back at 00:36:05. A hotplug on any one
+output makes KWin re-apply the entire output configuration — amdgpu dumped ~100
+lines of HDR infoframes, i.e. a modeset across all four screens. DP-1 goes
+black as collateral. So a flash on the main monitor can be caused by a cable
+two ports over. Worth knowing before ever debugging this class of bug again.
+
+**But that was a different incident.** The flash ulu actually reported happened
+~00:37:40, and the journal window covering it contains exactly three lines, all
+unrelated KSplash noise. `HDR SB:` bursts (a reliable modeset marker) exist for
+this boot at 00:25:09, 00:36:03 and 00:36:05 — and nowhere else. **The real
+event left no trace at all**, which is itself the finding: no modeset, no
+hotplug, no DP link loss. Everything KWin, powerdevil or the compositor could
+have done would have logged something.
+
+That eliminated the usual suspects one by one:
+- **GPU clock switching** (the classic AMD multi-monitor flicker): out.
+  `pp_dpm_mclk` sits pinned at its top state (1249 MHz) — amdgpu does that on
+  mixed-refresh multi-monitor setups. What never switches can't blank.
+- **VRR**: weakened to near-zero. DP-1 is the only output with adaptive sync
+  (`Vrr: Automatic`, range 48–170), but Plasma only engages it for fullscreen
+  windows, and the desktop was idle with a terminal open.
+- **powerdevil / libddcutil**: it was silent from 00:25:25 until the udev event
+  woke it, so it reacted rather than caused. It does hammer the I2C bus with
+  retries and timeouts afterwards — noise, not cause.
+
+**What the link actually looks like** (amdgpu debugfs, DP-1):
+
+```
+link_settings:  Current: 4  0x1e  0        4 lanes, 0x1e = HBR3 = 8.1 Gbps/lane
+dsc_clock_en:   0                          no compression active
+dp_dsc_fec_support: DSC no, FEC no         the sink supports neither
+force_yuv420_output: 0                     full RGB 4:4:4, no subsampling
+```
+
+Four lanes at HBR3 is the ceiling of DP 1.4: 32.4 Gbit/s raw, **25.92 Gbit/s
+after 8b/10b**. The sink cannot do DSC, so nothing compresses the stream, and
+it cannot do FEC, so nothing absorbs a bit error before it becomes a retrain.
+At 3440x1440@170 in RGB 4:4:4 that link runs at roughly 82% utilisation (8 bpc;
+10 bpc would need ~26.7 Gbit/s and simply would not fit, so amdgpu's bandwidth
+validation must already be falling back to 8 bpc plus dithering — inferred, not
+measured: this kernel's `output_bpc` prints only the maximum, not the current
+value).
+
+A maxed-out link with no error correction and no headroom is exactly where
+in-service link retraining lives, and a retrain is a short black screen that
+the kernel does not log. That explains every property of this bug: sporadic,
+distro-independent, only this one output, and invisible for years.
+
+**Consequence, and it is deliberately provisional.** DP-1 set to
+3440x1440@144, which drops utilisation to ~70%; everything else (HDR, wide
+gamut, VRR, geometry, priority) untouched. Possible bonus: at 144Hz 10 bpc
+*does* fit under the ceiling, so HDR may now run at true 10 bit instead of 8
+bit dithered. If the flash stays away for a few days the bandwidth theory is
+confirmed and a certified DP cable should buy the 170Hz back; if it returns,
+bandwidth was never it and the next step is DRM debug logging.
+
+ulu's call: bake the 144Hz into the scripts already, rather than wait out the
+test. Done for the console phase (`video=DP-1:3440x1440@144` in stage 2,
+marked PROVISIONAL there). The in-session mode is **not** covered by that — it
+comes from `kwinoutputconfig.json`, which stage 3 restores from the backup on
+the Downloads disk, i.e. from outside the repo. Until that file is re-captured
+the scripted result of a reinstall is still 170Hz.

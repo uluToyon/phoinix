@@ -105,14 +105,19 @@ timeout 3
 console-mode keep
 EOF
 
-# video=DP-2:...@144 — monitor-bug fix: the TCL 27" 4K must never init at
-# native 180Hz (DP bandwidth/DSC → black screen with all 4 displays).
-# See docs/LOG.md 2026-07-30.
+# Two refresh-rate caps, same mechanism, two different reasons:
+#   DP-2 @144 — monitor-bug fix: the TCL 27" 4K must never init at native
+#     180Hz (DP bandwidth/DSC → black screen with all 4 displays).
+#     See docs/LOG.md 2026-07-30.
+#   DP-1 @144 — the ultrawide's link runs 4 lanes at HBR3 with no DSC and no
+#     FEC; at 170Hz it sits at ~82% utilisation, where a single bit error
+#     costs a retrain (= the sporadic black flash). See docs/LOG.md 2026-07-31.
+#     PROVISIONAL: this is a running experiment, not a settled decision.
 cat > /boot/loader/entries/arch-zen.conf << EOF
 title   Arch Linux (zen)
 linux   /vmlinuz-linux-zen
 initrd  /initramfs-linux-zen.img
-options root=UUID=$ROOT_UUID rw video=DP-2:3840x2160@144
+options root=UUID=$ROOT_UUID rw video=DP-2:3840x2160@144 video=DP-1:3440x1440@144
 EOF
 
 # ---------------------------------------------------------------- etckeeper

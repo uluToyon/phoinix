@@ -137,6 +137,19 @@ Verified on the desktop (session 2):
 
 Still open:
 
+- **RUNNING EXPERIMENT — DP-1 at 144Hz instead of 170Hz.** Started 2026-07-31
+  against the years-old sporadic black flash on the ultrawide. Diagnosis in
+  `LOG.md`: the link runs 4 lanes at HBR3 with no DSC and no FEC, i.e. at the
+  DP 1.4 ceiling with ~82% utilisation, where one bit error costs a retrain —
+  and a retrain is a black flash the kernel never logs. Watch for a few days.
+  **No flash → confirmed**, and a certified DP cable should buy 170Hz back.
+  **Flash returns → not bandwidth**, next step is DRM debug logging.
+  Baked into stage 2 as a kernel arg already (ulu's call, marked PROVISIONAL
+  in the script) — but see the `kwinoutputconfig.json` item above: the
+  in-session mode still comes from the old capture, so a reinstall today would
+  still produce 170Hz. Also unresolved: the portrait monitor (DP-3) threw a
+  real hotplug on the same evening, cause unknown — a hotplug on any output
+  re-applies all four, so it is a second, independent source of flashes.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 - Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe` (exit code
