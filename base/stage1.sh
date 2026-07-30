@@ -100,9 +100,9 @@ for label in "${DATA_LABELS[@]}"; do
 done
 
 # ---------------------------------------------------- hand off to stage 2
-rsync -a "$REPO_DIR/" /mnt/root/archinstall/
+rsync -a "$REPO_DIR/" /mnt/root/phoinix/
 cp /var/log/stage1.log /mnt/var/log/stage1.log
 
 echo
 echo "stage 1 done. Next:"
-echo "  arch-chroot /mnt /root/archinstall/base/stage2.sh $HOST"
+echo "  arch-chroot /mnt /root/phoinix/base/stage2.sh $HOST"

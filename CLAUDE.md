@@ -7,13 +7,13 @@ personal settings — so distro-hopping away and back is cheap.
 ## Session handshake — read this first
 
 1. Read `docs/STATUS.md` — current state, what's done, what's next.
-2. Read `docs/PROTOKOLL.md` — append-only log of every decision *with rationale*.
+2. Read `docs/LOG.md` — append-only log of every decision *with rationale*.
    Never re-litigate a decision recorded there without being asked.
 3. `docs/DESIGN.md` holds the architecture rationale (stages, guard rails,
    capture tooling). Follow it.
 
-At the end of a work session: update `STATUS.md`, append to `PROTOKOLL.md`,
-commit. The repo is the source of truth — scripts are written/updated live as
+At the end of a work session: update `STATUS.md`, append to `LOG.md`,
+commit. Repo content is English only; conversation with ulu is German. The repo is the source of truth — scripts are written/updated live as
 steps are performed, never reconstructed later from memory.
 
 ## Working agreements

@@ -11,7 +11,7 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 - `base/stage1.sh` is written and reviewed but NOT yet executed.
 - `base/stage2.sh` and `base/stage3.sh` do not exist yet.
 
-- Repo is live: https://github.com/uluToyon/archinstall (public; commits use
+- Repo is live: https://github.com/uluToyon/phoinix (public; commits use
   the GitHub noreply address, author name `uluToyon`). Rule: curated config
   imports + secret scan before pushing anything captured from a live system.
 
