@@ -247,3 +247,44 @@ Options weighed:
 Precondition, satisfied here: no autologin configured (PAM has no password to
 hand on in that case), and no wallet existed yet — so PAM gets to create it.
 Verification is pending on the next reboot, together with the 4-monitor test.
+
+## 2026-07-30 — 4-monitor PLM test: PASS (and a bonus fix)
+
+The reboot with all four displays actually connected to the PC — the first
+real run of the black-screen scenario — came up clean: picture on all four,
+greeter fully rendered, no flicker phase. The baked-in fix works as designed.
+
+Unplanned bonus: the password field appeared on DP-1, the main monitor. On
+every previous distro the login manager grabbed the TV on HDMI, and ulu had
+never managed to change that. Cause found in the restored config: Plasma 6
+stores a per-output `priority` inside each setup block of
+`kwinoutputconfig.json` (current 4-monitor setup: DP-1=1 → primary, DP-2=2,
+DP-3=3, HDMI-A-1=4). Without that file KWin picks a primary heuristically;
+with it — and stage 3 deploys the same file to the PLM greeter's config dir —
+the greeter inherits ulu's intended primary. So the monitor-bug fix carries a
+second benefit that was never part of its design goal.
+
+Follow-up recorded in STATUS.md: the deployed file is still the *old* system's
+capture. Once ulu finishes tuning the monitor settings it has to be captured
+again, otherwise a reinstall restores the stale layout.
+
+## 2026-07-30 — KWallet silent unlock verified: PASS
+
+Same reboot, second test point. No KWallet window at login — neither the
+Blowfish/GPG creation dialog that started this whole topic nor a password
+prompt. Evidence beyond ulu's observation: journal shows the complete
+`pam_kwallet5` chain (auth → setcred → open_session) via plasmalogin-helper,
+the socket at `/run/user/1000/kwallet5.socket`, the systemd unit "Unlock
+kwallet from pam credentials", a wallet store created at exactly the login
+timestamp, and `ksecretd` running as `--pam-login` — credentials handed over
+by PAM, not typed by a human.
+
+So the decision holds at its advertised cost: one package name
+(`kwallet-pam` in `packages/kde.txt`), no `/etc/pam.d` edits, no wallet state
+in the repo. The `-pam_kwallet5.so` lines PLM already ships stop being no-ops
+the moment the module exists.
+
+Cosmetic: `ksecretd` fails to register with the host portal ("Connection
+already associated with an application ID"). Known noise on PAM-started
+sessions, no functional impact — only worth chasing if an app turns out not
+to retain its passwords.

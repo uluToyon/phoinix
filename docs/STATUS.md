@@ -25,6 +25,9 @@ _Last updated: 2026-07-30 night (session 2 — running ON the desktop)_
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
   dotfiles; **custom KDE keybindings** (ulu will adjust, incl. Spectacle) —
   capture `~/.config/kglobalshortcutsrc` once configured.
+- **Re-capture `kwinoutputconfig.json`** once ulu is done tuning the monitor
+  settings — the file currently in the repo/backup is the old system's state,
+  and a reinstall would restore that instead of the final layout.
 - **Mount-path legacy: DECIDED — clean re-wiring, no compat symlinks.**
   Restored configs get new /mnt/<Label> paths written in during capture;
   manual checklist: Steam "add library folder" → /mnt/Games/SteamLibrary,
@@ -88,19 +91,28 @@ Verified on the desktop (session 2):
 - **Plasma monitor layout: PASS (in-session).** All four outputs enabled,
   DP-1 ultrawide 3440x1440@170, DP-2 (TCL 27") 3840x2160**@144** — the cap
   holds — DP-3 2560x1440@144 portrait, HDMI-A-1 3840x2160@120. HDR and wide
-  colour gamut on all four. Note this is the state *after* login; the
-  greeter phase is the still-open test below.
+  colour gamut on all four.
+- **Full 4-monitor PLM test: PASS.** Reboot with all four displays live on
+  the PC: picture on all four, no black screen, greeter came up clean. Bonus
+  result — the password field appeared on DP-1 (the main monitor) for the
+  first time ever; without a restored config KWin used to pick the TV on
+  HDMI. The restored `kwinoutputconfig.json` carries a per-output `priority`
+  (DP-1=1 primary, DP-2=2, DP-3=3, HDMI-A-1=4), and the greeter copy honours
+  it. The monitor-bug fix thus solves the wrong-primary annoyance too.
+- **KWallet silent unlock: PASS.** No wallet window of any kind at login —
+  neither the Blowfish/GPG dialog nor a password prompt. Journal confirms the
+  full PAM chain (`pam_kwallet5`: authenticate → setcred → open_session,
+  socket `/run/user/1000/kwallet5.socket`, unit "Unlock kwallet from pam
+  credentials"), the store was created at login time
+  (`~/.local/share/kwalletd/kdewallet.kwl` + `.salt`), and `ksecretd` runs
+  with `--pam-login`, i.e. it got its credentials from PAM. `kwallet-pam` in
+  `packages/kde.txt` is therefore the whole fix — nothing else needed.
+  Cosmetic leftover: `ksecretd` logs a failed portal registration
+  ("Connection already associated with an application ID") on PAM start.
+  Harmless; revisit only if an app stops remembering its passwords.
 
 Still open:
 
-- **The full 4-monitor PLM test.** The first PLM boot looked good, but 2 of
-  the 4 monitors were switched to the laptop input at the time — the
-  black-screen scenario has therefore never actually been exercised. All
-  four now hang on the PC, so the next reboot IS the test: does the greeter
-  come up clean with all four displays live?
-- **KWallet silent unlock** (see decision below): the next login must show
-  NO wallet dialog. `~/.local/share/kwalletd/` was empty beforehand, so PAM
-  gets to create the wallet itself with the login password.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 
