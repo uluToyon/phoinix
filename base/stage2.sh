@@ -46,9 +46,13 @@ install -m644 "$REPO_DIR/system/zram-generator.conf" /etc/systemd/zram-generator
 # --------------------------------------------------------------------- user
 if ! id "$USERNAME" &>/dev/null; then
     useradd -m -G wheel -s /usr/bin/zsh "$USERNAME"
-    echo ">> Set password for $USERNAME:"
-    passwd "$USERNAME"
 fi
+# Prompt (again) whenever the account still has no usable password — keeps
+# the script re-runnable even after a mistyped confirmation aborted a run.
+while passwd -S "$USERNAME" | awk '{exit !($2 == "L" || $2 == "NP")}'; do
+    echo ">> Set password for $USERNAME:"
+    passwd "$USERNAME" || echo ">> Mismatch — try again."
+done
 
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 440 /etc/sudoers.d/10-wheel
