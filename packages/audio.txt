@@ -1,0 +1,9 @@
+# Audio stack (docs/LOG.md). WirePlumber state restore in stage 3 brings back
+# the Teufel soundbar fix: ~/.local/state/wireplumber/ (surround-5.1 profile,
+# -26dB route limit) + ~/.config/pipewire/pipewire.conf.d/10-clock.conf.
+pipewire
+pipewire-alsa
+pipewire-pulse
+wireplumber
+# pipewire-jack rejected — no JACK apps in use (Scarlett works class-compliant;
+# revisit only if a DAW ever shows up)
