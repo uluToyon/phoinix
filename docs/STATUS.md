@@ -41,6 +41,11 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 - Set zsh as ulu's login shell at useradd (zsh is in pacstrap).
 - Ship a minimal global zsh config so first login has no setup wizard.
 
+## Post-install test points
+
+- EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
+  steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
+
 ## Next steps
 
 1. Settle kernel + package + KDE questions, adjust `packages/`.
