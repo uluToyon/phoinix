@@ -2,3 +2,10 @@
 # Prefer -bin variants for huge builds (see docs/LOG.md on AUR variants).
 umu-launcher          # run Proton outside Steam — required by xivlauncher-rb / DZGUI
 proton-ge-custom-bin  # Proton-GE prebuilt: extra codecs (FFXIV cutscenes), faster fixes
+brave-bin             # browser + PDF viewer (xdg-mime default); profile via Brave Sync,
+                      # manual step post-install: join the sync chain (never capture the local profile)
+pcloud-drive          # pCloud client (official AppImage, packaged); login is a manual post-install step
+xivlauncher-rb        # FFXIV launcher (RB fork) via umu; game data on /mnt/Games (CRLF in FFXIV.cfg!),
+                      # ~/.xlcore is capture material; paths join the mount-path topic
+jdownloader2          # filehoster download manager; niche unmatched. Capture config selectively
+                      # (hoster logins are secrets — never into the repo)

@@ -144,3 +144,14 @@ Out: tmux (revisit when the future home-server exists), expac, uv & wmctrl
 deferred to actual install), cpupower, libinput-tools, wget.
 Old .zshrc/.p10k.zsh backed up to the Downloads disk (found configured
 powerlevel10k — input for the zsh round).
+
+## 2026-07-30 — App rounds (ulu's list)
+
+In: steam, discord (official; vesktop = plan B), qbittorrent, strawberry
+(HARD req: stereo→5.1 upmix player-internal ONLY, never system-wide),
+mpc-qt (haruna evaluation before script finalization), keepassxc,
+networkmanager-openvpn (ProtonVPN .ovpn; WireGuard migration on the wishlist),
+cups+splix+print-manager (SCX-4300, print only), libreoffice-fresh + hunspell
+de/en_US. AUR: brave-bin (PDF default; sync chain by hand), pcloud-drive,
+xivlauncher-rb, jdownloader2.
+DZGUI: stage-3 upstream install step (turnkey since v7 — deps deferred).

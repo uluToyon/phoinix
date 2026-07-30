@@ -45,6 +45,16 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
+- Evaluate haruna vs. mpc-qt BEFORE finalizing the scripts (ulu wants a look).
+- VPN session with ulu: walk through the whole desktop VPN topic together and
+  migrate ProtonVPN from .ovpn imports to WireGuard configs.
+
+## Post-install manual steps (not scriptable)
+
+- Brave: join the sync chain by hand (profile comes via Brave Sync).
+- pCloud: log in by hand (credentials in KeePassXC on FilesMusic).
+- ProtonVPN: import .ovpn profiles (FilesMusic/OpenVPNConfigs) into the
+  network applet by hand — may contain credentials, never into the repo.
 
 ## Post-install test points
 
