@@ -52,3 +52,14 @@ Downloads=10015c7b…, FilesMusic=eaa964b8…
 - [ ] stage2.sh schreiben & im chroot ausführen
 - [ ] Reboot, stage3: yay, KDE, SDDM
 - [ ] GitHub-Repo anlegen und pushen
+
+## 2026-07-30 — GitHub-Einrichtung
+
+- Diskussion privat vs. öffentlich vs. Zwei-Repo-Pipeline: Entscheidung
+  **ein Repo, öffentlich** — Pipeline-Split brächte nichts, weil das frische
+  System ohnehin fast das ganze Repo braucht; Schutz gegen Secrets liefert
+  kuratierte Übernahme + Secret-Scan vor dem Push, nicht die Repo-Grenze.
+  `age`-Verschlüsselung als Option für den Fall echter Secrets notiert.
+- Commit-Historie vor dem ersten Push anonymisiert: Autor `uluToyon`,
+  GitHub-noreply-Adresse statt Firmen-E-Mail.
+- Repo live: https://github.com/uluToyon/archinstall

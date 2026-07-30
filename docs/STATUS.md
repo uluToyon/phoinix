@@ -11,17 +11,20 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 - `base/stage1.sh` is written and reviewed but NOT yet executed.
 - `base/stage2.sh` and `base/stage3.sh` do not exist yet.
 
-## In discussion (not yet decided)
+- Repo is live: https://github.com/uluToyon/archinstall (public; commits use
+  the GitHub noreply address, author name `uluToyon`). Rule: curated config
+  imports + secret scan before pushing anything captured from a live system.
 
-- GitHub repo: visibility (public/private), then push.
-- Kernel choice: `linux` vs `linux-zen` vs CachyOS kernel (gaming focus).
-- `packages/pacstrap.txt` final contents.
-- KDE install scope (minimal / curated / full).
+## In discussion (not yet decided) — one topic at a time, per ulu
+
+- Kernel choice: `linux` vs `linux-zen` vs CachyOS kernel (gaming focus). ← current topic
+- `packages/pacstrap.txt` final contents (decided so far: NO vim, ever;
+  candidates micro + nano).
+- KDE install scope (leaning: curated explicit list in `packages/kde.txt`).
 
 ## Next steps
 
-1. Push to GitHub once auth is set up on the laptop.
-2. Settle kernel + package + KDE questions, adjust `packages/`.
+1. Settle kernel + package + KDE questions, adjust `packages/`.
 3. Run stage 1 on the desktop (needs explicit approval; serial S649NX0T343303X).
 4. Write + run stage 2 (chroot: locale, systemd-boot, user, network, zram).
 5. Reboot, write + run stage 3 (AUR helper, KDE, gaming stack).
