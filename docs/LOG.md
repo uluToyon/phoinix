@@ -630,3 +630,43 @@ the live system and the four files compared against ulu's hand-made state —
 Closes a gap on the way past: `kscreenlockerrc` was backed up on 2026-07-30 but
 appeared in no restore line of stage 3. It was captured and never deployed.
 Now it is written explicitly, so the gap cannot reopen.
+
+## 2026-07-31 — Pointer acceleration off, as a rule rather than a device setting
+
+ulu set one more thing without saying what, as a test of whether the diff
+method actually finds things. It did — `kcminputrc`, modified two minutes
+earlier: `PointerAccelerationProfile=1`, the flat profile, i.e. mouse
+acceleration off.
+
+The find turned into something more useful than the setting. KDE stores the
+profile **per device**, in a group built from vendor id, product id and device
+name. Querying KWin's D-Bus interface for every pointer showed four devices
+capable of a flat profile and exactly one that had it — the Microsoft wireless
+mouse. Not set: the **Keychron M6 8K**, an 8000 Hz gaming mouse, which turned
+out to be the one ulu actually plays with. The KCM shows one device at a time,
+so a setting made there quietly applies to whichever device happens to be
+selected. Worth knowing: this is a settings page where doing the obvious thing
+gets you a half-configured system.
+
+ulu's call, and it is the better one: **this is a gaming PC, so no mouse gets
+acceleration.** A rule about every pointer rather than a value on one device.
+
+That also removes the scripting problem instead of solving it. Writing
+`[Libinput][13364][53321][Keychron Keychron M6 8K]` into the repo would have
+meant three discovered identifiers in a file (against CLAUDE.md), coverage of
+exactly one mouse, and silent nothing the day a different one is plugged in.
+
+Implementation (stage 4, because it needs a running compositor): ask KWin for
+`ListPointers`, skip anything that reports no support for the flat profile —
+the "Consumer Control" pseudo-devices every keyboard registers — and set the
+D-Bus property on the rest. **KWin writes the group name and persists it to
+`kcminputrc` itself**, verified live: setting the property produced the correct
+group without a single identifier being authored by hand. Same principle the
+panels already follow — look things up at runtime, never hard-code them.
+
+Verified: applied to all four capable devices, and the block re-runs cleanly.
+
+Limitation, deliberately accepted: stage 4 is single-shot, so a mouse bought
+later is not covered automatically. Re-running `stage4.sh` by hand handles it,
+and a new mouse is rare enough not to justify making the unit fire on every
+login (which was decided against for good reasons in the panel work).

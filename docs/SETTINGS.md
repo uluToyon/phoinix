@@ -149,7 +149,18 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Side strips | `DP-2:55`, `DP-3:36` | dec |
 | Pinned launchers | Konsole, Dolphin, Brave, KeePassXC, Strawberry, Discord, qBittorrent | dec |
 | Kickoff favourites | browser, System Settings, Dolphin | dec |
+| Pointer acceleration | **flat profile on every pointer that supports it** | dec |
 | Final step | `systemctl --user restart plasma-plasmashell.service` | dec |
+
+**Pointer acceleration is a rule, not a device setting.** This is a gaming PC,
+so no mouse gets acceleration — the profile is applied to *every* pointer KWin
+reports, not to one chosen device. That is also the only way to script it
+cleanly: KDE stores the profile per device in a group built from vendor id,
+product id and device name (`[Libinput][13364][53321][Keychron Keychron M6 8K]`).
+Writing that literally would put three discovered identifiers in the repo,
+cover exactly one mouse, and silently do nothing after a mouse change. Stage 4
+asks KWin at runtime instead and sets the D-Bus property; KWin builds the group
+name and persists it to `kcminputrc` on its own.
 
 Screens are matched by **geometry**, never by index — Plasma numbers screens in
 detection order. A disconnected monitor yields `-1` and its panel is skipped

@@ -121,7 +121,43 @@ else
     echo "WARNING: no kickoff applet found — favourites left untouched"
 fi
 
-# ------------------------------------------------- 4. restart the shell
+# ------------------------------------------------- 4. flat pointer profile
+# This is a gaming PC: NO mouse gets pointer acceleration. Deliberately a rule
+# about every pointer rather than a setting on one device.
+#
+# Why this is stage 4 and not stage 3: KDE stores the profile per device, in a
+# group built from vendor id, product id and device NAME —
+#   [Libinput][13364][53321][Keychron Keychron M6 8K]
+# Writing that literally would put three discovered identifiers into the repo
+# (against CLAUDE.md), cover exactly one mouse, and silently do nothing the day
+# a different one is plugged in.
+#
+# Instead: ask KWin at runtime which pointers exist and set the property on
+# each. KWin builds the group name and persists it to kcminputrc itself, so no
+# identifier is ever authored here. Same principle as the panels — look ids up,
+# never hard-code them.
+#
+# Devices that report no support for the flat profile (the "Consumer Control"
+# pseudo-devices every keyboard registers) are skipped; setting it would fail.
+kwin_dev_get() {
+    qdbus6 org.kde.KWin "$1" org.freedesktop.DBus.Properties.Get \
+           org.kde.KWin.InputDevice "$2" 2>/dev/null
+}
+
+pointers="$(qdbus6 org.kde.KWin /org/kde/KWin/InputDevice \
+            org.kde.KWin.InputDeviceManager.ListPointers 2>/dev/null || true)"
+if [[ -z "$pointers" ]]; then
+    echo "WARNING: KWin listed no pointer devices — acceleration profile untouched"
+fi
+for sys in $pointers; do
+    dev="/org/kde/KWin/InputDevice/$sys"
+    [[ "$(kwin_dev_get "$dev" supportsPointerAccelerationProfileFlat)" == "true" ]] || continue
+    qdbus6 org.kde.KWin "$dev" org.freedesktop.DBus.Properties.Set \
+           org.kde.KWin.InputDevice pointerAccelerationProfileFlat true 2>/dev/null \
+        && echo "flat pointer profile: $(kwin_dev_get "$dev" name)"
+done
+
+# ------------------------------------------------- 5. restart the shell
 # Freshly created task-manager widgets read their launcher list once, when
 # they are built — writing the config afterwards reaches the file but not the
 # running instance, so the panel would show the built-in default (with its
