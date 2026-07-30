@@ -38,8 +38,10 @@ change things, then diff.
 ## In discussion (not yet decided) — one topic at a time, per ulu
 
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
-  dotfiles; **custom KDE keybindings** (ulu will adjust, incl. Spectacle) —
-  capture `~/.config/kglobalshortcutsrc` once configured.
+  dotfiles. **KDE shortcuts: done 2026-07-31** — media keys freed for
+  Strawberry, Spectacle's `Meta+Shift+S` moved to region capture. Written as
+  deviations, not captured; the file states its own defaults, so the next
+  change is found the same way (compare field 1 against field 2).
 - **chezmoi: still undecided, no longer blocking.** The shell config lives in
   `dotfiles/` as plain files stage 3 installs directly, so the question is now
   only *how* those two files are managed — not whether the repo is complete.

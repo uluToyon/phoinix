@@ -670,3 +670,52 @@ Limitation, deliberately accepted: stage 4 is single-shot, so a mouse bought
 later is not covered automatically. Re-running `stage4.sh` by hand handles it,
 and a new mouse is rare enough not to justify making the unit fire on every
 login (which was decided against for good reasons in the panel work).
+
+## 2026-07-31 — Global shortcuts: the file states its own defaults
+
+`kglobalshortcutsrc` had been parked in STATUS.md for days as "capture once
+configured". Capturing it whole would have been wrong twice over: ~275 lines of
+untouched defaults, and a `switch-to-activity-<UUID>` entry carrying an
+activity id that is regenerated on every install — a dead reference the moment
+it lands on a new machine.
+
+It also turned out to be unnecessary. Entries are
+`key=active,default,friendly`, i.e. **every line carries the default it
+deviates from**. "What did ulu actually change" is therefore computable from
+the file alone, with no before/after snapshot and no expiry date. Service
+entries are the exception, using plain `key=shortcut` with no default field —
+which is why a first pass misread all four Spectacle lines as changes; the
+truth came from diffing against the evening's snapshot and against Spectacle's
+own `.desktop`.
+
+Two real changes:
+
+- **Media keys belong to Strawberry.** Plasma's `mediacontrol` claims the same
+  four keys Strawberry registers, so Plasma's four are cleared. Worth recording
+  what was *not* touched: `pausemedia` and both seek shortcuts stay at their
+  defaults because they do not collide. Without this, a fresh install has
+  Plasma grabbing the media keys and Strawberry looking broken — with nothing
+  anywhere pointing at the cause.
+- **Spectacle: `Meta+Shift+S` moved from "open Spectacle" to "capture a
+  region".** The package ships `Print,Meta+Shift+S` on `_launch` and
+  `Meta+Shift+Print` on the region action; ulu took the combination off the
+  first and added it to the second, so the Windows key combination drags a
+  region immediately instead of opening a window. Multiple shortcuts for one
+  action are TAB-separated, stored escaped as `\t` — verified that a tab
+  written by `kwriteconfig6` round-trips into exactly that.
+
+The two `none` entries in the Spectacle group are not decisions: Spectacle
+ships no shortcut for those actions either. Kept anyway, so the group is
+explicit instead of partial.
+
+Verified as before: the eight calls were run against the live system and the
+file compared to ulu's hand-made state — identical. (First attempt wrote
+nothing at all: the test used `$G` for repeated arguments, and this session's
+shell is zsh, which does not word-split unquoted variables. The "identical"
+that produced was meaningless. Worth remembering when testing bash snippets
+from a zsh prompt.)
+
+No daemon owns the file in Plasma 6 — `plasma-kglobalaccel.service` is inactive
+and no `kglobalaccel` process exists; KWin handles global shortcuts itself.
+Irrelevant for stage 3, which runs before the first login, but it means a write
+during a live session can still be overwritten when the session ends.

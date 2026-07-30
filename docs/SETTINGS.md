@@ -119,6 +119,21 @@ of that name in `~/.config/pipewire/` shadows the packaged one completely.
 | `powerdevilrc` | both `…IdleTimeoutSec` | `-1` | timeouts disabled | dec |
 | `powerdevilrc` | `AC/SuspendAndShutdown/AutoSuspendAction` | `0` | never suspends | dec |
 | `powerdevilrc` | `AC/SuspendAndShutdown/PowerButtonAction` | `8` | **shut down** | dec |
+| `kglobalshortcutsrc` | `mediacontrol/{next,playpause,previous,stop}media` | `none` | media keys left to Strawberry | dec |
+| `kglobalshortcutsrc` | `services/org.kde.spectacle.desktop/_launch` | `Print` | `Meta+Shift+S` removed here… | dec |
+| `kglobalshortcutsrc` | `…/RectangularRegionScreenShot` | `Meta+Shift+S⇥Meta+Shift+Print` | …and added here | dec |
+
+**Shortcuts: only the deviations, never the whole file.** `kglobalshortcutsrc`
+is ~275 lines of largely untouched defaults and contains a
+`switch-to-activity-<UUID>` entry whose id is regenerated on every install — a
+wholesale capture would carry a dead reference into the repo. It also makes the
+extraction easy: entries are `key=active,default,friendly`, so the file states
+its own defaults and "what was actually changed" stays computable without a
+before/after snapshot. Service entries are the exception, using plain
+`key=shortcut`; multiple shortcuts are TAB-separated (escaped `\t`).
+
+Deliberately left at their defaults in `mediacontrol`: `pausemedia` and both
+seek shortcuts — they do not collide with Strawberry.
 
 `NumLock=0` and `PowerButtonAction=8` are KDE enum values compiled into the
 binaries and not readable from the system. Both were confirmed against the GUI
@@ -204,8 +219,9 @@ applet's Qt resource and cannot be patched any other way.
 
 ## Known gaps and open items
 
-- **`kglobalshortcutsrc` is not managed.** Custom KDE shortcuts (including
-  Spectacle) are still to be configured, then captured.
+- ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and
+  Spectacle are written as deviations. Any future shortcut change is found the
+  same way: compare field 1 against field 2 in that file.
 - **`kwinoutputconfig.json` is a provisional state**, carrying the 144 Hz
   experiment on DP-1. See `STATUS.md`.
 - **Console keymap has no variant.** `KEYMAP=de` means the text console keeps

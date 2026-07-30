@@ -147,6 +147,42 @@ kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key Au
 # 8 = shut down (enum confirmed against the GUI; KDE compiles it in).
 kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key PowerButtonAction 8
 
+# --- global shortcuts ------------------------------------------------------
+# Only the deviations from the defaults, never the whole file. kglobalshortcutsrc
+# is ~275 lines of mostly untouched defaults, and it contains
+# `switch-to-activity-<UUID>` — an activity id regenerated on every install,
+# which a wholesale capture would carry into the repo as a dead reference.
+#
+# The file conveniently states its own defaults: entries are
+# `key=active,default,friendly`, so "what did ulu actually change" is
+# computable at any time, no before/after snapshot needed. Two groups came out
+# of that comparison.
+#
+# 1. Media keys belong to Strawberry. Plasma's own media controller claims the
+#    same four keys and competes with it, so Plasma's are cleared. Note the
+#    ones deliberately LEFT alone: pausemedia and the two seek shortcuts do not
+#    collide. The default is written along in field 2 — that is the file's
+#    format, not us hard-coding a value.
+kwriteconfig6 --file kglobalshortcutsrc --group mediacontrol --key nextmedia      "none,Media Next,Media playback next"
+kwriteconfig6 --file kglobalshortcutsrc --group mediacontrol --key playpausemedia "none,Media Play,Play/Pause media playback"
+kwriteconfig6 --file kglobalshortcutsrc --group mediacontrol --key previousmedia  "none,Media Previous,Media playback previous"
+kwriteconfig6 --file kglobalshortcutsrc --group mediacontrol --key stopmedia      "none,Media Stop,Stop media playback"
+
+# 2. Spectacle: Meta+Shift+S moves from "open Spectacle" to "capture a region",
+#    so the Windows key combination does what it does on Windows — drag the
+#    region straight away instead of opening a window first. Spectacle ships
+#    `Print,Meta+Shift+S` on _launch and `Meta+Shift+Print` on the region
+#    action; this takes the combination off the first and adds it to the second.
+#    Service-type entries use a different format from the rest of the file:
+#    just `key=shortcut`, no default and no friendly name. Multiple shortcuts
+#    for one action are TAB-separated (KConfig stores the tab escaped as \t).
+#    The two `none` lines match Spectacle's own defaults — KDE writes the whole
+#    group, and keeping them makes the group explicit rather than partial.
+kwriteconfig6 --file kglobalshortcutsrc --group services --group org.kde.spectacle.desktop --key _launch                     "Print"
+kwriteconfig6 --file kglobalshortcutsrc --group services --group org.kde.spectacle.desktop --key RectangularRegionScreenShot "Meta+Shift+S"$'\t'"Meta+Shift+Print"
+kwriteconfig6 --file kglobalshortcutsrc --group services --group org.kde.spectacle.desktop --key CurrentMonitorScreenShot    "none"
+kwriteconfig6 --file kglobalshortcutsrc --group services --group org.kde.spectacle.desktop --key OpenWithoutScreenshot       "none"
+
 # ------------------------------------------------- 7. shell aliases (idempotent)
 if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
     cat >> "$HOME/.zshrc" << 'EOF'
