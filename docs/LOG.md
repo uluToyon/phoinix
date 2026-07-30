@@ -169,3 +169,15 @@ DZGUI: stage-3 upstream install step (turnkey since v7 — deps deferred).
   up). Trade-off accepted: plugins live outside pacman, p10k is on life
   support but config exists and works. ttf-meslo-nerd as the font.
 - Transcript-in-repo idea raised and dropped (secrets/name scrubbing burden).
+
+## 2026-07-30 — Monitor bug diagnosed & fix designed
+
+Black screen at first login-manager start (every distro): bandwidth/DSC —
+TCL 27" 4K defaults to native 180Hz; four displays at max modes overwhelm
+link training. ulu's proven fix (cap to 144Hz) is adopted as the permanent,
+scripted solution — restored via the backed-up Plasma 6 kwinoutputconfig.json
+(user + PLM greeter, deployed before first graphical start) plus a
+video=DP-2:3840x2160@144 kernel arg for the console phase.
+Also fixed a DESIGN.md-era gap: Plasma 6 stores output config in
+~/.config/kwinoutputconfig.json (not ~/.local/share/kscreen) — file now
+backed up, along with kdeglobals and kscreenlockerrc.

@@ -40,6 +40,20 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 - Enable `[multilib]` in pacman.conf (lib32 gaming packages).
 - Set zsh as ulu's login shell at useradd (zsh is in pacstrap).
 - Ship a minimal global zsh config so first login has no setup wizard.
+- Boot entry: `video=DP-2:3840x2160@144` (monitor-bug fix, console phase).
+
+## The monitor bug and its baked-in fix (decided)
+
+4-monitor setup exceeds DP bandwidth when amdgpu inits all displays at max
+modes (TCL 27" 4K wants native 180Hz w/ DSC) → black screen at first login
+manager start on every fresh distro. Proven fix: cap that monitor at 144Hz.
+phoinix bakes it in BEFORE first graphical start:
+1. stage 3 restores the backed-up `kwinoutputconfig.json` (contains the
+   144Hz cap + HDR/VRR/layout, keyed by monitor EDID) to ulu's ~/.config
+   AND to the PLM greeter's config dir, before enabling graphical login.
+2. stage 2 adds the video= kernel arg for the console phase.
+Wishlist: once running, test whether newer kernels handle 4K@180 w/ DSC on
+this topology — until proven, the cap stays.
 
 ## Later, with ulu (wishlist)
 
