@@ -95,9 +95,13 @@ pacstrap -K /mnt "${PACKAGES[@]}"
 genfstab -U /mnt >> /mnt/etc/fstab
 
 # Data disks must never block booting when one dies or is unplugged.
-for label in "${DATA_LABELS[@]}"; do
-    sed -i "\|/mnt/$label|s|defaults|defaults,nofail,x-systemd.device-timeout=5s|" /mnt/etc/fstab
-done
+# genfstab writes real option strings (rw,relatime,...), so append per field,
+# matching the mountpoint column exactly.
+labels_re="$(IFS='|'; echo "${DATA_LABELS[*]}")"
+awk -v re="^/mnt/(${labels_re})$" '
+    $1 !~ /^#/ && $2 ~ re { $4 = $4 ",nofail,x-systemd.device-timeout=5s" }
+    { print }
+' /mnt/etc/fstab > /mnt/etc/fstab.new && mv /mnt/etc/fstab.new /mnt/etc/fstab
 
 # ---------------------------------------------------- hand off to stage 2
 rsync -a "$REPO_DIR/" /mnt/root/phoinix/
