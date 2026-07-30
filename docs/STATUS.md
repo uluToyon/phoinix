@@ -12,9 +12,11 @@ _Last updated: 2026-07-31 (session 2 — running ON the desktop)_
 - Backup of old system's Claude data + config captures is on the `Downloads`
   disk: `backup-nvme1n1-20260730/`. Old-system Claude data was restored to
   `~/.claude`; project memory was ported.
-- Remaining work: finish the post-install verification below, then the
-  config-capture phase (KDE settings etc.). The chezmoi question from
-  DESIGN.md is still undecided — discuss before capturing.
+- **Post-install verification is complete** — every test point below passes,
+  including the two that needed a real reboot (stage 4 firing from a login,
+  and the shutdown hang). Remaining work: the config-capture phase (KDE
+  settings etc.). The chezmoi question from DESIGN.md is still undecided —
+  discuss before capturing.
 
 - Repo is live: https://github.com/uluToyon/phoinix (public; commits use
   the GitHub noreply address, author name `uluToyon`). Rule: curated config
@@ -123,18 +125,25 @@ Verified on the desktop (session 2):
   — so the Plasma clock honours `LC_TIME` and needs no per-widget format,
   i.e. nothing extra to script in `plasma/panels.js`.
 
+- **Stage 4 at a real login: PASS.** Marker deleted, rebooted, logged in
+  normally — the unit fired out of the login (`status=0/SUCCESS`) and did the
+  full run: launchers, 7 widgets cloned to the TV, both side strips, Kickoff
+  favourites against the fresh activity UUID, plasmashell restart, marker
+  rewritten. The systemd arming path works unattended. Every stage of phoinix
+  has now run in the mode it was designed for.
+- **Shutdown hang: PASS.** The plasmashell drop-in (order before kwin, 10 s
+  cap) removed the 40 s stall — `Stopping`/`Stopped KDE Plasma Workspace` in
+  the same second, shutdown is instant.
+
 Still open:
 
-- **Stage 4 firing at a real first login.** `stage4.sh` is verified (produces
-  the intended state; runs once and is skipped afterwards when started through
-  systemd), but the unit has never actually triggered from a login — it was
-  installed after the fact on an already-personalised system. Test it by
-  deleting `~/.local/state/phoinix/stage4.done` and rebooting.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
+- Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe` (exit code
+  still 0). Harmless today, brittle under `pipefail` — worth a look.
 
 ## Next steps
 
-1. Reboot and run the two open test points above (4-monitor PLM + KWallet).
-2. Continue the post-install manual steps with ulu.
-3. Start the config-capture phase — decide the chezmoi question first.
+1. Continue the post-install manual steps with ulu.
+2. Start the config-capture phase — decide the chezmoi question first.
+3. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.

@@ -409,3 +409,53 @@ format variables, `date` prints `Fr 31. Jul`, and the panel clocks read
 the Plasma clock takes its format from `LC_TIME` rather than storing one of
 its own, so the environment.d file alone is the whole fix — no clock format
 has to be written into `plasma/panels.js`.
+
+## 2026-07-31 — The 40-second shutdown, and why it was plasmashell's fault
+
+Every shutdown stalled for a fixed ~40 s. Fixed durations are a tell: that is
+not work in progress, that is a timeout expiring. It matched KDE's own
+`TimeoutSec=40` on `plasma-plasmashell.service`.
+
+Cause: plasmashell loses its Wayland connection *before* systemd asks it to
+stop. A client without a compositor still has a running process, but its event
+loop is wedged on the dead connection and never gets around to handling
+SIGTERM — so systemd waits out the full timeout and then SIGKILLs it. Nothing
+is actually being saved during those 40 s.
+
+Fix, as a drop-in (`system/user/plasma-plasmashell.service.d/phoinix-shutdown.conf`,
+deployed by stage 3): order plasmashell *before* kwin so it is stopped while
+its compositor still exists, plus `TimeoutStopSec=10` as a safety net in case
+the ordering does not take — logind may start the teardown in a way that makes
+the ordering moot. A drop-in rather than an edited unit file, so pacman
+upgrades of the KDE package keep working.
+
+**Verified on the next real shutdown: PASS.** `Stopping KDE Plasma Workspace…`
+and `Stopped KDE Plasma Workspace.` land in the *same second* (00:24:23), and
+ulu's own observation was "instant". So the ordering is the real fix and the
+10 s cap never comes into play — but it stays, cheap insurance against the same
+symptom returning through another path.
+
+## 2026-07-31 — Stage 4 fires at a real login: PASS
+
+The last genuinely untested link in the chain. Stage 4 was known to produce
+the right state and known to skip itself on a second systemd start, but the
+unit had never actually been triggered *by a login* — it was installed onto an
+already-personalised system, so every previous run was hand-started.
+
+Test: delete `~/.local/state/phoinix/stage4.done`, reboot, log in normally.
+
+Result: the unit started out of the login at 00:25:19 and exited
+`status=0/SUCCESS`, having done the full run — launchers set on the main
+panel, 7 widgets cloned to the TV, both side strips placed (screens resolved
+to 1 and 2 by geometry), Kickoff favourites written against the freshly
+generated activity UUID, plasmashell restarted, marker rewritten. That is the
+same result the hand-started runs produced, which is the point: the systemd
+arming path (rendered template + symlink into `plasma-workspace.target.wants`,
+`After=plasma-plasmashell.service`, `Wants=` not `Requires=`) works unattended
+on a login it has never seen before.
+
+With this, every stage of phoinix has now run in the mode it was designed for.
+
+Cosmetic leftover, noted not fixed: the run logs `sed: couldn't flush stdout:
+Broken pipe` — a `sed` whose reader closes early. Exit code was 0, but under
+`pipefail` that class of thing is brittle; worth a look on its own.
