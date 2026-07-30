@@ -200,3 +200,50 @@ cmdline, zero failed services. Field lessons, each fixed in the scripts:
   .service that a naive grep matches first.
 Stage 3 completed (manually finished after the getent abort; scripts fixed).
 tmux removed again — system matches the documented package set.
+
+## 2026-07-30 — Session 2: first session running ON the desktop
+
+The working session moved from the laptop to the installed desktop; Claude
+Code now runs locally in `~/phoinix` on the machine it builds.
+
+**First-boot verification (details in STATUS.md):** keyboard layout and shell
+restore both PASS. The zsh bootstrap is worth recording as a proven result:
+the first Konsole start required zero input — zinit cloned itself, fetched and
+compiled all 9 plugins, installed 191 completions, p10k pulled gitstatusd, and
+the prompt appeared complete with correct Nerd Font glyphs. The whole chain
+(stage 2 writes an empty `.zshrc` → stage 3 overwrites it with the restored one
+→ that one bootstraps itself on first login) works unattended, which is exactly
+the property phoinix is being built for.
+
+Noted for the capture phase: the restored `.zshrc` still carries the old
+system's `zsh-newuser-install` and `compinstall` blocks. Harmless, but legacy.
+
+## 2026-07-30 — KWallet: `kwallet-pam` (decided)
+
+First login greeted ulu with the KWallet creation dialog ("Blowfish or GPG?").
+Requirement: never see it again after a scripted reinstall.
+
+Diagnosis: `ksecretd` triggered it — some app asked the freedesktop
+Secret-Service API for a store. And `/usr/lib/pam.d/plasmalogin` (shipped by
+plasma-login-manager) **already** calls `pam_kwallet5.so`, but as an optional
+module (leading `-`), so it is silently skipped while the module is absent.
+The package `kwallet-pam` was simply not installed. That is also why other
+distros never show this dialog — they ship it.
+
+Options weighed:
+- **Disable KWallet** (`kwalletrc: Enabled=false`) — cheapest, but apps using
+  the Secret-Service API then have no store at all and fall back to their own
+  (Brave: obfuscated in-profile), with a risk of repeated logins in single
+  apps. Kept as the fallback if PAM misbehaves.
+- **Wallet with an empty password** — works, but is not cleanly scriptable:
+  it would mean pre-generating a `kdewallet.kwl` and carrying it in the repo.
+  Rejected on principle — that is exactly the file class where secrets end up
+  by accident later.
+- **`kwallet-pam`** — CHOSEN. The wallet is created with, and unlocked by, the
+  login password at PLM login: no dialog, no prompt, store fully functional,
+  and the secrets are genuinely encrypted. Scripted cost: one package name in
+  `packages/kde.txt`, nothing in `/etc/pam.d`, no state in the repo.
+
+Precondition, satisfied here: no autologin configured (PAM has no password to
+hand on in that case), and no wallet existed yet — so PAM gets to create it.
+Verification is pending on the next reboot, together with the 4-monitor test.

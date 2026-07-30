@@ -1,26 +1,20 @@
 # STATUS
 
-_Last updated: 2026-07-30 late evening (session 1 ending — HANDOVER to the desktop)_
-
-## Session handover (desktop takes over from here)
-
-The system is INSTALLED and boots into Plasma. Session 1 ran from the laptop
-via SSH; from now on work happens on the desktop in `~/phoinix`.
-First moves for the desktop session:
-1. Work through "Post-install manual steps" below with ulu.
-2. The OUTSTANDING 4-monitor PLM test (see below) — ask before the next reboot.
-3. Then begin the config-capture phase (KDE settings etc.); the chezmoi
-   question from DESIGN.md is still undecided — discuss before capturing.
-Old-system Claude data was restored to ~/.claude; project memory was ported.
+_Last updated: 2026-07-30 night (session 2 — running ON the desktop)_
 
 ## Where we are
 
-- Planning done, repo skeleton committed. **Nothing installed yet — the
-  target disk is untouched**, desktop sits in the Arch ISO awaiting go-ahead.
+- **The system is installed and in daily use.** Stages 1-3 all ran; the
+  desktop boots into Plasma on `linux-zen`, Wayland session, zero failed
+  services. Session 2 runs locally on the desktop in `~/phoinix`.
+- `base/stage1.sh`, `stage2.sh`, `stage3.sh` all exist, all executed, all
+  fixed up with the field lessons from install night (see `LOG.md`).
 - Backup of old system's Claude data + config captures is on the `Downloads`
-  disk: `backup-nvme1n1-20260730/`.
-- `base/stage1.sh` is written and reviewed but NOT yet executed.
-- `base/stage2.sh` and `base/stage3.sh` do not exist yet.
+  disk: `backup-nvme1n1-20260730/`. Old-system Claude data was restored to
+  `~/.claude`; project memory was ported.
+- Remaining work: finish the post-install verification below, then the
+  config-capture phase (KDE settings etc.). The chezmoi question from
+  DESIGN.md is still undecided — discuss before capturing.
 
 - Repo is live: https://github.com/uluToyon/phoinix (public; commits use
   the GitHub noreply address, author name `uluToyon`). Rule: curated config
@@ -28,11 +22,6 @@ Old-system Claude data was restored to ~/.claude; project memory was ported.
 
 ## In discussion (not yet decided) — one topic at a time, per ulu
 
-- KDE install scope (leaning: curated explicit list in `packages/kde.txt`);
-  waiting on ulu's actual app list. ← current topic
-- **Monitor bug on the desktop** — ulu wants to discuss it BEFORE the
-  install runs on the PC, in case setup can already work around it. Details
-  not yet collected.
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
   dotfiles; **custom KDE keybindings** (ulu will adjust, incl. Spectacle) —
   capture `~/.config/kglobalshortcutsrc` once configured.
@@ -41,10 +30,13 @@ Old-system Claude data was restored to ~/.claude; project memory was ported.
   manual checklist: Steam "add library folder" → /mnt/Games/SteamLibrary,
   re-run MateriaForge for 7th Heaven, set XIVLauncher game path.
 
-## Decided this session
+## Decided so far
 
 - Kernel: `linux-zen` only. Editor: `micro` only (vim banned, nano not
   installed). Login shell: zsh (in pacstrap so stage 2 can set it at useradd).
+- **KWallet: `kwallet-pam`** — no creation dialog, no password prompt, and
+  the secret store stays intact. See `LOG.md` for the rationale and the two
+  rejected alternatives.
 
 ## Stage-2 requirements collected so far
 
@@ -83,23 +75,37 @@ this topology — until proven, the cap stays.
 
 ## Post-install test points
 
-- **IMPORTANT, ask ulu on the desktop:** the first PLM boot looked good, but
-  2 of the 4 monitors were switched to the laptop input at the time — the
-  full 4-monitor black-screen test is still OUTSTANDING. When the session
-  has moved to the desktop and a reboot is due: remind ulu to have ALL four
-  monitors active on the PC, then verify PLM comes up clean.
+Verified on the desktop (session 2):
 
+- **Keyboard layout: PASS.** `localectl` reports VC keymap `de` AND X11
+  layout `de` — the stage-2 fix (vconsole KEYMAP alone leaves KDE in
+  English) does what it promises.
+- **Shell restore: PASS.** First Konsole start needed zero input: zinit
+  cloned itself, pulled and compiled all 9 plugins, installed 191
+  completions, powerlevel10k fetched gitstatusd, and the tuned p10k prompt
+  came up with correct Nerd Font glyphs. No `zsh-newuser-install` wizard —
+  the empty user `.zshrc` from stage 2 does its job.
+- **Plasma monitor layout: PASS (in-session).** All four outputs enabled,
+  DP-1 ultrawide 3440x1440@170, DP-2 (TCL 27") 3840x2160**@144** — the cap
+  holds — DP-3 2560x1440@144 portrait, HDMI-A-1 3840x2160@120. HDR and wide
+  colour gamut on all four. Note this is the state *after* login; the
+  greeter phase is the still-open test below.
+
+Still open:
+
+- **The full 4-monitor PLM test.** The first PLM boot looked good, but 2 of
+  the 4 monitors were switched to the laptop input at the time — the
+  black-screen scenario has therefore never actually been exercised. All
+  four now hang on the PC, so the next reboot IS the test: does the greeter
+  come up clean with all four displays live?
+- **KWallet silent unlock** (see decision below): the next login must show
+  NO wallet dialog. `~/.local/share/kwalletd/` was empty beforehand, so PAM
+  gets to create the wallet itself with the login password.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
-- Plasma monitor layout: arrangement correct? Ultrawide (DP-1) at 170Hz,
-  TCL 27" capped at 144Hz, HDR states as configured?
-- Shell restore: does Konsole greet with the old p10k prompt? (zinit
-  self-installs its plugins on first shell start — takes a moment.)
 
 ## Next steps
 
-1. Settle kernel + package + KDE questions, adjust `packages/`.
-3. Run stage 1 on the desktop (needs explicit approval; serial S649NX0T343303X).
-4. Write + run stage 2 (chroot: locale, systemd-boot, user, network, zram).
-5. Reboot, write + run stage 3 (AUR helper, KDE, gaming stack).
-6. Move the working session to the desktop; continue config capture there.
+1. Reboot and run the two open test points above (4-monitor PLM + KWallet).
+2. Continue the post-install manual steps with ulu.
+3. Start the config-capture phase — decide the chezmoi question first.

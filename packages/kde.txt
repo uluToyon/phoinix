@@ -12,6 +12,13 @@ breeze-gtk
 kde-gtk-config
 xdg-desktop-portal-kde
 kwalletmanager
+# kwallet-pam: /usr/lib/pam.d/plasmalogin already calls pam_kwallet5, but as an
+# optional module — silently skipped while the package is absent. Installing it
+# is the whole fix: the wallet is created with (and unlocked by) the login
+# password at PLM login. Without it, a fresh install greets ulu with the
+# "Blowfish or GPG?" wallet-creation dialog on first login. Requires no
+# autologin (PAM has no password to pass on in that case).
+kwallet-pam
 plasma-login-manager
 
 # KDE apps — one review round each (docs/LOG.md)
