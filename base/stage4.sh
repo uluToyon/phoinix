@@ -33,15 +33,12 @@ STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/phoinix"
 MARKER="$STATE_DIR/stage4.done"
 
 # ------------------------------------------------- the desired Plasma state
-# Panel launchers, in display order. Setting this key explicitly is the whole
-# point: while it is unset, the icons-only task manager shows its built-in
-# default, which includes a Discover entry we deliberately do not install —
-# it renders as a broken generic icon. The default lives compressed inside
-# the applet's Qt resource, so there is nothing to grep and nothing to patch.
-PANEL_LAUNCHERS='["applications:systemsettings.desktop","applications:org.kde.dolphin.desktop","applications:brave-browser.desktop"]'
+# Pinned launchers of the main panel, in display order. The TV panel is a
+# clone of that panel, so this list reaches both.
+PANEL_LAUNCHERS='["applications:org.kde.konsole.desktop","applications:org.kde.dolphin.desktop","applications:brave-browser.desktop","applications:org.keepassxc.KeePassXC.desktop","applications:org.strawberrymusicplayer.strawberry.desktop","applications:discord.desktop","applications:org.qbittorrent.qBittorrent.desktop"]'
 
-# Kickoff favourites. Same story: Plasma's default list ships Discover AND
-# Kontact, neither of which is installed here.
+# Kickoff favourites. Plasma's default list ships Discover AND Kontact,
+# neither of which is installed here — they would sit there as dead entries.
 KICKOFF_FAVOURITES="preferred://browser,systemsettings.desktop,org.kde.dolphin.desktop"
 
 # ------------------------------------------------- 1. wait for the shell
@@ -61,18 +58,35 @@ plasma_script() {
     qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$1"
 }
 
-# ------------------------------------------------- 2. panel launchers
-plasma_script '
-panels().forEach(function(p) {
-    p.widgets().forEach(function(w) {
-        if (w.type.indexOf("icontasks") !== -1 || w.type === "org.kde.plasma.taskmanager") {
-            w.currentConfigGroup = ["General"];
-            w.writeConfig("launchers", '"$PANEL_LAUNCHERS"');
-            w.reloadConfig();
-            print("launchers set on " + w.type);
+# ------------------------------------------------- 2. panels
+# Connector -> "x,y,width,height", straight from KScreen. This is the bridge
+# between the stable name of a physical output and the unstable number Plasma
+# uses internally; panels.js matches on the geometry, never on the number.
+connector_geometry() {
+    kscreen-doctor -o 2>/dev/null | sed -e 's/\x1b\[[0-9;]*m//g' | awk -v want="$1" '
+        /^Output:/  { name = $3 }
+        /Geometry:/ && name == want {
+            split($2, pos, ","); split($3, dim, "x");
+            print pos[1] "," pos[2] "," dim[1] "," dim[2];
+            found = 1; exit
         }
-    });
-});'
+        END { if (!found) print "-1,-1,-1,-1" }'   # not connected -> panels.js skips it
+}
+
+PANEL_JS="$(mktemp)"
+trap 'rm -f "$PANEL_JS"' EXIT
+
+sed -e "s|@MAIN_GEOM@|$(connector_geometry "$PANEL_MAIN_CONNECTOR")|" \
+    -e "s|@TV_GEOM@|$(connector_geometry "$PANEL_TV_CONNECTOR")|" \
+    -e "s|@SIDE1_GEOM@|$(connector_geometry "${PANEL_SIDE[0]%%:*}")|" \
+    -e "s|@SIDE1_THICKNESS@|${PANEL_SIDE[0]##*:}|" \
+    -e "s|@SIDE2_GEOM@|$(connector_geometry "${PANEL_SIDE[1]%%:*}")|" \
+    -e "s|@SIDE2_THICKNESS@|${PANEL_SIDE[1]##*:}|" \
+    -e "s|@MAIN_HEIGHT@|$PANEL_MAIN_HEIGHT|" \
+    -e "s|@LAUNCHERS@|$PANEL_LAUNCHERS|" \
+    "$REPO_DIR/plasma/panels.js" > "$PANEL_JS"
+
+plasma_script "$(< "$PANEL_JS")"
 
 # ------------------------------------------------- 3. kickoff favourites
 # Stored in kactivitymanagerd-statsrc under a group name built from the
@@ -106,6 +120,16 @@ if [[ -n "$KICKOFF_ID" ]]; then
 else
     echo "WARNING: no kickoff applet found — favourites left untouched"
 fi
+
+# ------------------------------------------------- 4. restart the shell
+# Freshly created task-manager widgets read their launcher list once, when
+# they are built — writing the config afterwards reaches the file but not the
+# running instance, so the panel would show the built-in default (with its
+# broken Discover icon) until the next login. Restarting plasmashell is what
+# makes the panels look the way this script just described them. Windows are
+# unaffected; only the shell reloads.
+systemctl --user restart plasma-plasmashell.service
+echo "plasmashell restarted"
 
 # ------------------------------------------------- done
 install -d "$STATE_DIR"

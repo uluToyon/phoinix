@@ -9,7 +9,9 @@
 Description=phoinix stage 4 — Plasma personalisation (first login only)
 Documentation=file://@REPO_DIR@/base/stage4.sh
 After=plasma-plasmashell.service
-Requires=plasma-plasmashell.service
+# Wants, NOT Requires: stage 4 restarts plasmashell as its last step, and a
+# Requires= dependency would tear this unit down mid-run when that happens.
+Wants=plasma-plasmashell.service
 PartOf=graphical-session.target
 ConditionPathExists=!%S/phoinix/stage4.done
 

@@ -329,3 +329,48 @@ run through systemd it executes once (`Result=success`) and is skipped on the
 second attempt (`ConditionResult=no`). Still untested: the unit actually
 firing at a real first login — that needs a fresh install, or a marker delete
 plus reboot.
+
+## 2026-07-31 — Panels: built by stage 4, TV mirrors the main monitor
+
+ulu built his panels in the GUI: main panel on the ultrawide (no longer
+floating, full width, seven pinned launchers — Konsole, Dolphin, Brave,
+KeePassXC, Strawberry, Discord, qBittorrent), plus clock-only strips on the
+TCL 4K and the portrait monitor. Captured by diffing a config snapshot taken
+before he started, which beats asking him to recall what he clicked.
+
+**"Can panels be linked?" — no.** Plasma has neither panel duplication nor
+any coupling between panels; each is a standalone containment. Not a missing
+setting, a missing feature.
+
+What replaces it: panels are *built from a script*, so the TV panel is a
+clone of the live main panel rather than a second hand-written description of
+it. One source, no drift. Changing the main panel means changing the
+definition and re-running stage 4 — as close to "linked" as Plasma gets.
+
+`plasma/panels.js` (template, fed to plasmashell's scripting interface by
+stage 4) rebuilds the layout from scratch: remove every panel, build the main
+one, clone it to the TV, add the side strips. Rebuilding rather than patching
+is deliberate — a fresh install starts from Plasma's default panel, and
+repairing an unknown state is guesswork.
+
+Three things worth remembering, each learned the hard way here:
+
+- **Screens are matched by geometry, never by index.** Plasma numbers screens
+  in detection order. Stage 4 resolves connector names (`DP-1`, `HDMI-A-1`,
+  from `hosts/desktop/config.sh`) to geometry via kscreen-doctor and passes
+  that in; panels.js finds the matching screen itself. A monitor that is not
+  connected yields -1 and its panel is skipped instead of landing elsewhere.
+- **Panel length is not copied to the clone.** The main panel is clamped to
+  3360 px by Plasma's own 21:9 rule for the ultrawide; the TV gets its own
+  full width instead.
+- **A freshly created task manager reads its launchers only once, at build
+  time.** Writing the config afterwards updates the file but not the running
+  widget — the panel keeps showing the built-in default (broken Discover
+  icon) until the shell restarts. Stage 4 therefore ends with
+  `systemctl --user restart plasma-plasmashell.service`. Which is also why
+  the unit uses `Wants=` instead of `Requires=`: a Requires dependency would
+  kill stage 4 mid-run at exactly that moment.
+
+Verified on the live desktop: stage 4 wiped the hand-built panels and
+reproduced all four correctly (main and TV pixel-identical in the launcher
+area, both clock strips in place).
