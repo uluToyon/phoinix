@@ -25,10 +25,10 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 - Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
   dotfiles; **custom KDE keybindings** (ulu will adjust, incl. Spectacle) —
   capture `~/.config/kglobalshortcutsrc` once configured.
-- **Old mount path `/mnt/nvme0n1` is baked into existing setups** (7th Heaven
-  .desktop, MateriaForge prefix paths, likely Steam library + XIVLauncher
-  configs). New scheme is /mnt/Games. To decide: compat symlink vs. clean
-  re-wiring after install.
+- **Mount-path legacy: DECIDED — clean re-wiring, no compat symlinks.**
+  Restored configs get new /mnt/<Label> paths written in during capture;
+  manual checklist: Steam "add library folder" → /mnt/Games/SteamLibrary,
+  re-run MateriaForge for 7th Heaven, set XIVLauncher game path.
 
 ## Decided this session
 
