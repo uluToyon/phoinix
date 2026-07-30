@@ -1,0 +1,13 @@
+# CLI tools — one review round each (docs/LOG.md).
+bat                   # cat with syntax highlighting; alias cat->bat in dotfiles (as on old system)
+eza                   # modern ls; old zshrc aliases ls/ll/la/lt restored via dotfiles (needs nerd font for icons)
+zoxide                # learning cd; alias cd->z as on old system
+fzf                   # fuzzy finder: Ctrl+R history search, Ctrl+T files; wired up in dotfiles
+fastfetch             # system info card; the hopper's first command after every install
+btop                  # terminal monitor; replaces htop/glances/s-tui (GPU view incl.)
+# expac rejected — orphaned leftover, no active consumer
+# uv rejected — only user was the old DZGUI setup; DZGUI 7 is turnkey (bundled runtime)
+# wmctrl rejected — X11 tool, suspected DZGUI leftover; no consumer on Wayland
+jq                    # JSON processor; consumer: stage-3 DZGUI fetch parses the GitHub releases API
+power-profiles-daemon # Plasma power profile switcher (powerdevil backend); enable service in stage 3
+# cpupower rejected — redundant next to gamemode (auto) + power-profiles-daemon (KDE click)

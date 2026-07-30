@@ -132,3 +132,15 @@ rejected as GTK.
 **New standing rule from ulu: avoid GNOME/GTK apps wherever possible — prefer
 Qt/KDE-native; GTK only when no usable Qt alternative exists (say so openly).**
 Stage-3 note: xdg-mime default for PDF → brave.
+
+## 2026-07-30 — CLI tool rounds
+
+In: bat, eza, zoxide, fzf (the old-zshrc quartet — aliases cat→bat,
+ls→eza, cd→z restored via dotfiles; ulu wants an fzf tour later), fastfetch,
+btop (replaces htop/glances/s-tui), jq (consumer: stage-3 DZGUI fetch via
+GitHub releases API), power-profiles-daemon (Plasma profile switcher).
+Out: tmux (revisit when the future home-server exists), expac, uv & wmctrl
+(old DZGUI setup — DZGUI 7 is turnkey with bundled runtime; all its deps
+deferred to actual install), cpupower, libinput-tools, wget.
+Old .zshrc/.p10k.zsh backed up to the Downloads disk (found configured
+powerlevel10k — input for the zsh round).

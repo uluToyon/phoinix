@@ -41,6 +41,11 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 - Set zsh as ulu's login shell at useradd (zsh is in pacstrap).
 - Ship a minimal global zsh config so first login has no setup wizard.
 
+## Later, with ulu (wishlist)
+
+- fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
+  it can do (history search, file finding, previews, zi) once the system runs.
+
 ## Post-install test points
 
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
