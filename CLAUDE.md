@@ -20,6 +20,9 @@ steps are performed, never reconstructed later from memory.
 
 - Communicate with ulu in German; repo content stays in English.
 - Discuss before acting: decisions get talked through first, files/actions after.
+- **One topic at a time.** Even when ulu raises several points in one
+  message, work through them strictly one after another — close a topic
+  (one question, one decision) before opening the next.
 - Destructive steps (partitioning, overwriting) need explicit go-ahead each time.
 - Never store secrets in the repo (see DESIGN.md "Never in the repo").
 - Never encode discovered identifiers (device names, ALSA card indices) — use
