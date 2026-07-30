@@ -91,3 +91,17 @@ Downloads=10015c7b…, FilesMusic=eaa964b8…
   this one-off SSH session (the ISO ships it; future runs are local on the
   target), htop is comfort — both go on the stage-3 list. Base stays at 17
   packages, each with an installation-time justification.
+
+## 2026-07-30 — Bluetooth investigated (live on the ISO)
+
+- Chip: MediaTek MT7925 (USB 0e8d:0717), board ASRock X870 Steel Legend WiFi.
+- Hardware is fine: initializes cleanly on the current kernel, scan found 18
+  devices. ulu's "never worked right" traces back to the immature MT7925
+  stack in older kernels/firmware — no quirks needed on a fresh system.
+- Script consequence: bluez, bluez-utils, bluedevil in stage 3; enable
+  bluetooth.service. Nothing else.
+- Note: the scary `wl`/taint warning in the ISO dmesg is the ISO's bundled
+  broadcom-wl driver false-matching the MediaTek card (overly broad PCI
+  alias). Not installed on the target → gone after install.
+- Recommendation for ulu (manual): update BIOS (3.08, 2024-09 → current) for
+  MT7925 connectivity fixes.
