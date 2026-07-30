@@ -63,3 +63,14 @@ Downloads=10015c7b…, FilesMusic=eaa964b8…
 - Commit-Historie vor dem ersten Push anonymisiert: Autor `uluToyon`,
   GitHub-noreply-Adresse statt Firmen-E-Mail.
 - Repo live: https://github.com/uluToyon/archinstall
+
+## 2026-07-30 — Kernel-Entscheidung
+
+- **Nur `linux-zen`.** Kein LTS-Fallback, kein CachyOS-Repo — bewusst:
+  Das Reinstall-Skript selbst ist die Wiederherstellungsstrategie ("dafür
+  sitzen wir hier"). Diskutiert wurden zen+lts-Kombination und ein optionales
+  CachyOS-Modul; beides verworfen zugunsten maximaler Schlichtheit.
+  Auf dem 7800X3D (Single-CCD, GPU-Limit) sind Kernel-Unterschiede ohnehin
+  im Prozentbereich; die echten Gaming-Hebel (Mesa, gamemode, VRR, Proton-GE)
+  kommen in Stage 3.
+- `vim` aus pacstrap.txt entfernt (Grundsatzentscheidung ulu).

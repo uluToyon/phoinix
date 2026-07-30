@@ -1,7 +1,7 @@
 # Minimal bootable base — everything else comes in stage 3.
 # One package per line; lines starting with # are ignored.
 base
-linux
+linux-zen
 linux-firmware
 amd-ucode
 e2fsprogs
@@ -9,7 +9,6 @@ dosfstools
 networkmanager
 openssh
 sudo
-vim
 git
 etckeeper
 man-db
