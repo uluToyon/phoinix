@@ -181,3 +181,22 @@ video=DP-2:3840x2160@144 kernel arg for the console phase.
 Also fixed a DESIGN.md-era gap: Plasma 6 stores output config in
 ~/.config/kwinoutputconfig.json (not ~/.local/share/kscreen) — file now
 backed up, along with kdeglobals and kscreenlockerrc.
+
+## 2026-07-30 — Install night: stages 1-3 executed, lessons collected
+
+Stage 1 & 2 clean (one fstab bug fixed pre-run: genfstab writes real option
+strings, not "defaults"). First boot: kernel 7.1.5-zen, zram, monitor fix on
+cmdline, zero failed services. Field lessons, each fixed in the scripts:
+- 5s device timeout dropped all three SATA data disks (spin-up) → 30s.
+- etckeeper auto-commits need a persistent git identity.
+- A global /etc/zsh/zshrc does NOT suppress zsh-newuser-install → empty user
+  ~/.zshrc in stage 2.
+- Stale EFI NVRAM entries pointed at the destroyed ESP's GUID → cleaned,
+  fresh entry via efibootmgr from the ISO (chroot bootctl can't write NVRAM).
+- mpc-qt and splix are AUR-only → moved lists.
+- paru-bin broke on a libalpm soname bump → helper builds from source now.
+- `getent passwd a b` exits 2 under pipefail if any key is missing.
+- PLM's systemd unit is plasmalogin.service; the package also ships a D-Bus
+  .service that a naive grep matches first.
+Stage 3 completed (manually finished after the getent abort; scripts fixed).
+tmux removed again — system matches the documented package set.

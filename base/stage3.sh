@@ -106,9 +106,10 @@ xdg-mime default brave-browser.desktop application/pdf || true
 sudo systemctl enable bluetooth cups power-profiles-daemon
 
 # Graphical login LAST — everything above (esp. the monitor fix) must exist
-# before PLM ever starts. Unit name from the plasma-login-manager package.
-PLM_UNIT="$(pacman -Qlq plasma-login-manager | grep -oE '[^/]+\.service$' | sort -u | head -1)"
-[[ -n "$PLM_UNIT" ]] || { echo "ERROR: no service unit in plasma-login-manager"; exit 1; }
+# before PLM ever starts. Look only in systemd/system/ — the package also
+# ships a D-Bus .service file that a naive grep matches first (bit us once).
+PLM_UNIT="$(pacman -Qlq plasma-login-manager | grep 'systemd/system/.*\.service$' | xargs -r -n1 basename | head -1)"
+[[ -n "$PLM_UNIT" ]] || { echo "ERROR: no systemd unit in plasma-login-manager"; exit 1; }
 sudo systemctl enable "$PLM_UNIT"
 sudo systemctl set-default graphical.target
 
