@@ -155,3 +155,17 @@ cups+splix+print-manager (SCX-4300, print only), libreoffice-fresh + hunspell
 de/en_US. AUR: brave-bin (PDF default; sync chain by hand), pcloud-drive,
 xivlauncher-rb, jdownloader2.
 DZGUI: stage-3 upstream install step (turnkey since v7 — deps deferred).
+
+## 2026-07-30 — Final package rounds
+
+- AUR helper: **paru** over yay (successor-in-spirit by yay's co-maintainer,
+  reviews PKGBUILD diffs by default — fits the repo culture). Alias yay→paru
+  in dotfiles. base-devel in cli.txt; paru bootstrap = first stage-3 step.
+- Out: linux-zen-headers (no DKMS consumer), gimp (never used; Krita would be
+  the Qt path if image editing ever becomes real).
+- **zsh: restore the old setup 1:1** (option A) — zinit self-bootstraps and
+  manages powerlevel10k, fast-syntax-highlighting, autosuggestions,
+  zsh-completions, fzf-tab; plus zoxide init and the tuned .p10k.zsh (backed
+  up). Trade-off accepted: plugins live outside pacman, p10k is on life
+  support but config exists and works. ttf-meslo-nerd as the font.
+- Transcript-in-repo idea raised and dropped (secrets/name scrubbing burden).

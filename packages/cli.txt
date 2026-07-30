@@ -10,4 +10,8 @@ btop                  # terminal monitor; replaces htop/glances/s-tui (GPU view 
 # wmctrl rejected — X11 tool, suspected DZGUI leftover; no consumer on Wayland
 jq                    # JSON processor; consumer: stage-3 DZGUI fetch parses the GitHub releases API
 power-profiles-daemon # Plasma power profile switcher (powerdevil backend); enable service in stage 3
+base-devel            # build toolchain for AUR packages (paru bootstrap + everything in aur.txt)
+# linux-zen-headers rejected — zero DKMS candidates on this system (AMD GPU + MediaTek
+# wifi are in-kernel); any future DKMS package pulls headers automatically
+ttf-meslo-nerd        # MesloLGS Nerd Font: p10k prompt glyphs + eza icons (konsole default font)
 # cpupower rejected — redundant next to gamemode (auto) + power-profiles-daemon (KDE click)
