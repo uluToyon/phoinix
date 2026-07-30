@@ -156,6 +156,23 @@ Still open:
   both marked PROVISIONAL. Also unresolved: the portrait monitor (DP-3) threw a
   real hotplug on the same evening, cause unknown — a hotplug on any output
   re-applies all four, so it is a second, independent source of flashes.
+- **WAITING ON ulu — dialog window size.** ulu remembers a behaviour from the
+  old system he does *not* want back: a sub-window ("are you sure?") opening at
+  exactly the size of its parent application. That is KWin's
+  `[Windows] Placement=Maximizing` ("Window placement: Maximized" in the GUI),
+  which opens every new window maximized, dialogs included.
+  **Investigated 2026-07-31: it is set nowhere** — not in the old system's
+  captured `kwinrc`, not in `~/.config/kwinrc`, not in `~/.config/kdedefaults/`,
+  not in `kwinrulesrc` (empty), and Arch ships no `/etc/xdg/kwinrc` at all.
+  Most likely it came from the previous distro's system-wide defaults, which is
+  why it never appeared in any file of his and never made it into a backup.
+  **Open: ulu confirms whether a dialog still opens parent-sized** (e.g.
+  `Shift+Del` in Dolphin, then cancel). If it opens small and centred the topic
+  is closed; if not, the diagnosis was wrong and it needs another look.
+  Either way there is a standing proposal: write `Placement=Centered`
+  explicitly, so no future distro default can reintroduce it — exactly the
+  class of problem this repo exists for. Raise this with ulu when he comes back
+  to it, or when he mentions it himself.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 - Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe` (exit code
