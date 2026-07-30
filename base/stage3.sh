@@ -79,11 +79,16 @@ fi
 
 # The login greeter runs its own mini-Plasma with its own config — the
 # monitor fix must land there too, or the FIRST login screen goes black.
-GREETER_HOME="$(getent passwd plasmalogin sddm 2>/dev/null | head -1 | cut -d: -f6)"
-if [[ -n "$GREETER_HOME" && -f "$HOME/.config/kwinoutputconfig.json" ]]; then
-    sudo install -Dm644 "$HOME/.config/kwinoutputconfig.json" \
-        "$GREETER_HOME/.config/kwinoutputconfig.json"
-fi
+# NOTE: never `getent passwd a b` under pipefail — it exits 2 if ANY key is
+# missing, even with usable output (aborted a run once). One lookup per user.
+for greeter_user in plasmalogin sddm; do
+    greeter_home="$(getent passwd "$greeter_user" | cut -d: -f6)" || continue
+    if [[ -f "$HOME/.config/kwinoutputconfig.json" ]]; then
+        sudo install -Dm644 -o "$greeter_user" -g "$greeter_user" \
+            "$HOME/.config/kwinoutputconfig.json" \
+            "$greeter_home/.config/kwinoutputconfig.json"
+    fi
+done
 
 # ------------------------------------------------- 6. shell aliases (idempotent)
 if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
