@@ -75,3 +75,12 @@ Downloads=10015c7b…, FilesMusic=eaa964b8…
   taken in FFXIV tooling), alexander rejected (snapshot lore — deselected).
 - Repo language policy confirmed: discussion happens in German, **everything
   in the repo is English** — this log was translated from German accordingly.
+
+## 2026-07-30 — Base package decisions
+
+- Editor: **micro only** (ulu reviewed it live). No nano package; instead
+  a `nano` → `micro` shell alias comes with the dotfiles in stage 3.
+- Login shell will be **zsh** — added to pacstrap so stage 2 can set it at
+  useradd time; `bash-completion` dropped (bash itself stays via `base`).
+- Open item parked in STATUS.md: a monitor-related bug on the desktop, to be
+  discussed BEFORE the install runs on the PC.

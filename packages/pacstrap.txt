@@ -13,6 +13,7 @@ git
 etckeeper
 man-db
 man-pages
-bash-completion
+micro
+zsh
 zram-generator
 rsync

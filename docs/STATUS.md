@@ -17,10 +17,18 @@ _Last updated: 2026-07-30 (session 1, from the laptop)_
 
 ## In discussion (not yet decided) — one topic at a time, per ulu
 
-- Kernel choice: `linux` vs `linux-zen` vs CachyOS kernel (gaming focus). ← current topic
-- `packages/pacstrap.txt` final contents (decided so far: NO vim, ever;
-  candidates micro + nano).
-- KDE install scope (leaning: curated explicit list in `packages/kde.txt`).
+- KDE install scope (leaning: curated explicit list in `packages/kde.txt`);
+  waiting on ulu's actual app list. ← current topic
+- **Monitor bug on the desktop** — ulu wants to discuss it BEFORE the
+  install runs on the PC, in case setup can already work around it. Details
+  not yet collected.
+- Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
+  dotfiles.
+
+## Decided this session
+
+- Kernel: `linux-zen` only. Editor: `micro` only (vim banned, nano not
+  installed). Login shell: zsh (in pacstrap so stage 2 can set it at useradd).
 
 ## Next steps
 
