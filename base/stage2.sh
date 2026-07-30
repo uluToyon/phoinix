@@ -102,9 +102,12 @@ EOF
 # ---------------------------------------------------------------- etckeeper
 if [[ ! -d /etc/.git ]]; then
     etckeeper init
-    git -C /etc -c user.name="etckeeper" -c user.email="root@$HOSTNAME" \
-        commit -qm "Initial commit after stage 2" || true
 fi
+# Persistent identity — without it every etckeeper auto-commit on pacman
+# transactions dies with "empty ident name" (learned on first boot).
+git -C /etc config user.name "etckeeper"
+git -C /etc config user.email "root@$HOSTNAME"
+git -C /etc log -1 &>/dev/null || git -C /etc commit -qm "Initial commit after stage 2" || true
 
 echo
 echo "stage 2 done. Next: exit the chroot, then:"
