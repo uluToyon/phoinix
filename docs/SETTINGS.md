@@ -366,6 +366,9 @@ geometry that a full-file rewriter would re-encode.
 | `Application/GUI\Notifications\TorrentAdded` | `false` (default true) | dec |
 | `LegalNotice/Accepted` | `true` — removes a dialog that greets every fresh install | dec |
 | Launcher + autostart | both point at `scripts/qbittorrent-vpn.sh`, never the packaged entry | dec |
+| Group switch | `newgrp` (util-linux), **not** `sg` — `sg` no longer exists on Arch | dec |
+| Argument passing | file arguments travel in the environment, base64'd; never through the shell line | dec |
+| Post-switch check | effective gid compared against the group's before qBittorrent is exec'd | dec |
 | KWin rule (stage 4) | `QBT_CONNECTOR` + `QBT_OFFSET` + `QBT_SIZE`, resolved at runtime | dec |
 
 **Deliberately not scripted:** `Session\Port` and `SSL\Port` (drawn fresh per
