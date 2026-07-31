@@ -603,7 +603,7 @@ deleted, this one is kept.
 | Setting | Value | Origin |
 |---|---|---|
 | `XIVLAUNCHER_DESKTOP` | `/usr/share/applications/XIVLauncher-RB.desktop` | dec |
-| `DESKTOP_ICONS` | `XIVLauncher-RB.desktop:1,1` and `phoinix-monitor-switch.desktop:4,3` — basename plus column,row in the Folder View grid | dec |
+| `DESKTOP_ICONS` | `XIVLauncher-RB.desktop:2,2` and `phoinix-monitor-switch.desktop:4,4` — basename plus column,row in the Folder View grid | dec |
 | `MONITOR_SWITCH` | `34R83Q:6:8`, `27R83U:6:8`, `XZ322QU V3:15:17` — model, desktop input, laptop input (VCP 0x60) | carried |
 | `MONITOR_SWITCH_REF` | `XZ322QU V3` — the only panel that reports its input truthfully | dec |
 

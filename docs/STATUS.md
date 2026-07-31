@@ -15,14 +15,14 @@ the umount holder). Stage 4 finished and did the big work (launchers, 7 TV
 widgets, both side panels, Kickoff favourites, window rules, playlist), but
 left two warnings:
 
-1. **Desktop icons were NOT positioned — cause found, fix NOT built yet.**
-   Stage 4 finds the Folder View containment via `lastResolution`, but Plasma
-   writes that key only after icons have been arranged by hand at least once.
-   On a virgin install it does not exist — verified on the live system: four
-   folder containments, zero `lastResolution` keys. **Another full reinstall
-   hits the same wall by construction.** Fix direction: match the containment
-   by `lastScreen` (+ activity) instead; stage 4 already maps connectors to
-   screen numbers for the panels.
+1. ~~**Desktop icons were NOT positioned.**~~ **FIXED 2026-07-31 (session 7).**
+   Stage 4 matched the Folder View containment on `lastResolution`, which
+   Plasma writes only after icons have been arranged by hand — absent on every
+   virgin install. It now matches on `lastScreen` plus the activity, with the
+   screen number resolved at runtime from `PANEL_MAIN_CONNECTOR` (DP-1 = Plasma
+   screen 0 here) instead of being stored. Applied live; both icons sit on
+   their configured cells. The fresh-install case itself remains unverified by
+   construction — see `LOG.md`.
 2. **Places order skipped** — `user-places.xbel` exists only after Dolphin
    has run once. Open Dolphin, delete stage 4's marker, re-run. Known, benign.
 

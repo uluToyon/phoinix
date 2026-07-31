@@ -510,22 +510,60 @@ rule_set "87ef503c-e43d-41b8-b5c5-701cbe71f854" \
 # favourites hit. Hence stop, write, start.
 if [[ ${#DESKTOP_ICONS[@]} -gt 0 ]]; then
     main_geom="$(connector_geometry "$PANEL_MAIN_CONNECTOR")"
-    IFS=, read -r _ _ mw mh <<< "$main_geom"
+    IFS=, read -r mx my mw mh <<< "$main_geom"
     if [[ "$mw" == "-1" ]]; then
         echo "WARNING: $PANEL_MAIN_CONNECTOR not connected — desktop icon position skipped"
     else
         res="${mw}x${mh}"
         applets="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
 
-        # Which containment is the Folder View on that screen? Read it from the
-        # file rather than guessing a number: `lastResolution` is written by
-        # Plasma itself and is the only stable link between screen and group.
-        cont="$(awk -F'[][]' -v res="$res" '
-            /^\[Containments\]\[[0-9]+\]\[General\]$/ { g = $4 }
-            $0 == "lastResolution=" res && g { print g; exit }' "$applets")"
+        # Which containment is the Folder View on that screen?
+        #
+        # This used to match on `lastResolution`, and that could never work on
+        # the one machine state it matters for. Plasma writes that key only
+        # once icons have been arranged BY HAND, so a virgin install has none —
+        # verified on the first real install: four folder containments, zero
+        # lastResolution keys (LOG 2026-07-31). The stage warned and skipped,
+        # and every future reinstall would have hit the same wall by
+        # construction. It worked on the old system only because ulu had
+        # arranged those icons years earlier.
+        #
+        # `lastScreen` is written from the start. It holds Plasma's own screen
+        # NUMBER, assigned in detection order — precisely the kind of
+        # discovered identifier this repo refuses to store — so it is resolved
+        # at runtime instead: ask the running shell which of its screens has
+        # the geometry of PANEL_MAIN_CONNECTOR. Same trick panels.js uses for
+        # the panels, and the reason a connector name is all config.sh holds.
+        screen_idx="$(plasma_script "
+            var r = -1;
+            for (var i = 0; i < screenCount; i++) {
+                var g = screenGeometry(i);
+                if (g.x == $mx && g.y == $my && g.width == $mw && g.height == $mh) { r = i; break; }
+            }
+            print(r);" | tr -dc '0-9-')"
+
+        # The activity is part of the match because a second activity gets its
+        # own folder containment on the SAME screen — same plugin, same
+        # lastScreen, different desktop. Matching without it would be a coin
+        # flip the day ulu adds one.
+        cont=""
+        if [[ "$screen_idx" =~ ^[0-9]+$ ]]; then
+            cont="$(awk -v want="$screen_idx" -v act="${ACTIVITY:-}" '
+                /^\[Containments\]\[[0-9]+\]$/ {
+                    c = $0; gsub(/[^0-9]/, "", c); plugin = ""; scr = ""; a = ""; next
+                }
+                /^\[/ { c = ""; next }
+                c == "" { next }
+                /^plugin=/     { plugin = substr($0, 8) }
+                /^lastScreen=/ { scr    = substr($0, 12) }
+                /^activityId=/ { a      = substr($0, 12) }
+                plugin == "org.kde.plasma.folder" && scr == want && (act == "" || a == act) {
+                    print c; exit
+                }' "$applets")"
+        fi
 
         if [[ -z "$cont" ]]; then
-            echo "WARNING: no folder containment found for $res — icon position skipped"
+            echo "WARNING: no folder containment for $PANEL_MAIN_CONNECTOR (screen ${screen_idx:-?}) — icon position skipped"
         else
             # `positions` is {res: [a, b, url, col, row, url, col, row, …]}.
             # What the two LEADING values mean is not understood: a scripted
