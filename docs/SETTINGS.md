@@ -67,7 +67,7 @@ dropped all three SATA disks on first boot.
 | SSH | `authorized_keys` from `hosts/<host>/` | dec |
 | Services | `NetworkManager`, `sshd`, plus `nftables` + `systemd-resolved` on a VPN host | dec |
 | Group `vpnonly` | system group, ulu is a member. Owns no files, has no sudo rights — it exists solely to be matched in the nftables output chain | dec |
-| `/etc/nftables.conf` | ONE rule: drop packets from `vpnonly` leaving anything but `proton0`. Policy stays `accept`, so this is **not** an input firewall | dec |
+| `/etc/nftables.conf` | two chains: mark the `vpnonly` group in **output** (`type route`), drop it in **postrouting** if it did not leave via `proton0`. Policy stays `accept`, so this is **not** an input firewall | dec |
 | nftables drop-in | `RemainAfterExit=yes` — without it the unit reports inactive while its rules are loaded, and the qBittorrent launcher refuses forever | dec |
 | DNS | `systemd-resolved`, NM set to `dns=systemd-resolved`, `/etc/resolv.conf` → stub | dec |
 | Bootloader | systemd-boot, `default arch-zen.conf`, `timeout 3` | dec |
@@ -303,7 +303,8 @@ application. Rationale in `LOG.md` 2026-07-31.
 | `VPN_INTERFACE` | `proton0` — authored, not discovered. Both connections share it, so qBittorrent's binding survives switching country | dec |
 | `VPN_GROUP` | `vpnonly` | dec |
 | `VPN_GATEWAY` | `10.2.0.1` — Proton's in-tunnel gateway: NAT-PMP peer and DNS | dec |
-| NM connections | one per `.conf`, `never-default` for v4 **and** v6, only the first autoconnects | dec |
+| NM connections | one per `.conf`, `wireguard.ip4/ip6-auto-default-route` **off**, routes confined to table 51, rule `priority 100 fwmark 0x51 table 51`, only the first autoconnects | dec |
+| `VPN_MARK_APP` / `VPN_MARK_WG` / `VPN_ROUTE_TABLE` | `0x51` / `0x52` / `51` — the group's mark selects the tunnel table; WireGuard's own mark exempts its encapsulation from the drop | dec |
 | qBittorrent | `Session\Interface` + `Session\InterfaceName` = `proton0` | dec |
 | qBittorrent WebUI | `127.0.0.1:8080`, `LocalHostAuth=false` — how the forwarded port arrives without a credential existing anywhere | dec |
 | Launcher | `~/.local/share/applications/org.qbittorrent.qBittorrent.desktop`, copied from the packaged file with only `Exec` rewritten to `scripts/qbittorrent-vpn.sh` | dec |

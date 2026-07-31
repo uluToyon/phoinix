@@ -48,7 +48,37 @@ XIVLauncher, mpc-qt/haruna, CUPS/printer**. qBittorrent is done only as far as
 the VPN needed (interface binding, WebUI, launcher) — its own settings round is
 still open.
 
-### ProtonVPN — scripted and verified, NOT YET APPLIED TO THE DESKTOP
+### ProtonVPN — LIVE ON THE DESKTOP AND MEASURED
+
+Applied and verified on the real machine 2026-07-31. Measured, not assumed:
+ordinary traffic leaves via `enp8s0`, group traffic via `proton0` with an exit
+inside Proton's network, the two exit addresses differ, the drop counter stays
+at 0 in normal use, switching CH → NL mid-session changes nothing, and **with
+the tunnel down the group is blocked by name and by raw IP while everything
+else keeps working**. That last one is the requirement ulu actually stated.
+
+Getting there refuted the first design three times — `never-default` does not
+restrain a WireGuard connection, the drop rule strangled the tunnel's own
+encapsulation, and the filter sat in a hook that runs before the reroute. All
+three are written up in `LOG.md`; none was visible on paper.
+
+**Open: port forwarding.** `natpmpc` is refused by both servers (CH answers
+"the gateway does not support nat-pmp", NL times out). Both configs say
+`NAT-PMP (Port Forwarding) = on`, but that header records what was *requested*
+at generation time, not what the server can do — Proton grants it only on P2P
+servers, so CH#919 and NL#586 are probably not P2P. Next step is ulu's:
+regenerate two configs on servers carrying the double-arrow, drop them in
+`VPN_CONFIG_DIR`, re-run stage 3. Torrenting works without it; it costs peers.
+
+**Also open:** qBittorrent has only its VPN-relevant settings so far, and the
+QEMU host does not exercise this path at all (`VPN_CONFIG_DIR` is empty there),
+so the split tunnel is only ever tested by hand on the desktop.
+
+### Superseded — the pre-verification note
+
+Kept because it is the honest record: this section previously read "scripted
+and verified, NOT YET APPLIED", on the strength of a QEMU run that had no
+tunnel and therefore only ever proved the blocking half.
 
 Split tunnel over WireGuard: only qBittorrent uses the VPN, and qBittorrent can
 use nothing else. The guarantee is an nftables rule, not qBittorrent's own

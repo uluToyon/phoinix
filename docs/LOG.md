@@ -1634,3 +1634,78 @@ Two smaller things caught by the end-of-session scan and the read-before-import
 rule: the WireGuard files never enter the repo (only `VPN_CONFIG_DIR` does), and
 a stage 3 comment had quoted ulu's actual Proton server name — not a credential,
 but a discovered identifier in a public repo, removed.
+
+## 2026-07-31 — The split tunnel, as it actually had to be built
+
+The entry above describes a design that did not work. It was written before the
+thing had ever carried a packet, and running it on the desktop refuted it three
+times over. Recorded in full, because every one of the three is the sort of
+mistake that looks like a working design on paper.
+
+**1. `never-default` does not keep a WireGuard connection out of the way.**
+NetworkManager sees `AllowedIPs = 0.0.0.0/0`, enables its own *auto default
+route*, and installs a private table plus `suppress_prefixlength 0` rules that
+capture everything. So the whole machine was running through the tunnel — the
+exact opposite of the requirement — while `ipv4.never-default` reported `yes`.
+The property is not ignored; it only governs the main table, which is not where
+NetworkManager put the route. Fix: `wireguard.ip4-auto-default-route no` (and
+ip6), and confine the tunnel's default route to its own table.
+
+**2. The drop rule strangled the tunnel it was protecting.** WireGuard's
+encapsulated packets must leave over the ordinary interface — that is what a
+tunnel is — and they inherit the group of the process that caused them. So
+"group `vpnonly`, not leaving via `proton0`" matched the encryption itself.
+Measured: 7 dropped packets per connection attempt, while `ip route get` pointed
+correctly at the tunnel. Fix: WireGuard stamps its own `fwmark` on those
+packets, and the rule makes an exception for exactly that mark — precise,
+unlike an exception on UDP port 51820, which anything could have used.
+
+**3. And the filter sat in the wrong hook.** With marking in place the packets
+were still dropped, and the counters said something very specific: the *same*
+7 packets appeared in the marking rule and in the drop rule of a single pass.
+`nft(8)` explains it — a `route` chain performs its new route lookup once the
+packet "is about to be accepted", i.e. at the **end** of the output hook. A
+filter chain sitting inside that hook therefore still sees the OLD output
+interface, and drops packets that were on their way to being rerouted into the
+tunnel. Moving the filter to **postrouting** puts it after the reroute, where
+`oifname` is the truth. Marking stays in output, where a route chain belongs.
+
+Also found while wiring it up: the port-forwarding service asked `natpmpc` for a
+mapping without being in the group, so its request to the in-tunnel gateway went
+out of the ordinary interface to the LAN router instead — `ip route get 10.2.0.1`
+showed it resolving via the local gateway, in plain sight.
+
+**What the finished thing measures on the live desktop:**
+
+| check | result |
+|---|---|
+| ordinary traffic | via `enp8s0`, ulu's own line |
+| group traffic | via `proton0`, exit inside Proton's network |
+| the two exit addresses | different — the traffic is separated |
+| drop counter during normal use | 0 |
+| switching CH → NL mid-session | group traffic continues, nothing to re-do |
+| **tunnel down entirely** | ordinary traffic keeps working, group blocked by name AND by raw IP |
+
+The last row is the requirement ulu actually stated, and the shared interface
+name is what makes the fifth row true: both connections are `proton0`, so
+qBittorrent's binding and the nftables rule survive a change of country.
+
+**One test that nearly reported a leak, and why it did not.** Bringing the NL
+connection down appeared to let group traffic straight out. It had not: the CH
+connection autoconnects, NetworkManager had raised it within the second, and the
+traffic went through *that* tunnel. The test only became valid after autoconnect
+was disabled on both. A negative result is worth as much as a positive one only
+when the setup is what you believe it is.
+
+**Still open: port forwarding.** `natpmpc` is refused by both servers — CH says
+"the gateway does not support nat-pmp", NL times out without answering. Both
+configs carry `NAT-PMP (Port Forwarding) = on`, but that header records what was
+*requested* when the file was generated, not what the server can do: Proton
+grants port forwarding only on P2P servers. The likely answer is that neither
+CH#919 nor NL#586 is one. Torrenting works without it; it costs peers, not
+function.
+
+**And the QEMU harness could not have caught any of this.** It ran without a
+tunnel, so it only ever exercised the blocking half — which is precisely the
+half that was already right. A test that cannot fail in the interesting
+direction is not a test of that direction.
