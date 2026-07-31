@@ -2161,3 +2161,84 @@ ulu adds later comes along by itself, where a generator would only ever recreate
 the one entry that existed the day it was written.
 
 Also cleaned up: `~/.config/haruna/`, left behind when the package was removed.
+
+## 2026-07-31 — Applications, round 14: XIVLauncher and Dalamud
+
+ulu asked the design question first, which turned out to be the right order:
+rebuild the Dalamud install, or image it? The sizes answered it. `~/.xlcore` is
+~2.7 GB, of which the Proton prefix (954 MB), Dalamud, the .NET runtime, its
+assets and Browsingway's embedded browser (623 MB) all re-download themselves.
+What does not come back is about 80 MB.
+
+**The character configuration was already solved, by ulu, before I proposed
+anything.** `/mnt/Games/FFXIV/ffxivConfig` sits on the games disk and
+`GameConfigPath` points at it, so hotbars, macros and UI survive by
+construction. My first analysis had planned to carry it — a solution to a
+problem his disk layout had already removed. Worth remembering: look at what is
+already arranged before designing the arrangement.
+
+**A 4.4 GB backup from February 2025 was on FilesMusic**, and ulu chose to set
+up fresh and image afterwards rather than restore it. Right call: its
+`installedPlugins` and Dalamud framework were seventeen months old, and stale
+plugin binaries against a current game patch is precisely the state where
+nothing loads.
+
+**What is carried**, ~80 MB: `launcher.ini`, `accounts.json` (a credential —
+account name and last OTP, kept at 0600), `dalamudConfig.json`, `dalamudUI.ini`,
+`pluginConfigs/` minus Browsingway's runtime directory, and `installedPlugins/`.
+The binaries are carried on ulu's call: `dalamudConfig.json` does hold the full
+profile (ten plugins with enabled state) and the three third-party repo URLs, so
+in principle Dalamud could reinstall — but that behaviour was never verified and
+the repos are outside anyone's control. 79 MB is the cheaper insurance.
+
+**Two things the seeding test found that reading never would.**
+
+First: **`~/.xlcore` is a symlink**, not a directory. XIVLauncher-RB creates it
+for compatibility beside the real `~/.local/share/dev.goats.xivlauncher`. The
+backup read through it and worked; the restore would have created a plain
+directory in its place, shadowing the link with files the launcher never opens.
+The backup would have looked perfect and the restore would have been silently
+inert. Caught because `du -sh ~/.xlcore` reported 0 while its children were
+gigabytes — a symlink's own size.
+
+Second, and smaller: `pluginConfigs/Browsingway/dependencies` is not a cache. It
+is the CEF runtime Browsingway *executes from* — its helper processes were seen
+running out of that path. Excluding it is still right, because it re-downloads,
+but the comment justifying the exclusion was wrong and is fixed.
+
+**Then the test answered its actual question: seeding works.** The live
+directory was moved aside, 80 MB restored into an empty one, and XIVLauncher
+came up fully configured — account, settings, all ten plugins — and carried
+through into the game, Dalamud rebuilding its framework around the restored
+config. ulu kept the restored directory and deleted the original.
+
+## 2026-07-31 — Browsingway's first-run failure is a startup race
+
+A long-standing annoyance of ulu's, present on his previous Arch install too:
+after entering FFXIV, Browsingway's overlays do not react to cactbot until the
+plugin is disabled and re-enabled once. Diagnosed live, while the broken state
+was on screen.
+
+Not a graphics fault, though the log invites that reading: Dawn logs
+`D3D12CreateDevice failed` and a pair of OpenVR registry warnings, all noise.
+The timestamps are the finding:
+
+```
+19:43:54.755  Browsingway finished loading
+19:43:58.969  IINACT finished loading            (+4 s)
+19:43:58.977  OverlayPlugin initialised
+19:43:59.830  cactbot event source enabled       (+5 s)
+```
+
+Browsingway's inlays load their URLs — Horizoverlay and three cactbot pages,
+each carrying `?HOST_PORT=ws://…` — about five seconds before IINACT's websocket
+server exists. The connection fails and the pages do not retry indefinitely.
+Toggling the plugin reloads them, by which time the server is up.
+
+There is no configuration-level fix: Dalamud does not expose plugin load order,
+Browsingway has no start delay, and whether a page retries is cactbot's and
+Horizoverlay's business. The lighter workaround than toggling the whole plugin
+is the per-overlay reload action in Browsingway's own window.
+
+Recorded because it costs nothing to write and saves the next investigation:
+the symptom points at graphics, the cause is ordering.

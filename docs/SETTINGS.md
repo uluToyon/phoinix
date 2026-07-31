@@ -610,10 +610,20 @@ insurance. Shrinking to 284 KB later is easy; the reverse is not.
 in Dalamud disappears from the backup too. Without that it would only ever grow
 and would reinstate things deliberately got rid of.
 
-**Restore is per file and per tree, never wholesale**: anything already in
-`~/.xlcore` belongs to a launcher that has run since. Whether a *seeded*
-`~/.xlcore` lets XIVLauncher start fully configured is **not yet verified** —
-the restore is written to be correct either way.
+**The real directory is `~/.local/share/dev.goats.xivlauncher`.** `~/.xlcore`
+is only a compatibility symlink XIVLauncher-RB creates beside it — reading
+through it works, writing into it does not: a restore that creates a plain
+`~/.xlcore` directory shadows the link with files the launcher never reads.
+Both scripts therefore name the XDG path.
+
+**Restore is per file and per tree, never wholesale**: anything already there
+belongs to a launcher that has run since.
+
+**Seeding is verified (2026-07-31).** The live directory was moved aside, the
+80 MB restored into an empty one, and XIVLauncher came up fully configured —
+account, settings, all ten plugins — and carried through into the game, with
+Dalamud re-downloading its framework around the restored config. The restored
+directory was then kept and the original deleted.
 
 ## Known gaps and open items
 

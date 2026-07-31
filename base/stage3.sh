@@ -609,7 +609,11 @@ fi
 # the backup exists to protect. On a fresh install nothing is present and the
 # whole set lands.
 if [[ -n "${XLCORE_BACKUP_DIR:-}" ]]; then
-    XL="$HOME/.xlcore"
+    # The XDG path, NOT ~/.xlcore — that is only a compatibility symlink
+    # XIVLauncher-RB creates. Restoring into a real ~/.xlcore directory would
+    # shadow the link with files the launcher never reads. Found by testing a
+    # seeded restore, which is the only way it could have been found.
+    XL="$HOME/.local/share/dev.goats.xivlauncher"
     if [[ ! -d "$XLCORE_BACKUP_DIR" ]]; then
         echo "WARNING: $XLCORE_BACKUP_DIR missing — XIVLauncher starts unconfigured."
         echo "         Not fatal: it will simply ask for the account again."
