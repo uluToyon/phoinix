@@ -4,11 +4,17 @@ _Last updated: 2026-07-31 (session 5 — keychron, the superproject question, th
 
 ## Pick up here
 
-Three decisions are waiting, and nothing else is queued ahead of them:
+One decision is left, and nothing is queued ahead of it:
 
-1. **chezmoi** — whether the two dotfiles get managed by it, and how.
-2. **`fixes/`** — the curlable collection, parked by ulu on 2026-07-31 and
-   described under "Later, with ulu".
+**`fixes/`** — the curlable collection, parked by ulu on 2026-07-31 and
+described under "Later, with ulu".
+
+**chezmoi is decided: rejected (2026-07-31).** Its one remaining rationale was
+templating across machines, and ulu settled that — the laptop will never run
+this installer. What it would really have bought us is drift detection, and that
+is now `scripts/check-drift.sh`. Run it with `./scripts/check-drift.sh desktop`;
+it exits non-zero when a captured file and the live one disagree. Full reasoning
+in `DESIGN.md`.
 
 **The soundbar is set back and captured (2026-07-31).** ulu chose the first
 option: exactly −26 dB, not a hunt for where the glitching starts. Live sink and
@@ -71,10 +77,10 @@ Both items that stood here at the start of session 5 are closed:
   and closed (they are git submodules; phoinix stays one repo). It produced one
   parked idea, `fixes/`, listed under "Later, with ulu" below.
 
-Still open on the Keychron topic, deliberately not pursued yet: **no device
-configuration is carried in this repo.** Key mapping and DPI live on the devices
-themselves, so a distro-hop does not lose them — but a factory reset would. Ask
-ulu whether he has remapped anything worth exporting from the launcher.
+Closed with it: **no device configuration is carried in this repo, and none is
+needed.** ulu has remapped nothing on either device, so there is no layout to
+export — and key mapping lives on the hardware anyway, which a distro-hop does
+not touch.
 
 The M6 already appears once elsewhere, indirectly: stage 4 turns pointer
 acceleration off for *every* pointer precisely so no mouse has to be named.
@@ -110,12 +116,12 @@ Strawberry, KeePassXC, ProtonVPN, qBittorrent, Discord, Brave, Steam,
 LibreOffice, mpc-qt, DZGUI, XIVLauncher. haruna was evaluated and rejected.
 `SETTINGS.md` is the inventory; the rounds and their findings are in `LOG.md`.
 
-### Still open, deliberately: the old AirVPN files
+### Resolved: the old AirVPN files are gone
 
-`/mnt/FilesMusic/OpenVPNConfigs` holds four **AirVPN** `.ovpn` files (2022 and
-2024) with inline private keys, plus a Windows installer. The repo used to
-describe them as ulu's ProtonVPN profiles, which they never were. Deleting them
-is ulu's call.
+`/mnt/FilesMusic/OpenVPNConfigs` held four **AirVPN** `.ovpn` files (2022 and
+2024) with inline private keys. The repo used to describe them as ulu's
+ProtonVPN profiles, which they never were. He deleted the directory himself
+during the 2026-07-31 clean-up, along with `/mnt/FilesMusic/Linux/`.
 
 ## Where we are
 
@@ -155,9 +161,10 @@ change things, then diff.
   aliases now live in `~/.config/phoinix/aliases.zsh`, a file phoinix owns and
   rewrites every run — the old inline block in `.zshrc` was written once and
   could never gain an entry. Shortcuts are written as deviations, not captured.
-- **chezmoi: still undecided, no longer blocking.** The shell config lives in
-  `dotfiles/` as plain files stage 3 installs directly, so the question is now
-  only *how* those two files are managed — not whether the repo is complete.
+- ~~**chezmoi: still undecided.**~~ **REJECTED 2026-07-31** — see `DESIGN.md`.
+  The shell config stays in `dotfiles/` as plain files stage 3 installs
+  directly; `scripts/check-drift.sh` covers the one thing chezmoi was still
+  wanted for.
 - **Mount-path legacy: DECIDED — clean re-wiring, no compat symlinks.**
   Restored configs get new `/mnt/<Label>` paths. Checklist status:
   Steam library **done**, XIVLauncher game path **done**
@@ -464,5 +471,4 @@ Still open:
    `~/.config/pipewire/pipewire.conf`, the `konsolerc` re-check.
 6. **Re-run the QEMU test after changes to stages 1-4**:
    `scripts/qemu-test.sh --fresh`, then `--installed` after the reboot.
-7. Decide the chezmoi question (no longer blocking anything).
 8. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.

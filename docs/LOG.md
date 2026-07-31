@@ -2569,3 +2569,52 @@ that was tested glitch-free years ago, and restoring it removes the most likely
 explanation for ulu's lingering doubt — but confirming it needs hours in FFXIV
 or DayZ, and only he can report that. If it still glitches at −26 dB, the level
 was never the cause and the hunt reopens elsewhere.
+
+## 2026-07-31 — chezmoi rejected, and a drift check instead
+
+The chezmoi question had been open since the first sessions. `DESIGN.md` chose
+it over stow for one reason: templating, to handle differing usernames across
+machines. That reason was checked rather than taken on trust, and it is gone:
+
+- `dotfiles/p10k.zsh` — **no** machine-specific value at all. Its two matches on
+  a username are comments about `asdf` inside the generated file.
+- `dotfiles/zshrc` — exactly one, `zstyle :compinstall filename
+  '/home/ulutoyon/.zshrc'`, a cosmetic leftover from `zsh-newuser-install`.
+- And ulu settled the rest: "der laptop wird nie dieses skript hier ausführen,
+  maximal überwachend bei einer installation involviert sein." There is no
+  second machine to template for, so the feature has no subject.
+
+Rejected, then. Adopting it anyway would have meant a SECOND mechanism for
+getting configuration onto a machine next to stage 3 — two answers to one
+question — and it would have to be installed and initialised before doing
+anything, in a repo whose entire premise is that one command does everything. It
+would also have owned two files while stage 3 owns forty-odd `kwriteconfig6`
+settings and a captured tree.
+
+**What chezmoi would genuinely have given us is `chezmoi diff`:** noticing when
+a captured file and the live one stop agreeing. That is worth having on its own
+merits, because this repo has already lost that bet once — the soundbar sat
+2.77 dB from its documented value for months, and nothing said so until the old
+transcripts were dug up by hand. So the benefit was taken without the framework:
+`scripts/check-drift.sh`.
+
+It walks `hosts/<host>/home/` rather than carrying a list, so a file added there
+is covered without anyone remembering to update the checker. Two special cases,
+both stated in output instead of hidden:
+
+- `.zshrc` legitimately differs by the alias hook stage 3 appends, so the hook
+  is stripped before comparing. Without that it would report drift on every
+  machine phoinix has ever touched, i.e. always, which is the same as never.
+- `stream-properties` is per-application wireplumber state and grows with every
+  app that has played a sound. It is reported as "expected to differ" rather
+  than skipped — a check that hides things is worse than one that explains them.
+
+**It found real drift on its first run.** `~/.config/kdeglobals` carried
+`Breadcrumb Navigation=false` under `[KFileDialog Settings]` while the repo
+still had `true` from whenever the file was captured. Nothing in `docs/` ever
+mentioned the setting, so the repo's value was never a decision — just the state
+of a moment. The live value was captured. Nine files in sync afterwards, exit 0.
+
+One bug of my own, caught by reading the output instead of trusting it: the
+summary line printed "0 drifted" while listing a drifted file, because it
+counted the wrong variable. A checker that miscounts is worse than no checker.

@@ -136,12 +136,26 @@ Most of "record all the settings" is capture, not authorship:
   transaction. Install *before* configuring anything.
 - **`pacman -Qqe`** (explicit) and **`pacman -Qqm`** (AUR/foreign) to seed
   package lists. Curate into groups; ungrouped dumps rot and you stop trusting them.
-- **`chezmoi`** for dotfiles — chosen over stow for templating, which handles
-  the differing usernames across machines (`ulutoyon` on desktop,
-  a different username on the Fedora laptop). STILL UNDECIDED, and no longer
-  blocking: the shell config now sits in `dotfiles/` as plain files that
-  stage 3 installs directly. chezmoi is therefore only a question of *how*
-  those two files are managed, not *whether* they are in the repo at all.
+- **`chezmoi`** for dotfiles — **REJECTED 2026-07-31.** It was originally chosen
+  over stow for templating, to handle differing usernames across machines. That
+  reason is gone, and was checked rather than assumed before dropping it:
+  `p10k.zsh` holds no machine-specific value at all (its two username matches
+  are comments about asdf in the generated file), `zshrc` holds exactly one —
+  a cosmetic `zstyle :compinstall filename` line left over from
+  `zsh-newuser-install` — and ulu has since stated the laptop will **never** run
+  this installer, at most watch an installation. There is no second machine to
+  template for.
+
+  Against adopting it anyway: it would be a SECOND mechanism for getting
+  configuration onto a machine, next to the one stage 3 already is — two answers
+  to the same question. It has to be installed and initialised before it does
+  anything, in a repo whose whole point is that one command does everything. And
+  it would own two files while stage 3 owns some forty `kwriteconfig6` settings
+  and a captured tree, which makes the boundary arbitrary.
+
+  What chezmoi would genuinely have given us was noticing when a captured file
+  and the live one stop agreeing. That is `scripts/check-drift.sh` instead —
+  ten-odd lines rather than a framework. It found real drift on its first run.
 
 **Captured config belongs IN the repo, never in an external backup.** Stage 3
 originally restored all of it from `/mnt/Downloads/backup-.../` — a dated,
