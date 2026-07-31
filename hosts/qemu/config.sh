@@ -26,8 +26,12 @@ HOSTNAME="phoinix-test"
 # is that it is per-host at all, which stage 2 did not use to allow.
 KERNEL_PARAMS="console=ttyS0,115200"
 
-# The desktop gives root 200G of a 1TB disk. The test only has to reach a
-# booting system, so it runs on a small sparse image. ESP stays at the shared
-# 1G — the reason for that size (multiple kernels + fallback initramfs) is
-# exactly the kind of thing a test should not quietly deviate from.
-ROOT_SIZE="12G"
+# The desktop gives root 200G of a 1TB disk. 12G was the first guess here, on
+# the assumption that the test only had to reach a booting system — stage 3 ran
+# for half an hour and then died on "not enough free disk space" partway through
+# the AUR builds. A test host has to be sized for the REAL package set or it
+# tests the installer only up to the point where it runs out of room.
+# The image is sparse, so this costs nothing until it is used.
+# ESP stays at the shared 1G — the reason for that size (multiple kernels +
+# fallback initramfs) is exactly what a test should not quietly deviate from.
+ROOT_SIZE="60G"

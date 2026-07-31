@@ -20,8 +20,14 @@ source "$REPO_DIR/hosts/$HOST/config.sh"
 exec > >(tee -a "$HOME/stage3.log") 2>&1
 
 # Keep sudo alive for the whole run (long pacman/AUR phases).
+# The refresh is the while CONDITION, not a command in the body, and that is
+# the whole point: this subshell inherits `set -e`, so as a body command a
+# single failed `sudo -n true` killed the keepalive silently and every later
+# sudo prompted again. Verified in QEMU (three password prompts in one run),
+# then reduced locally. As a condition, a lost ticket ends the loop cleanly
+# instead of aborting it, and nothing else changes.
 sudo -v
-( while true; do sudo -n true; sleep 50; done ) &
+( while sudo -n true 2>/dev/null; do sleep 50; done ) &
 SUDO_KEEPALIVE=$!
 trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null' EXIT
 
@@ -46,7 +52,11 @@ fi
 
 # ------------------------------------------------- 3. AUR packages
 mapfile -t AUR_PKGS < <(read_list "$REPO_DIR/packages/aur.txt")
-paru -S --needed --noconfirm "${AUR_PKGS[@]}"
+# --sudoloop: paru refreshes sudo itself for the whole build run. Our keepalive
+# above cannot cover this phase — makepkg's sudo calls do not necessarily share
+# stage 3's terminal, and sudo's tickets are per-tty by default, so a ticket
+# refreshed here is not the ticket makepkg is asked for.
+paru -S --needed --noconfirm --sudoloop "${AUR_PKGS[@]}"
 
 # ------------------------------------------------- 4. DZGUI (turnkey upstream)
 # v7+ ships its own runtime; jq parses the GitHub releases API (see cli.txt).

@@ -28,7 +28,9 @@ set -euo pipefail
 ISO="${PHOINIX_ISO:-/mnt/Downloads/archlinux-x86_64.iso}"
 WORK="${PHOINIX_QEMU_DIR:-$HOME/.cache/phoinix-qemu}"
 DISK_SERIAL="phoinix-test"     # must match DISK in hosts/qemu/config.sh
-DISK_SIZE="${PHOINIX_QEMU_DISK:-30G}"
+# Sparse, so this is a ceiling and not an allocation. Must comfortably exceed
+# ROOT_SIZE in hosts/qemu/config.sh plus room for AUR build trees in /home.
+DISK_SIZE="${PHOINIX_QEMU_DISK:-100G}"
 RAM="${PHOINIX_QEMU_RAM:-4G}"
 
 OVMF_CODE="/usr/share/edk2/x64/OVMF_CODE.4m.fd"
