@@ -376,11 +376,29 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
             # two identical entries. BOTH keep the same interface name — only
             # one can be up at a time, and that is what lets qBittorrent's
             # binding and the nftables rule stay valid whichever is active.
+            # Routing, and this is where the first version was simply wrong.
+            # `never-default` alone does NOT keep a WireGuard connection out of
+            # the way: NetworkManager sees AllowedIPs 0.0.0.0/0 and turns on its
+            # own "auto default route", which installs a private table plus
+            # `suppress_prefixlength 0` rules that capture EVERYTHING. Measured
+            # on the live desktop: the whole machine was running through the
+            # tunnel while `ipv4.never-default` read `yes`.
+            # So auto-default-route is switched off, and the tunnel's default
+            # route is confined to its own table, reachable only by packets the
+            # nftables chain has marked. Nothing reaches it by accident, and
+            # qBittorrent is routed there rather than trusted to bind itself.
             sudo nmcli connection modify "$VPN_INTERFACE" \
                 connection.id "$name" \
                 connection.autoconnect no \
-                ipv4.never-default yes \
-                ipv6.never-default yes
+                wireguard.ip4-auto-default-route no \
+                wireguard.ip6-auto-default-route no \
+                wireguard.fwmark "$VPN_MARK_WG" \
+                ipv4.never-default no \
+                ipv6.never-default no \
+                ipv4.route-table "$VPN_ROUTE_TABLE" \
+                ipv6.route-table "$VPN_ROUTE_TABLE" \
+                ipv4.routing-rules "priority 100 fwmark $VPN_MARK_APP table $VPN_ROUTE_TABLE" \
+                ipv6.routing-rules "priority 100 fwmark $VPN_MARK_APP table $VPN_ROUTE_TABLE"
             echo "vpn: imported $name -> $VPN_INTERFACE"
         done
 

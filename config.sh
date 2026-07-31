@@ -55,6 +55,22 @@ VPN_INTERFACE="proton0"   # authored name; both Proton connections share it, so
                           # qBittorrent's binding survives switching countries
 VPN_GROUP="vpnonly"       # group whose traffic may only leave via VPN_INTERFACE
 VPN_GATEWAY="10.2.0.1"    # Proton's in-tunnel gateway: NAT-PMP peer and DNS
+
+# Policy routing. Two marks and a table, because "bind the app to the
+# interface" turned out not to be enough on either side:
+#
+#   VPN_MARK_APP  is stamped on the group's packets and selects VPN_ROUTE_TABLE,
+#                 whose only route is a default via the tunnel. So qBittorrent
+#                 is ROUTED into the tunnel rather than trusted to bind itself.
+#   VPN_MARK_WG   is what WireGuard stamps on its OWN encapsulated packets
+#                 (wireguard.fwmark). Those leave over the normal interface by
+#                 necessity — they are the tunnel — and they inherit the group
+#                 of whatever process caused them. Without an exception for
+#                 this mark the drop rule strangles the tunnel it protects:
+#                 measured on the live desktop, 7 packets dropped per attempt.
+VPN_MARK_APP="0x51"       # = 81; deliberately the same number as the table
+VPN_MARK_WG="0x52"        # = 82; only WireGuard itself ever sets this
+VPN_ROUTE_TABLE=51
 QBT_WEBUI_PORT=8080       # localhost only, auth bypassed for localhost — this is
                           # how the forwarded port reaches qBittorrent without a
                           # credential existing anywhere

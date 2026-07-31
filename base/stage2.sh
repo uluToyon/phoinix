@@ -164,7 +164,10 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
     # has no sudo rights; it exists purely to be matched in the output chain.
     gpasswd -a "$USERNAME" "$VPN_GROUP" >/dev/null
 
-    sed -e "s|@VPN_INTERFACE@|$VPN_INTERFACE|g" -e "s|@VPN_GROUP@|$VPN_GROUP|g" \
+    sed -e "s|@VPN_INTERFACE@|$VPN_INTERFACE|g" \
+        -e "s|@VPN_GROUP@|$VPN_GROUP|g" \
+        -e "s|@VPN_MARK_APP@|$VPN_MARK_APP|g" \
+        -e "s|@VPN_MARK_WG@|$VPN_MARK_WG|g" \
         "$REPO_DIR/system/nftables.conf" > /etc/nftables.conf
     chmod 644 /etc/nftables.conf
     # The drop-in is what makes the unit's state honest — without it the
