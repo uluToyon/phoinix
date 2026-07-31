@@ -1,8 +1,45 @@
 # STATUS
 
-_Last updated: 2026-07-31 (session 4 — the one command, and the application phase finished)_
+_Last updated: 2026-07-31 (session 5 — keychron, the superproject question, the monitor switch)_
 
 ## Pick up here
+
+**Open, parked 2026-07-31: the QEMU run for session 5's changes.** Stage 2
+(udev rules), stage 3 (the monitor-switch `.desktop`) and stage 4 (multi-icon
+positions) all changed and none has been through the VM. Nothing is known to be
+broken — the udev rules and the switch are verified on the real desktop — but
+the stage 4 icon JSON exists only as arithmetic checked against ulu's running
+Plasma, never written by the script itself. That is the one piece of the day
+carrying no proof.
+
+Two things stand in the way, both found while trying:
+
+1. **The harness cannot be driven unattended.** `qemu-test.sh` puts the serial
+   console on stdio via `-nographic`, and QEMU does not read a stdin that is not
+   a terminal — verified three ways (direct, via a log, via a FIFO with a
+   persistent writer; `/proc/<pid>/fd/0` pointed at the FIFO each time and
+   neither LF nor CR reached the guest). `qemu-mon.sh type` is no way around it:
+   it handles `[a-z0-9]` only, on purpose, and the test line needs `:` `/` `|`.
+   A pseudo-terminal instead of stdio would fix this and is the actual work item.
+2. **Driving it by hand is a long sequence** across two terminals, including a
+   `pkill qemu-system` between stage 2's reboot and `--installed`, and a
+   password that must be `[a-z0-9]` only so the KDE greeter can be typed into
+   later. ulu ran out of patience on 2026-07-31, fairly.
+
+Fixtures are already in place for whenever it runs: `hosts/qemu/config.sh` now
+sets `MONITOR_SWITCH` and `DESKTOP_ICONS`, without which the run would have
+skipped both new paths and passed while proving nothing.
+
+**Three smaller things found on 2026-07-31, none blocking:**
+
+- **The repo does not manage the pacman mirrorlist at all** — no `reflector`,
+  nothing in `base/`. Every install takes whatever the ISO happens to ship,
+  which costs download speed on a fresh machine. Five lines of work.
+- **`umu-launcher` sits in `packages/aur.txt` but now lives in `multilib`**
+  (1.4.4-1). It is no longer an AUR package and goes through paru for nothing.
+  One line to move — unless the AUR variant is wanted deliberately.
+- **`kdeconnect` is in `packages/kde.txt` but not installed on the desktop yet.**
+  `sudo pacman -S --needed kdeconnect`, then pair the phone by hand.
 
 Both items that stood here at the start of session 5 are closed:
 
