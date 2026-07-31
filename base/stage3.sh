@@ -381,6 +381,14 @@ PLM_UNIT="$(pacman -Qlq plasma-login-manager | grep 'systemd/system/.*\.service$
 sudo systemctl enable "$PLM_UNIT"
 sudo systemctl set-default graphical.target
 
+# ------------------------------------------------- 12. disarm the login hook
+# The ~/.zprofile block stage 2 wrote checks for this marker, so stage 3 runs
+# exactly once out of a login. Written LAST, so a stage 3 that died halfway is
+# retried at the next login instead of being skipped. Deleting the marker
+# re-arms it — same contract as stage 4's.
+install -d "$HOME/.local/state/phoinix"
+: > "$HOME/.local/state/phoinix/stage3.done"
+
 echo
 echo "stage 3 done. Reboot (or 'sudo systemctl start $PLM_UNIT') to reach KDE."
 echo "Manual checklist afterwards: docs/STATUS.md → 'Post-install manual steps'."

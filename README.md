@@ -19,10 +19,12 @@ Fitting — so is every distro hop that ends right back at Arch.
 
 | Path | Purpose |
 |---|---|
-| `base/` | stage 1/2/3 install scripts (Arch-specific) |
+| `scripts/bootstrap.sh` | the one command — clones and drives the whole install |
+| `base/` | stage 1–4 install scripts (Arch-specific) |
 | `packages/` | grouped package lists, pacman and AUR separately |
 | `system/` | `/etc` bits, systemd units, udev rules (Arch-specific) |
-| `dotfiles/` | chezmoi-managed, distro-agnostic |
+| `plasma/` | scripts fed to plasmashell's scripting interface (stage 4) |
+| `dotfiles/` | shell config, installed as plain files by stage 3 |
 | `hosts/` | per-machine config (`desktop/`, `laptop/`) |
 | `config.sh` | shared defaults: user, locale, sizes |
 
@@ -31,26 +33,38 @@ Decision log of the original build: [docs/LOG.md](docs/LOG.md)
 
 ## Stages
 
-| Stage | Runs where | Does |
-|---|---|---|
-| `base/stage1.sh <host>` | Arch ISO | partition, mkfs, mount, pacstrap, genfstab |
-| `base/stage2.sh <host>` | chroot | locale, hostname, mkinitcpio, user, bootloader, services |
-| `base/stage3.sh` | first boot, as user | AUR helper, packages, dotfiles, desktop config |
+| Stage | Runs where | Started by | Does |
+|---|---|---|---|
+| `base/stage1.sh <host>` | Arch ISO, root | bootstrap | partition, mkfs, mount, pacstrap, genfstab |
+| `base/stage2.sh <host>` | chroot, root | bootstrap | locale, hostname, user, bootloader, services |
+| `base/stage3.sh <host>` | first boot, as user | login hook from stage 2 | AUR helper, packages, dotfiles, desktop config |
+| `base/stage4.sh <host>` | first Plasma session | systemd user unit from stage 3 | panels, window rules, everything needing a live shell |
 
-Stage 1 is destructive and one-shot; it demands the target disk's serial
-number before touching anything. Stages 2 and 3 are re-runnable.
+Each stage arms the next, so the whole install runs from one command. Stage 1
+is destructive and one-shot; stages 2–4 are re-runnable.
 
 ## Usage
 
 ```sh
-# on the Arch ISO
-git clone https://github.com/uluToyon/phoinix && cd phoinix
-./base/stage1.sh desktop
-arch-chroot /mnt /root/phoinix/base/stage2.sh desktop
-reboot
-# after first login
-~/phoinix/base/stage3.sh
+# on the Arch ISO — this is the whole thing
+curl -fsSL https://raw.githubusercontent.com/uluToyon/phoinix/main/scripts/bootstrap.sh | bash -s desktop
 ```
 
-Don't `curl | bash` the disk stage — clone, read, then run. Pin to a tag if
-you want a one-liner.
+That clones the repo, runs stages 1 and 2, and reboots. Log in as the user,
+stage 3 runs itself and reboots into KDE, stage 4 fires at that login. Two
+things are typed by a human and nothing else: the password for the new user
+account, and later the sudo password.
+
+For a reproducible run, pin to a tag: `… | bash -s desktop v1.0`.
+
+**What keeps stage 1 from eating the wrong disk:** the target is a
+`/dev/disk/by-id/` path in `hosts/<host>/config.sh`, so it simply does not
+resolve on another machine and stage 1 aborts before touching anything. It
+also refuses without UEFI, refuses a target with mounted partitions, refuses
+the disk hosting the running ISO, and counts down before it starts.
+
+Prefer to read before you run? Clone it and start the same script locally:
+
+```sh
+git clone https://github.com/uluToyon/phoinix && ./phoinix/scripts/bootstrap.sh desktop
+```

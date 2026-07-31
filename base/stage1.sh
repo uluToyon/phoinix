@@ -7,8 +7,17 @@
 # under /mnt, mounts the data disks so genfstab records them, runs
 # pacstrap + genfstab, and copies this repo into the target for stage 2.
 #
-# Guard rails: refuses to run without UEFI, refuses a mounted target,
-# and requires typing the disk's serial number — not y/N — to proceed.
+# Guard rails, in order of how much they actually protect:
+#   1. DISK is a /dev/disk/by-id/ path, i.e. it CONTAINS the disk's serial.
+#      On any machine that is not this one it does not resolve and stage 1
+#      aborts before touching anything. This is the real protection.
+#   2. Refuses to run without UEFI.
+#   3. Refuses a target that has mounted partitions, or that hosts the ISO.
+#   4. A countdown, against the accidental invocation. PHOINIX_YES=1 skips it.
+# There used to be a "type the disk serial to continue" prompt. It was dropped
+# on purpose: the serial is two lines up in hosts/<host>/config.sh, so it only
+# ever proved that the config had been read — while making the documented
+# one-command install impossible. See docs/LOG.md 2026-07-31.
 
 set -euo pipefail
 
@@ -51,8 +60,17 @@ if [[ "$REUSE_HOME" == 1 ]]; then
 else
     echo "Layout to create: ESP $ESP_SIZE | root $ROOT_SIZE (ext4) | home = rest (ext4)"
 fi
-read -rp "Type the disk serial to continue: " CONFIRM
-[[ "$CONFIRM" == "$SERIAL" ]] || { echo "Serial mismatch — aborting."; exit 1; }
+# Deliberately NOT a prompt: this script is driven by scripts/bootstrap.sh from
+# a single piped command, where stdin is the pipe and any `read` gets EOF, not
+# a human. A countdown needs no stdin at all and still catches the one case
+# the by-id check cannot: right machine, right disk, started by accident.
+if [[ "${PHOINIX_YES:-0}" != 1 ]]; then
+    for ((i = 10; i > 0; i--)); do
+        printf '\r  DESTROYING the above in %2ds  (Ctrl-C to abort) ' "$i"
+        sleep 1
+    done
+    printf '\r%*s\r' 55 ''
+fi
 
 timedatectl set-ntp true
 
@@ -110,5 +128,6 @@ rsync -a "$REPO_DIR/" /mnt/root/phoinix/
 cp /var/log/stage1.log /mnt/var/log/stage1.log
 
 echo
-echo "stage 1 done. Next:"
+echo "stage 1 done. bootstrap.sh continues with stage 2 by itself."
+echo "Started by hand instead? Next:"
 echo "  arch-chroot /mnt /root/phoinix/base/stage2.sh $HOST"

@@ -99,6 +99,57 @@ install -d -m700 -o "$USERNAME" -g "$USERNAME" "/home/$USERNAME/.ssh"
 install -m600 -o "$USERNAME" -g "$USERNAME" \
     "$REPO_DIR/hosts/$HOST/authorized_keys" "/home/$USERNAME/.ssh/authorized_keys"
 
+# ------------------------------------------------------- hand off to stage 3
+# Stage 1 put the repo in /root/phoinix, but stage 3 must run as the user
+# (AUR builds refuse root) and would not be able to read it there. Nothing
+# used to create the user's copy — the README promised ~/phoinix and every
+# install bridged that gap by hand. It is created here.
+# Created ONCE, never refreshed: stage 2 is re-runnable, and from the second
+# run onwards the user's copy is a working repo with its own commits — this is
+# where sessions happen. Overwriting it would eat exactly that work. If it
+# needs updating, it is a git repo and knows how to pull.
+USER_REPO="/home/$USERNAME/phoinix"
+if [[ "$REPO_DIR" != "$USER_REPO" && ! -d "$USER_REPO/.git" ]]; then
+    install -d -o "$USERNAME" -g "$USERNAME" "$USER_REPO"
+    cp -a "$REPO_DIR/." "$USER_REPO/"
+    chown -R "$USERNAME:$USERNAME" "$USER_REPO"
+fi
+
+# Start stage 3 at the first login. A login shell, deliberately, not a systemd
+# unit: stage 3 needs a terminal for the sudo password, and its long pacman/AUR
+# phases are the part of the install that actually breaks (a paru/libalpm bump
+# did, once) — in a unit that output would vanish into the journal while the
+# screen sits blank. A unit would also need passwordless sudo, i.e. a hole that
+# has to be closed again afterwards.
+# .zprofile is free: the dotfiles restored in stage 3 bring only .zshrc and
+# .p10k.zsh, and .zprofile is read by login shells only, not by every terminal.
+# Disarmed by the marker stage 3 writes at its end — same mechanism as stage 4,
+# so deleting the marker re-arms it.
+cat > "/home/$USERNAME/.zprofile" << EOF
+# --- phoinix: run stage 3 once, at the first login -------------------------
+# Written by stage 2. Delete ~/.local/state/phoinix/stage3.done to re-arm.
+if [[ ! -e "\$HOME/.local/state/phoinix/stage3.done" ]]; then
+    mkdir -p "\$HOME/.local/state/phoinix"
+    # flock, in case a second login (or an ssh session) arrives mid-run.
+    if flock -n "\$HOME/.local/state/phoinix/stage3.lock" \\
+             "$USER_REPO/base/stage3.sh" "$HOST"; then
+        echo
+        echo "Stage 3 done. Rebooting into KDE — stage 4 runs at that login."
+        for i in 10 9 8 7 6 5 4 3 2 1; do
+            printf '\\r  reboot in %2ds  (Ctrl-C to stay here) ' "\$i"
+            sleep 1
+        done
+        printf '\\r%*s\\r' 45 ''
+        sudo systemctl reboot
+    else
+        echo
+        echo ">> Stage 3 failed. Log: ~/stage3.log"
+        echo ">> Fix, then re-run: $USER_REPO/base/stage3.sh $HOST"
+    fi
+fi
+EOF
+chown "$USERNAME:$USERNAME" "/home/$USERNAME/.zprofile"
+
 # ----------------------------------------------------------------- services
 systemctl enable NetworkManager sshd
 
@@ -140,5 +191,7 @@ git -C /etc config user.email "root@$HOSTNAME"
 git -C /etc log -1 &>/dev/null || git -C /etc commit -qm "Initial commit after stage 2" || true
 
 echo
-echo "stage 2 done. Next: exit the chroot, then:"
+echo "stage 2 done. bootstrap.sh unmounts and reboots by itself;"
+echo "stage 3 then starts at the first login of $USERNAME."
+echo "Started by hand instead? Next: exit the chroot, then:"
 echo "  umount -R /mnt && reboot"

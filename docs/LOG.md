@@ -1259,3 +1259,88 @@ FF7 Remake, fixed by disabling it in favour of a clean `10-clock.conf`. That is
 exactly the `disabled-forceclock.bak/` directory found in the PipeWire config
 during the repo import and excluded as switched-off leftovers. The call was
 right; now the reason is on record too.
+
+## 2026-07-31 — Session 4: the one command
+
+ulu's requirement, stated plainly: **one command on the ISO kicks off the whole
+installation.** Typing passwords is fine; typing the target disk's serial is
+not.
+
+**The serial prompt was ceremony.** `hosts/desktop/config.sh:3` already reads
+`DISK="/dev/disk/by-id/nvme-Samsung_SSD_980_1TB_S649NX0T343303X"` — the by-id
+path *contains* the serial. So `read -rp "Type the disk serial to continue"`
+asked ulu to retype a string sitting two lines above it in the same repo. It
+proved that the config had been read, nothing more, and it was the single thing
+making a one-command install impossible.
+
+What actually protects the disk, and always did, is `[[ -e "$DISK" ]]`: on a
+machine that is not this one the by-id path does not resolve and stage 1 aborts
+before touching anything. That is a *machine-level* lock and it needs no human.
+Verified both ways rather than argued: pointed at a made-up by-id path stage 1
+exits with "does not exist"; run against this running desktop it exits with
+"has mounted partitions — refusing". The prompt is replaced by a 10 s countdown
+(`PHOINIX_YES=1` skips it), which covers the one case the by-id check cannot —
+right machine, right disk, started by accident.
+
+**The chain, and how each link arms the next.** Nothing is started by hand
+after the first line:
+
+```
+curl … bootstrap.sh | bash -s desktop
+  → stage 1 (destructive)  → stage 2 (chroot)  → reboot
+  → ~/.zprofile hook       → stage 3          → reboot
+  → systemd user unit      → stage 4
+```
+
+Stage 4 was already armed this way, which is why the pattern was not invented
+here — it was extended downwards.
+
+**A gap that had been bridged by hand every time.** Stage 1 rsyncs the repo to
+`/root/phoinix`, root-owned. Stage 3 must run as the user (AUR builds refuse
+root) and could never read it there. The README promised `~/phoinix` — and
+**no script had ever created it.** Stage 2 now does, once: guarded by
+`! -d "$USER_REPO/.git"`, because from the second run onwards that directory is
+a working repo with its own commits (it is where sessions happen), and
+refreshing it would eat exactly that work.
+
+**Stage 3 starts from a login shell, not a systemd unit.** Weighed explicitly.
+A unit would fire without any login at all, but it has no terminal: `sudo -v`
+would fail, so it would need a passwordless-sudo drop-in — a hole that then has
+to be closed again — and the long pacman/AUR phase, the part of this install
+that has actually broken before (paru-bin against a libalpm soname bump), would
+run invisibly into the journal while the screen sits blank. A login shell gets
+the password prompt, the output on screen, and the right user for free.
+`.zprofile` is unoccupied: the dotfiles bring only `.zshrc` and `.p10k.zsh`, and
+it is read by login shells only, not by every terminal. Disarmed by
+`~/.local/state/phoinix/stage3.done`, written by stage 3 **last** so a run that
+died halfway is retried at the next login instead of skipped — and deleting the
+marker re-arms it, the same contract stage 4's marker already has. Wrapped in
+`flock -n` in case a second login (or an ssh session from the laptop) arrives
+mid-run.
+
+**One bug, found by the dry run rather than by reading.** `bootstrap.sh`
+reattaches `/dev/tty` to stdin, because under `curl | bash` stdin is the pipe at
+EOF — a `read` gets nothing and a `read -t` returns instantly instead of
+counting. The first version guarded that with `[[ -r /dev/tty ]]`, which tests
+the permission bits and cheerfully says yes where there is no controlling
+terminal at all. Worse, `exec` is a special builtin: a failed redirection on it
+kills a non-interactive shell outright, so the installer would have died on the
+spot in exactly the environments where it is most likely to be scripted. The
+test has to be a real open in a subshell: `if ( : < /dev/tty ) 2>/dev/null`.
+Same reasoning killed `read -t` for the countdowns — they use `sleep`, which
+needs no stdin at all.
+
+**Verified in isolation, not yet as a whole.** The login hook was run under zsh
+against a fake `$HOME` through all three paths (stage 3 fails → still armed;
+succeeds → marker written, reboot; marker present → silent). `bootstrap.sh` was
+dry-run with the stages stubbed: fresh clone, existing clone, tag pin, missing
+host argument. Both stage-1 guards were fired for real. The full chain has
+**not** run on hardware or in QEMU — that is now the top item in STATUS.md,
+because a broken bootstrap is discovered on the day the machine is already
+wiped.
+
+Documentation caught up with the goal: the README's "Don't `curl | bash` the
+disk stage" and the matching DESIGN.md caveat are gone, replaced by a section
+that names where the protection actually sits. Both had been written for the
+one-off SSH-driven first install and then generalised into a rule that
+contradicted the reason this repo exists.

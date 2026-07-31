@@ -183,9 +183,44 @@ worked exactly once.
 - Log each stage: `exec > >(tee -a /var/log/install.log) 2>&1` — this doubles as
   the "recording".
 - Expect the SSH session to die at reboot with changed host keys. Normal.
-- `curl | bash` is the wrong pattern for the disk stage: runs as root, partitions
-  drives, no chance to review changes. Clone, read the diff, run. If you want a
-  one-liner, pin to a tag — never a moving branch.
+
+---
+
+## The one command — `curl | bash` is the point, not the hazard
+
+This section used to say the opposite: "`curl | bash` is the wrong pattern for
+the disk stage — clone, read the diff, run." That was written for the one-off
+SSH-driven first install and then got lifted into the README as a general rule,
+where it contradicted the project's own goal (docs/LOG.md 2026-07-30 gives
+"keeps the curl workflow simple" as part of why encryption was dropped). Being
+able to rebuild this machine from one line is the reason the repo exists.
+
+**Where the protection actually sits.** "Read the diff first" is not what stops
+a destructive script — nobody reads a diff at 2 a.m. on an ISO. What stops it:
+
+1. `DISK` is a `/dev/disk/by-id/` path, so it *contains* the disk serial. On any
+   machine that is not this one it does not resolve, and stage 1 aborts before
+   touching anything. This is a machine-level lock, and it needs no human.
+2. No UEFI, a target with mounted partitions, or a target hosting the running
+   ISO — each is a hard refusal.
+3. A countdown before the first destructive command.
+
+Stage 1 used to also demand the disk's serial typed by hand. It was dropped on
+2026-07-31: the serial is *in the repo*, two lines above in
+`hosts/<host>/config.sh`, so retyping it only ever proved that the config had
+been read — while making the one-command install impossible. A ceremony traded
+for the feature it was blocking.
+
+**Tag-pinning is an option, not a commandment.** `bootstrap.sh <host> <ref>`
+checks out a tag for a reproducible run. The moving branch is the default,
+because for a personal installer "the latest state of my own repo" is the
+correct thing to install.
+
+**One consequence for every stage: nothing may read stdin.** Under `curl | bash`
+stdin is the pipe, at EOF — a `read` gets nothing and a `read -t` returns
+instantly. `bootstrap.sh` reattaches `/dev/tty` once for everything below it,
+and the countdowns use `sleep` rather than `read -t` so they work either way.
+Password prompts are fine: `passwd` and `sudo` open `/dev/tty` themselves.
 
 ---
 

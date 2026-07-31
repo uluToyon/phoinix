@@ -1,40 +1,33 @@
 # STATUS
 
-_Last updated: 2026-07-31, ~03:40 (session 3 — the long night)_
+_Last updated: 2026-07-31 (session 4 — the one command)_
 
 ## Pick up here
 
-### FIRST, BEFORE ANYTHING ELSE — the curl one-liner
+### DONE 2026-07-31 — the one command
 
-**The repo contradicts its own goal and has to be fixed.** `README.md:55` and
-`docs/DESIGN.md:186` tell the reader *not* to `curl | bash` the disk stage,
-while `docs/LOG.md:23` cites "keeps the curl workflow simple" as part of the
-reason encryption was dropped. Being able to curl the installer **was the
-point**. The warning came from the "SSH-driven install" section, where it was
-scoped to that one remote first run, and then got lifted into the README as a
-general rule.
-
-Also true and independent of that: **`stage1.sh` cannot be `curl | bash`ed as
-it stands.** It sources `config.sh` and `hosts/<host>/config.sh`, reads
-`packages/pacstrap.txt`, and rsyncs the whole repo to `/mnt/root/phoinix/` for
-stage 2. A single piped file has none of that.
-
-So the one-liner needs a bootstrap: fetch a small script, clone the repo, run
-stage 1 — e.g.
+`scripts/bootstrap.sh` exists and the whole install now runs from one line on
+the ISO:
 
 ```
 curl -fsSL https://raw.githubusercontent.com/uluToyon/phoinix/main/scripts/bootstrap.sh | bash -s desktop
 ```
 
-`git` and `curl` are both on the Arch ISO. To do:
+Each stage arms the next: bootstrap → 1 → 2 (chroot) → reboot → login hook →
+3 → reboot → systemd user unit → 4. Two human inputs remain, both by ulu's
+explicit choice: the password for the new user, later the sudo password.
+Rationale in `LOG.md`; the serial prompt is gone.
 
-1. Write `scripts/bootstrap.sh` (clone — optionally at a tag — then exec stage 1).
-2. Rewrite `README.md` and the DESIGN.md caveat so the curl path is the
-   **documented, intended** route, not a discouraged one.
-3. Keep tag-pinning as an *option* for reproducible runs, not as a commandment.
-4. The real guard rail already exists and should be named as such: stage 1
-   refuses without UEFI, refuses a mounted target, refuses the ISO's own disk,
-   and demands the target disk's **serial** typed by hand.
+**Not yet tested end to end.** Every piece was verified in isolation (guards,
+login hook, bootstrap dry run — see `LOG.md`), but the chain has never run on
+real hardware or in QEMU. The QEMU loop in `DESIGN.md` is the right place for
+that, and it is the highest-value open item in the repo: a broken bootstrap is
+only discovered on the day the machine is already wiped.
+
+One live-system detail, harmless: this desktop has no `~/.zprofile` and no
+`stage3.done` marker, because both are new. Irrelevant unless stage 2 is ever
+re-run *here* — then the next login would start stage 3 once. `touch
+~/.local/state/phoinix/stage3.done` prevents that if it ever matters.
 
 ---
 
@@ -296,13 +289,15 @@ Still open:
 
 ## Next steps
 
-1. **Continue the application phase** — next application is ulu's choice; the
+1. **Test the one-command chain in QEMU** (see "Pick up here"). Highest value
+   in the repo right now — every part is verified, the whole is not.
+2. **Continue the application phase** — next application is ulu's choice; the
    untouched list is at the top of this file.
-2. **Quick wins waiting for ulu**, none of them blocking: the dialog-window-size
+3. **Quick wins waiting for ulu**, none of them blocking: the dialog-window-size
    check (one `Shift+Del` in Dolphin), the `[KeeShare]` private key, the stale
    `~/.config/pipewire/pipewire.conf`, the `konsolerc` re-check now that this
    Konsole has been closed.
-3. **Watch the 144Hz experiment** on DP-1 — a few days without a black flash
+4. **Watch the 144Hz experiment** on DP-1 — a few days without a black flash
    confirms the bandwidth diagnosis.
-4. Decide the chezmoi question (no longer blocking anything).
-5. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.
+5. Decide the chezmoi question (no longer blocking anything).
+6. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.
