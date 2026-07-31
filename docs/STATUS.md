@@ -186,20 +186,16 @@ Still open:
   **Blocked for now:** both reference titles (FFXIV, DayZ) are not installed
   yet, so neither option can be judged. Revisit once gaming is set up — ulu's
   call, deliberately deferred.
-- **DECISION NEEDED — ulu's real name and work e-mail are on GitHub.**
-  `hosts/desktop/authorized_keys` carried the SSH key's comment field
-  (`<realname>@<employer>.de`), which violates the standing rule that no real
-  name appears in any repo file. The comment is now `ulu@laptop` in the working
-  tree, but the original is in commit `42e99b4`, and that commit **is already
-  in `origin/main`**. Nothing cryptographic is exposed — it is a *public* key
-  and SSH ignores the comment — but the name and the work address are
-  published.
-  Options: (a) leave it, the fix stops it spreading further; (b) rewrite
-  history with `git filter-repo` and force-push, which also rewrites every
-  later commit, and note that GitHub can keep unreferenced objects reachable by
-  SHA for a while — a support request is needed to be sure.
-  **Also worth checking**: a public repo tied to a work address is exactly the
-  sort of thing search engines index. ulu's call.
+- ~~ulu's real name and work e-mail are on GitHub.~~ **RESOLVED 2026-07-31,
+  history rewritten and the repository recreated.** Details in `LOG.md`.
+  Standing consequence: **there is no global git identity on this machine**,
+  and the repo sets `uluToyon` + the GitHub noreply address locally, so new
+  commits carry the anonymous identity automatically. Do not add a global
+  `user.name`/`user.email` — that is exactly how 35 commits acquired the real
+  name in the first place.
+  Out of scope but worth remembering: the old system's backup on the Downloads
+  disk (`backup-nvme1n1-20260730/`, the Claude transcripts) still contains the
+  name. It was never published, but it is on disk.
 - **KeePassXC: a pointless private key sits in `keepassxc.ini`.** KeePassXC
   generated a KeeShare signing key when that settings page was opened; the
   share list is empty, so it protects nothing. Deleting the `[KeeShare]`

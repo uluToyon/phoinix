@@ -23,6 +23,12 @@ steps are performed, never reconstructed later from memory.
 
 - Communicate with ulu in German; repo content stays in English.
 - In repo files, always call the human "ulu" — never a real name, on any machine.
+  This includes **commit metadata**: no global git identity on any machine, the
+  repo sets `uluToyon` + the GitHub noreply address locally. A leak once reached
+  35 commits this way (see `LOG.md` 2026-07-31).
+- **Secret scans run over the whole repo, not over the file being imported.**
+  The one leak that got through sat in a hand-written file that no import check
+  ever looked at.
 - Discuss before acting: decisions get talked through first, files/actions after.
 - **One topic at a time.** Even when ulu raises several points in one
   message, work through them strictly one after another — close a topic

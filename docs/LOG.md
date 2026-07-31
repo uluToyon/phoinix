@@ -1191,6 +1191,57 @@ the first program in the repo: it writes the playlist back to its file on
 session exit, which closes the gap between "the file survives a reinstall" and
 "the file is current".
 
+## 2026-07-31 — The name: history rewritten, repository recreated
+
+The end-of-session scan ran over the **whole repo** rather than over the files
+being imported, and found what four earlier scans had missed: the SSH key in
+`hosts/desktop/authorized_keys` carried a comment field with ulu's real name
+and work e-mail. That file was written by hand on day one and had therefore
+never been through an import check — the scans were aimed at incoming material,
+not at what was already there.
+
+Pulling that thread found far more than one file:
+
+- **35 of 62 commits** still had `<real name> <work address>` as author *and*
+  committer. The anonymisation of 2026-07-30 had only covered part of the
+  history.
+- Early versions of `CLAUDE.md`, `DESIGN.md`, `PROTOKOLL.md`, `LOG.md` and
+  `STATUS.md` named him in running text.
+- `authorized_keys` carried it in essentially every commit.
+
+Rewritten with `git filter-branch` (no `git-filter-repo` on this machine):
+`--env-filter` for author and committer identity, `--tree-filter` replacing
+every spelling variant in file contents. Then the `refs/original` backups were
+deleted, the reflog expired and the object database pruned.
+
+**Force-pushing was not enough.** Verified rather than assumed: after the
+force-push, `api.github.com/repos/.../commits/<old sha>` still answered **HTTP
+200**. Unreferenced objects stay reachable by SHA until GitHub garbage-collects
+them, which is not guaranteed to happen on any schedule. With zero forks, zero
+stars and a 34-hour-old repository, deleting and recreating it was both cheap
+and certain. After recreation the same request answers **HTTP 422** — the
+strongest evidence available from outside that the objects are gone.
+
+Final verification went over **every object in the database** (433: blobs,
+commits, tags), not just reachable commits, plus commit metadata across all
+refs, the working tree including binaries, git config, hooks, `packed-refs`,
+reflog and dangling objects. Zero hits. The rewrite backup that had been kept
+as the rollback path was checked (it did contain the old name), then deleted.
+
+**What stops it coming back:** there is no global git identity on this machine,
+and the repository sets `uluToyon` plus the GitHub noreply address locally, so
+every new commit is anonymous by default. Adding a global `user.name` would
+reopen exactly the hole this came through.
+
+Two lessons, both cheap to state:
+
+1. **Scan the whole repo, not the incoming file.** Every check until now
+   targeted material being imported. The leak was in a file written by hand
+   before any of those rules existed.
+2. **A force-push does not delete anything.** It moves a reference. For a
+   public repository, removal means recreating it — or trusting a support
+   request.
+
 Small lesson worth keeping, since it cost two rounds of confusion: **newly
 installed fonts only reach processes started afterwards.** Kanji rendered as
 boxes in Konsole and in the Plasma widget while Strawberry showed them fine —
