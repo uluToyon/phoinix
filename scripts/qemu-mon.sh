@@ -4,7 +4,7 @@
 #   qemu-mon.sh cmd 'info status'          any monitor command
 #   qemu-mon.sh shot /tmp/vm.png           what is on the screen right now
 #   qemu-mon.sh key ret                    one key
-#   qemu-mon.sh type phoinixtest           a string, key by key
+#   qemu-mon.sh type somestring            a string, key by key
 #
 # Why this exists: the test runs on a serial console, so stage 4's RESULT — a
 # login greeter, a panel with the right launchers — cannot be seen there at

@@ -1545,3 +1545,92 @@ not fix. That is a legitimate outcome, and the reason it is safe is that the
 *reason* is on record — the failure mode `LOG.md` documented for the soundbar
 (a captured fix whose rationale was lost, then undone by the person it
 protected) applies just as much to a fix deliberately not made.
+
+## 2026-07-31 — Applications, round 5: ProtonVPN as a split tunnel
+
+ulu named ProtonVPN as the next application and set two requirements that turned
+out to be different problems: **qBittorrent must never reach the internet
+outside the tunnel**, and **nothing except qBittorrent may go through it.**
+
+**The folder said something else than the repo.** `packages/apps.txt`,
+`STATUS.md` and the wishlist all described ProtonVPN over `.ovpn` profiles in
+`/mnt/FilesMusic/OpenVPNConfigs`. Every file in there is **AirVPN**
+(`*.vpn.airdns.org`), the newest from April 2024, and each carries an inline
+private key with no `auth-user-pass` — certificate-only, i.e. the key IS the
+credential. Leftovers from an older subscription that the repo had recorded as
+the current setup. Worth remembering as a class: a documented "manual step" that
+nobody has performed since it was written is a claim, not a fact.
+
+**Nothing was configured at all.** No VPN connection existed on the machine, so
+this was never a migration — which removed the main argument for staying on
+OpenVPN.
+
+**WireGuard, for a reason that is about phoinix rather than about protocols.**
+Proton's OpenVPN profiles need a separate OpenVPN username and password, so an
+import can never be unattended: either it is typed after every reinstall, or a
+plaintext credential lands in a NetworkManager connection file. A WireGuard
+config carries its own key and imports in one command. NetworkManager speaks
+WireGuard natively, so `networkmanager-openvpn` (and `openvpn` with it) left the
+package set. Obfuscation, OpenVPN's real advantage, is irrelevant: ulu's VPN
+runs at home only.
+
+**Port forwarding decided the shape, and it needed checking rather than
+assuming.** Proton's WireGuard configs carry a `NAT-PMP (Port Forwarding)`
+toggle, available only on P2P servers, and the granted port has a **60 second
+lease** — so it is a service that renews, not a setting. Both of ulu's configs
+came back with `NAT-PMP = on` and `Moderate NAT = off`, which is the right pair:
+Proton documents that the two are mutually exclusive. That trade — port
+forwarding *or* console-style Type 2 NAT — is the real decision on a gaming
+machine, and it dissolved once ulu chose "VPN for qBittorrent only".
+
+**The guarantee is the kernel's, not the application's.** qBittorrent's
+"bind to interface" setting was set, but it is the application promising
+something about itself: it does not survive a bug, an update that resets it, or
+a mistyped option, and it never covered name resolution at all. So qBittorrent
+runs with a dedicated group (`sg`, via a wrapper the desktop entry points at)
+and an nftables output rule drops every packet from that group that would leave
+through anything but `proton0`. A group rather than a separate user, because a
+GUI application in ulu's session would otherwise drag in a second home
+directory, download-folder permissions and Wayland socket access to express one
+bit. The ruleset is deliberately **not** an input firewall — policy stays
+`accept`, so enabling `nftables.service` does not hand the machine a posture it
+never had, and the laptop's SSH access keeps working.
+
+**DNS was the subtle part, and it nearly broke the whole thing.** Proton's
+config points at `10.2.0.1`, a resolver that only exists inside the tunnel. With
+one global `resolv.conf` both options are bad: route all DNS through the tunnel
+and a dropped tunnel stalls the entire desktop in lookup timeouts; route
+qBittorrent's DNS past it and the nftables rule drops the query, leaving
+qBittorrent unable to resolve anything at all. Also worth naming: doing nothing
+is not neutral — NetworkManager gives VPN connections DNS priority by default,
+so the whole system would have moved into the tunnel silently. `systemd-resolved`
+removes the dilemma by keeping DNS per link, and ulu chose it from three options.
+The nftables rule accepts loopback for exactly this reason: qBittorrent talks to
+the resolved stub, and resolved — not being in the group — queries Proton
+through the tunnel itself.
+
+**Verified in QEMU before touching the desktop**, which is the point of having
+the VM. With the group created, the ruleset loaded and no tunnel present:
+
+- a process **outside** the group reached the internet (nothing else broke);
+- a process **inside** the group could not resolve anything;
+- a process **inside** the group could not reach a raw IP either — the case
+  that proves it is not merely DNS filtering;
+- loopback still worked from inside the group;
+- the drop counter stood at 15 packets, so the rule demonstrably fired.
+
+**And the test found a bug that would have made qBittorrent unlaunchable.** The
+wrapper refuses to start unless something demonstrably enforces the tunnel, and
+used `systemctl is-active nftables.service` as its proxy, since a normal user
+cannot read the ruleset. Arch ships `nftables.service` as a bare `Type=oneshot`
+with **no `RemainAfterExit`**: it loads the rules and goes inactive while they
+stay in the kernel. So on a perfectly healthy machine the check said "not
+active" and qBittorrent would never have started — with the rule loaded and
+counting drops in the same breath. A drop-in adds `RemainAfterExit=yes`, which
+makes the unit's three states mean what the check assumes. The packaged unit has
+no `ExecStop`, so nothing else changes.
+
+Two smaller things caught by the end-of-session scan and the read-before-import
+rule: the WireGuard files never enter the repo (only `VPN_CONFIG_DIR` does), and
+a stage 3 comment had quoted ulu's actual Proton server name — not a credential,
+but a discovered identifier in a public repo, removed.

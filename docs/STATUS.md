@@ -42,10 +42,33 @@ re-run *here* — then the next login would start stage 3 once. `touch
 
 ---
 
-Session 3 ended mid-way through the **application phase**. Done so far:
-Dolphin, Konsole, Strawberry, KeePassXC. Not yet touched: **Brave,
-qBittorrent, Discord, Steam, LibreOffice, DZGUI, XIVLauncher, mpc-qt/haruna,
-CUPS/printer, ProtonVPN**.
+**Application phase.** Done: Dolphin, Konsole, Strawberry, KeePassXC,
+ProtonVPN. Not yet touched: **Brave, Discord, Steam, LibreOffice, DZGUI,
+XIVLauncher, mpc-qt/haruna, CUPS/printer**. qBittorrent is done only as far as
+the VPN needed (interface binding, WebUI, launcher) — its own settings round is
+still open.
+
+### ProtonVPN — scripted and verified, NOT YET APPLIED TO THE DESKTOP
+
+Split tunnel over WireGuard: only qBittorrent uses the VPN, and qBittorrent can
+use nothing else. The guarantee is an nftables rule, not qBittorrent's own
+setting — see `SETTINGS.md` for the inventory and `LOG.md` for why.
+
+Proven in QEMU with the tunnel absent: a process in the `vpnonly` group reached
+neither a hostname nor a raw IP, loopback still worked, a process outside the
+group was unaffected, and the drop counter moved. The run also caught a bug that
+would have left qBittorrent unlaunchable on the desktop (Arch's
+`nftables.service` reports inactive while its rules are loaded).
+
+**Open on the live desktop:** stage 2's system half has never run here — no
+`vpnonly` group, no nftables ruleset, no `systemd-resolved`. Those need root and
+this session's sudo has no password, so they are ulu's to run. Until then the
+desktop has no VPN at all, exactly as before.
+
+**Also still open, deliberately:** the old `/mnt/FilesMusic/OpenVPNConfigs`
+folder holds four **AirVPN** `.ovpn` files (2022 and 2024) with inline private
+keys, plus a Windows installer. The repo used to describe them as ulu's
+ProtonVPN profiles, which they never were. Deleting them is ulu's call.
 
 The method is settled — see "Working mode" below. In short: snapshot,
 ulu clicks, **close the application**, diff the whole config tree, decide per
@@ -138,8 +161,8 @@ this topology — until proven, the cap stays.
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
 - Evaluate haruna vs. mpc-qt BEFORE finalizing the scripts (ulu wants a look).
-- VPN session with ulu: walk through the whole desktop VPN topic together and
-  migrate ProtonVPN from .ovpn imports to WireGuard configs.
+- ~~VPN session with ulu.~~ **Done 2026-07-31** — WireGuard split tunnel built and
+  verified in QEMU; see the ProtonVPN entry at the top of this file.
 
 ## Post-install manual steps (not scriptable)
 
@@ -155,8 +178,8 @@ this topology — until proven, the cap stays.
   session's additions.
 - Brave: join the sync chain by hand (profile comes via Brave Sync).
 - pCloud: log in by hand (credentials in KeePassXC on FilesMusic).
-- ProtonVPN: import .ovpn profiles (FilesMusic/OpenVPNConfigs) into the
-  network applet by hand — may contain credentials, never into the repo.
+- ~~ProtonVPN: import .ovpn profiles by hand.~~ **Obsolete 2026-07-31** — replaced by the
+  scripted WireGuard split tunnel. Manual part left: generating the configs at Proton (done).
 
 ## Post-install test points
 

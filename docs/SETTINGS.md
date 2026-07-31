@@ -65,7 +65,11 @@ dropped all three SATA disks on first boot.
 | Global zshrc | `compinit`, history 10000, emacs bindings | dec |
 | Empty user `~/.zshrc` | suppresses `zsh-newuser-install` | dec |
 | SSH | `authorized_keys` from `hosts/<host>/` | dec |
-| Services | `NetworkManager`, `sshd` | dec |
+| Services | `NetworkManager`, `sshd`, plus `nftables` + `systemd-resolved` on a VPN host | dec |
+| Group `vpnonly` | system group, ulu is a member. Owns no files, has no sudo rights — it exists solely to be matched in the nftables output chain | dec |
+| `/etc/nftables.conf` | ONE rule: drop packets from `vpnonly` leaving anything but `proton0`. Policy stays `accept`, so this is **not** an input firewall | dec |
+| nftables drop-in | `RemainAfterExit=yes` — without it the unit reports inactive while its rules are loaded, and the qBittorrent launcher refuses forever | dec |
+| DNS | `systemd-resolved`, NM set to `dns=systemd-resolved`, `/etc/resolv.conf` → stub | dec |
 | Bootloader | systemd-boot, `default arch-zen.conf`, `timeout 3` | dec |
 | Kernel arg | `video=DP-2:3840x2160@144` — monitor bug | dec |
 | Kernel arg | `video=DP-1:3440x1440@144` — link stability, **PROVISIONAL** | dec |
@@ -286,6 +290,34 @@ applet's Qt resource and cannot be patched any other way.
 | `Colors:*`, `ColorEffects:*`, `WM/*` | the Breeze Dark scheme written out — a block, not individual choices | old |
 
 ---
+
+## ProtonVPN split tunnel (stages 2 and 3)
+
+Only qBittorrent uses the VPN; everything else keeps the normal line. And
+qBittorrent can use *nothing but* the VPN — enforced by the kernel, not by the
+application. Rationale in `LOG.md` 2026-07-31.
+
+| Setting | Value | Origin |
+|---|---|---|
+| `VPN_CONFIG_DIR` | `/mnt/FilesMusic/VPN` — WireGuard configs, **never in the repo** (each carries a PrivateKey, which for Proton *is* the credential) | dec |
+| `VPN_INTERFACE` | `proton0` — authored, not discovered. Both connections share it, so qBittorrent's binding survives switching country | dec |
+| `VPN_GROUP` | `vpnonly` | dec |
+| `VPN_GATEWAY` | `10.2.0.1` — Proton's in-tunnel gateway: NAT-PMP peer and DNS | dec |
+| NM connections | one per `.conf`, `never-default` for v4 **and** v6, only the first autoconnects | dec |
+| qBittorrent | `Session\Interface` + `Session\InterfaceName` = `proton0` | dec |
+| qBittorrent WebUI | `127.0.0.1:8080`, `LocalHostAuth=false` — how the forwarded port arrives without a credential existing anywhere | dec |
+| Launcher | `~/.local/share/applications/org.qbittorrent.qBittorrent.desktop`, copied from the packaged file with only `Exec` rewritten to `scripts/qbittorrent-vpn.sh` | dec |
+| Port forwarding | user unit `phoinix-portforward.service`, renews the NAT-PMP lease every 45 s (lease is 60 s) and pushes the port into qBittorrent | dec |
+
+**Two lines of defence, and only one of them is the guarantee.** The interface
+binding is qBittorrent promising something about itself; it does not survive a
+bug, an update that resets it, or a mistyped option. The nftables rule survives
+all three. Both are set, but only the second is load-bearing.
+
+**Both failure paths close rather than open.** If the group is missing, `nft`
+rejects the *whole* ruleset (it resolves group names at parse time), so
+`qbittorrent-vpn.sh` checks the group **and** the service state and refuses to
+launch. If the tunnel is down, qBittorrent simply has no route out.
 
 ## Known gaps and open items
 
