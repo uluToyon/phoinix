@@ -830,3 +830,55 @@ review would have.
 
 Verified: the generated file matches ulu's hand-made state exactly, minus the
 install stick.
+
+## 2026-07-31 — Applications, round 2: Konsole (and a latent stage-4 abort)
+
+Konsole breaks the rule established on Dolphin — close the application before
+diffing — because the session runs inside it. Konsole writes profile changes
+immediately but `konsolerc` only on exit, so `konsolerc` cannot be trusted
+until this window has been closed at least once. Noted in STATUS.md for the
+next session; nothing was changed there in this round anyway.
+
+Both of ulu's settings turned out to be **outside** Konsole:
+
+- **Autostart.** `~/.config/autostart/org.kde.konsole.desktop`, added through
+  System Settings. KDE's autostart is a directory of .desktop files, so the
+  entry lives nowhere near the application's own configuration — it would never
+  have been found by looking at Konsole's files, only by sweeping the whole
+  config tree. Stage 3 installs the packaged `.desktop` rather than carrying a
+  copy: KDE writes a normalised version when adding through the GUI, but the
+  packaged file behaves identically and cannot go stale.
+- **A KWin rule**: `position=7280,0`, `size=1440,1262`, both Apply Initially.
+  And `7280,0` is *exactly* the origin of DP-3, `1440` exactly its width — so
+  the intent is "top-left of the portrait monitor", confirmed with ulu, not a
+  coordinate that happens to be there.
+
+**Window rules moved wholesale to stage 4.** A position written as `7280,0`
+is a coordinate in the current monitor layout and points somewhere else the day
+a screen is rearranged, without a word of warning. Stage 4 already resolves
+connector names to geometry for the panels, so the repo stores
+`KONSOLE_CONNECTOR="DP-3"` and the position is computed at runtime. Dolphin's
+rule moved along even though it needs no position: `count` and `rules` in
+`[General]` are a single shared index, and two stages writing into it would
+eventually have one drop the other's entries. One owner for the file.
+`org.kde.KWin.reconfigure()` is called afterwards, or a fresh install would
+only see its rules from the second login onwards.
+
+**The test failure that was not a test failure.** Running the new section
+aborted with exit 141. Cause: `connector_geometry()` had awk `exit` on the
+first match, which closes the pipe while `kscreen-doctor` is still writing —
+SIGPIPE upstream. That was already visible as the cosmetic
+`sed: couldn't flush stdout: Broken pipe` parked in STATUS.md, and it was
+harmless *there* only because the result is interpolated into a `sed` argument,
+where the exit status is discarded. The new code assigns it:
+`konsole_geom="$(connector_geometry ...)"` — and in an assignment the
+substitution's status IS the assignment's, so under `set -e` this would have
+aborted stage 4 mid-run on every install. Dropping the `exit` and reading to
+the end fixes the abort and the cosmetic warning in one line.
+
+Worth generalising: a helper that is safe as an argument is not automatically
+safe in an assignment.
+
+Verified: rules reproduce byte-identically apart from the order of the id list
+in `[General]`, which is irrelevant while no two rules match the same window
+(commented in the script).

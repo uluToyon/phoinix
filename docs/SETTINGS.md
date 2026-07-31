@@ -145,7 +145,7 @@ selection, not guessed.
 |---|---|---|---|---|
 | Dolphin | `~/.local/share/dolphin/view_properties/global/.directory` | `Settings/HiddenFilesShown` | `true` | dec |
 | Dolphin | `dolphinrc` | `General/GlobalViewProps` | `true` | dec |
-| Dolphin | `kwinrulesrc` | size / sizerule | `1295,839`, Apply Initially | dec |
+| Konsole | `~/.config/autostart/org.kde.konsole.desktop` | — | starts at login | dec |
 
 **"Show hidden files" is a view property, and it hides well.** Not in
 `dolphinrc`, not in `kdeglobals` — the `Show hidden files` key there belongs to
@@ -187,7 +187,19 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Kickoff favourites | browser, System Settings, Dolphin | dec |
 | Pointer acceleration | **flat profile on every pointer that supports it** | dec |
 | Places sidebar order | `PLACES_ORDER` labels, resolved at runtime | dec |
+| Window rule: Dolphin | size `1295,839`, Apply Initially | dec |
+| Window rule: Konsole | origin of `KONSOLE_CONNECTOR`, size `1440,1262` | dec |
 | Final step | `systemctl --user restart plasma-plasmashell.service` | dec |
+
+**All window rules live in stage 4, none in stage 3.** `count` and `rules` in
+`[General]` form a single shared index, so two stages writing into
+`kwinrulesrc` would eventually have one drop the other's entries. Stage 4 is
+also the only stage that can resolve a *position*: a rule storing `7280,0`
+encodes a coordinate in the current monitor layout and silently points
+elsewhere once a screen moves, so the repo stores a connector name and the
+origin is computed at runtime. Rule ids are fixed UUIDs authored here, so
+re-runs update rules instead of appending duplicates, and
+`org.kde.KWin.reconfigure()` makes them apply without waiting for a re-login.
 
 **Places sidebar order comes from labels, never from the file.** KDE persists
 the order of device entries as `<separator>` markers in `user-places.xbel`,

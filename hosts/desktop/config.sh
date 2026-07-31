@@ -28,3 +28,12 @@ PANEL_SIDE=("DP-2:55" "DP-3:36")   # TCL 27" 4K, portrait 1440x2560
 # and nothing else. Removable media (e.g. the install stick) is deliberately
 # absent — it has no business in a reproducible layout.
 PLACES_ORDER=(archroot archhome Games FilesMusic Downloads Video)
+
+# --- Window rules (stage 4) ------------------------------------------------
+# Sizes are the application's own business, but a POSITION is a coordinate in
+# the current monitor layout — write 7280,0 into the repo and it silently
+# points somewhere else the day a screen is rearranged. So a position is given
+# as a connector name and resolved to that monitor's origin at runtime.
+KONSOLE_CONNECTOR="DP-3"      # portrait monitor — Konsole opens at its origin
+KONSOLE_SIZE="1440,1262"      # its full width, about half its height
+DOLPHIN_SIZE="1295,839"       # size only, no position

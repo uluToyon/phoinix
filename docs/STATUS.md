@@ -180,8 +180,15 @@ Still open:
   to it, or when he mentions it himself.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
-- Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe` (exit code
-  still 0). Harmless today, brittle under `pipefail` — worth a look.
+- ~~Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe`.~~ **Fixed
+  2026-07-31, and it was not cosmetic.** `connector_geometry()` had awk `exit`
+  on the first match, closing the pipe under `kscreen-doctor` (SIGPIPE). Only
+  harmless because the result was interpolated into an argument; the first use
+  in an assignment would have aborted stage 4 under `set -e`. awk now reads to
+  the end.
+- **`konsolerc` needs a re-check next session.** Konsole writes it on exit, and
+  the session runs inside Konsole, so nothing there could be verified. Nothing
+  appeared changed in this round, but confirm once this window has been closed.
 - **Live system is behind the repo on one point:** the boot entry on disk still
   reads `video=DP-2:...` only. The DP-1 cap was added to `stage2.sh` but stage 2
   has not been re-run, so the kernel arg is not active. Irrelevant for the

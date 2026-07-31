@@ -214,21 +214,18 @@ kwriteconfig6 --file "$HOME/.local/share/dolphin/view_properties/global/.directo
 # bound to absolute paths and cannot be carried to a fresh install.
 kwriteconfig6 --file dolphinrc --group General --key GlobalViewProps true
 
-# Dolphin window size, as a KWin rule (this is the Plasma half of configuring
-# an application). "Apply Initially": the window opens at this size and can be
-# resized afterwards without the rule fighting back.
-# The rule id is a UUID we author and keep FIXED — re-running stage 3 then
-# updates this rule instead of appending a duplicate. NOTE: `count` and `rules`
-# below list every rule; both have to grow when a second rule is added.
-DOLPHIN_RULE="29ab85f8-8f9d-4b32-8d51-59a70e84660d"
-kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key Description "Application settings for org.kde.dolphin"
-kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key wmclass "dolphin org.kde.dolphin"
-kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key wmclasscomplete true
-kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key wmclassmatch 1
-kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key size "1295,839"
-kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key sizerule 3
-kwriteconfig6 --file kwinrulesrc --group General --key count 1
-kwriteconfig6 --file kwinrulesrc --group General --key rules "$DOLPHIN_RULE"
+# Dolphin's window rule lives in stage 4, together with every other one — see
+# the window-rules section there for why they cannot be split across stages.
+
+# --- Konsole ---------------------------------------------------------------
+# Start Konsole at login. This is not a Konsole setting at all: KDE's autostart
+# is a directory of .desktop files, so the entry sits outside anything the
+# application itself knows about. Copying the packaged .desktop rather than
+# carrying our own copy in the repo keeps it correct across Konsole updates —
+# KDE writes a normalised copy when you add it through the GUI, but the plain
+# packaged file works identically and never goes stale.
+install -Dm644 /usr/share/applications/org.kde.konsole.desktop \
+               "$HOME/.config/autostart/org.kde.konsole.desktop"
 
 # ------------------------------------------------- 8. shell aliases (idempotent)
 if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then

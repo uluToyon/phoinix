@@ -63,12 +63,19 @@ plasma_script() {
 # between the stable name of a physical output and the unstable number Plasma
 # uses internally; panels.js matches on the geometry, never on the number.
 connector_geometry() {
+    # NOTE: awk deliberately reads to the end instead of `exit`ing on the first
+    # match. Exiting closes the pipe while kscreen-doctor is still writing,
+    # which raises SIGPIPE upstream: harmless where the result is only
+    # interpolated into an argument (it merely logged "sed: couldn't flush
+    # stdout: Broken pipe"), but fatal in `x="$(connector_geometry ...)"`,
+    # where the substitution's status IS the assignment's and `set -e` aborts
+    # the whole stage. Reading on costs nothing and removes both.
     kscreen-doctor -o 2>/dev/null | sed -e 's/\x1b\[[0-9;]*m//g' | awk -v want="$1" '
         /^Output:/  { name = $3 }
-        /Geometry:/ && name == want {
+        /Geometry:/ && name == want && !found {
             split($2, pos, ","); split($3, dim, "x");
             print pos[1] "," pos[2] "," dim[1] "," dim[2];
-            found = 1; exit
+            found = 1
         }
         END { if (!found) print "-1,-1,-1,-1" }'   # not connected -> panels.js skips it
 }
@@ -228,7 +235,75 @@ else
     fi
 fi
 
-# ------------------------------------------------- 6. restart the shell
+# ------------------------------------------------- 6. window rules
+# ALL window rules live here, including ones that would work fine in stage 3.
+# They share a single index — `count` and `rules` in [General] list every rule
+# id — so two stages writing into kwinrulesrc would sooner or later have one
+# overwrite the other's entries. One owner, and it is the stage that can also
+# resolve a screen position.
+#
+# Positions are the reason: a rule storing `position=7280,0` encodes a
+# coordinate in the current monitor layout, and it points somewhere else the
+# day a screen is rearranged, silently. The repo stores a connector name
+# instead and this resolves it to that monitor's origin at runtime, reusing the
+# same connector_geometry() the panels use.
+#
+# Rule ids are UUIDs authored here and kept FIXED, so a re-run updates a rule
+# instead of appending a duplicate.
+KWIN_RULES=()
+
+rule_set() {   # $1 = rule uuid, rest = key=value pairs
+    local uuid="$1"; shift
+    local kv
+    for kv in "$@"; do
+        kwriteconfig6 --file kwinrulesrc --group "$uuid" --key "${kv%%=*}" "${kv#*=}"
+    done
+    KWIN_RULES+=("$uuid")
+}
+
+# Dolphin: size only, no position — it may open wherever it likes.
+rule_set "29ab85f8-8f9d-4b32-8d51-59a70e84660d" \
+    "Description=Application settings for org.kde.dolphin" \
+    "wmclass=dolphin org.kde.dolphin" \
+    "wmclasscomplete=true" \
+    "wmclassmatch=1" \
+    "size=$DOLPHIN_SIZE" \
+    "sizerule=3"
+
+# Konsole: opens at the origin of its configured monitor. "Apply Initially"
+# for both, so the window starts there and stays movable afterwards.
+konsole_geom="$(connector_geometry "$KONSOLE_CONNECTOR")"
+IFS=, read -r kx ky _ _ <<< "$konsole_geom"
+if [[ "$kx" == "-1" ]]; then
+    echo "WARNING: $KONSOLE_CONNECTOR not connected — Konsole rule without position"
+    rule_set "02b2155b-05b1-4162-8852-f76552df6f06" \
+        "Description=Application settings for org.kde.konsole" \
+        "wmclass=konsole org.kde.konsole" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "size=$KONSOLE_SIZE" "sizerule=3"
+else
+    echo "window rules: Konsole -> $KONSOLE_CONNECTOR origin $kx,$ky"
+    rule_set "02b2155b-05b1-4162-8852-f76552df6f06" \
+        "Description=Application settings for org.kde.konsole" \
+        "wmclass=konsole org.kde.konsole" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "position=$kx,$ky" "positionrule=3" \
+        "size=$KONSOLE_SIZE" "sizerule=3"
+fi
+
+# The order of this list is the order KWin applies the rules in, so it only
+# matters once two rules can match the SAME window. These match different
+# applications, hence any order is correct here.
+kwriteconfig6 --file kwinrulesrc --group General --key count "${#KWIN_RULES[@]}"
+kwriteconfig6 --file kwinrulesrc --group General --key rules "$(IFS=,; echo "${KWIN_RULES[*]}")"
+
+# KWin reads its rules at startup, so a fresh install would otherwise only see
+# them from the SECOND login onwards. This makes them take effect immediately.
+qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null \
+    && echo "window rules: KWin reconfigured" \
+    || echo "WARNING: could not ask KWin to reload its rules — they apply at next login"
+
+# ------------------------------------------------- 7. restart the shell
 # Freshly created task-manager widgets read their launcher list once, when
 # they are built — writing the config afterwards reaches the file but not the
 # running instance, so the panel would show the built-in default (with its
