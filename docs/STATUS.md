@@ -14,10 +14,13 @@ Three decisions are waiting, and nothing else is queued ahead of them:
 option: exactly −26 dB, not a hunt for where the glitching starts. Live sink and
 the repo copy of `default-routes` both carry `channelVolumes 0.050120`, which is
 the value the recovered transcripts document as tested glitch-free — an exact
-match, not an approximation. **What is not settled is whether the glitching is
-gone**; that needs hours of FFXIV or DayZ, and only ulu can report it. If it
-still glitches at −26 dB, the level was never the cause and the investigation
-reopens somewhere else entirely.
+match, not an approximation. ulu confirmed the level right afterwards ("passt
+so, lass es auf -26"), so the 2.77 dB drop is fine in daily use and the
+"probe upward" option is **closed, not deferred** — do not reopen it.
+
+**What is not settled is whether the glitching is gone**; that needs hours of
+FFXIV or DayZ, and only ulu can report it. If it still glitches at −26 dB, the
+level was never the cause and the investigation reopens somewhere else entirely.
 
 Deferred by ulu, not forgotten: **`kdeconnect` is in `packages/kde.txt` but not
 installed on this desktop** (`sudo pacman -S --needed kdeconnect`, then pair the
