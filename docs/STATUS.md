@@ -324,6 +324,17 @@ this topology — until proven, the cap stays.
   exit, so the file tracks the playlist by itself. Stage 4 imports it back on a
   fresh install. Accepted cost (ulu's call): a crash or power cut loses that
   session's additions.
+- **GitHub authentication has to be re-established by hand after every
+  reinstall.** Found 2026-08-01 when the session's commits could not be pushed:
+  no `gh`, no SSH key, no credential helper, no stored token — the fresh
+  machine has no way to authenticate, and none of it may live in this repo
+  (`DESIGN.md`, "Never in the repo"). The commits themselves are fine; only the
+  push needs a human. Fastest: `git push` and enter `uluToyon` plus a Personal
+  Access Token (GitHub has not accepted account passwords for years). Worth
+  deciding once, with ulu: a token in a credential helper, `github-cli` in
+  `packages/cli.txt` plus `gh auth login`, or an SSH key anchored on a data
+  disk the way the WireGuard configs already are. Until then it is a manual
+  step like the others here.
 - **KDE Connect: pair the phone by hand.** The pairing exchanges keys between
   the two devices and is confirmed on the phone, so it cannot be scripted from
   here. Nothing else is needed — the package is in `packages/kde.txt` and our
