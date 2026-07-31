@@ -344,8 +344,22 @@ Still open:
   `workspace.windowList()` via
   `qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript`, then read
   `journalctl --user -b`.
-- EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
-  steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
+- ~~EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it.~~
+  **PASS 2026-07-31, and the decision to drop `steam-devices` /
+  `game-devices-udev` holds.** Switched on, the dongle re-enumerates: the
+  ACRUX id `1a34` disappears and the kernel loads `xpad`, which binds it as
+  `Microsoft X-Box 360 pad` on `event27`/`js1`. systemd's `uaccess` rule then
+  puts an ACL on the node (`user:ulutoyon:rw-`), so the session owner can read
+  it — which is exactly what those packages would have provided.
+  **Measure the pad switched ON.** Idle, the dongle presents as a plain HID
+  device called "Receiver Update" with a root-only hidraw node and no input
+  device at all; measured in that state it looks like the decision was wrong,
+  and it was briefly recorded here as such.
+- **`/dev/input/js0` is the ASRock LED controller, not a gamepad.** The board's
+  RGB controller is tagged as a joystick, so the pad is `js1` and anything that
+  grabs "the first joystick" gets the motherboard lighting. Harmless until some
+  game or launcher does exactly that; worth remembering as an explanation
+  before debugging the game.
 - ~~Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe`.~~ **Fixed
   2026-07-31, and it was not cosmetic.** `connector_geometry()` had awk `exit`
   on the first match, closing the pipe under `kscreen-doctor` (SIGPIPE). Only
