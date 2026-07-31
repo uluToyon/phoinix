@@ -2290,3 +2290,45 @@ as a fresh topic, the `qemu-base`/`edk2-ovmf` package-list decision, the
 soundbar level (no longer blocked — DayZ and FFXIV are both installed now), the
 144 Hz experiment on DP-1, and MateriaForge for 7th Heaven, which is the last
 unfinished item of the mount-path decision.
+
+## 2026-07-31 — No submodules: why phoinix stays one repo
+
+ulu asked whether GitHub can do what GitLab calls a "superproject" with
+subprojects — check out the parent, commit in the children and in the parent.
+It can: GitLab's superproject is not a GitLab feature, it is plain **git
+submodules**, and GitHub handles them identically. The differences are UI.
+
+His idea was to split phoinix into a superproject with `phoinix-script` (what
+we have) and `phoinix-fixes` (the fixes developed along the way). Decided
+against, for reasons specific to this repo rather than general submodule
+grumbling:
+
+- **The install chain would break in a place that must not break.** Stage 1
+  rsyncs the repo to `/mnt/root/phoinix/`, stage 2 copies it to
+  `/home/<user>/phoinix`. A submodule keeps its real git directory in the
+  parent's `.git/modules/<name>` and carries only a `.git` *file* holding an
+  ABSOLUTE path to it. After the copy into the home directory that path still
+  points at `/root/phoinix/...`, so the working repo — the one we hold sessions
+  in — would have dead submodules. Fixable, but it is new machinery on the
+  critical path, and `scripts/bootstrap.sh` would additionally need
+  `--recurse-submodules` or the one-command install stops working.
+- **The split does not follow the code.** Five of six scripts in `scripts/`
+  source `config.sh` and `hosts/<host>/config.sh`; only `qemu-mon.sh` stands
+  alone. They are limbs of the installer, not a separable collection.
+- **The rationale is the artifact.** `docs/` is 3614 lines, larger than every
+  script in the repo combined, and LOG.md references across all of it. The
+  mpc-qt fix is fifteen lines of code and one hard-won insight; separating them
+  keeps the cheap half.
+- **One copy or it rots.** If the stages call the fix scripts instead of
+  duplicating them, the installer is their test harness and a broken fix shows
+  up in the next QEMU run. Two repos give you a published copy nobody tests.
+
+ulu's actual requirement, stated after the first answer, was publication plus
+reachability after a distro-hop: curl one script and be done. That does not
+argue for submodules at all — curling a single file needs a stable raw URL and
+a dependency-free script, and the repo layout is irrelevant to both.
+
+Parked at ulu's request, not built. The agreed shape is recorded in STATUS.md
+under "Later, with ulu". If it ever outgrows a directory it can move out with
+`git filter-repo` and keep its history; merging back a premature split is the
+harder direction, which is why the directory comes first.

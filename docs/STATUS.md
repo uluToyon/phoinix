@@ -4,10 +4,7 @@ _Last updated: 2026-07-31 (session 4 — the one command, and the application ph
 
 ## Pick up here
 
-1. **The complicated question ulu wants to work through next.** Raised at the
-   end of session 4, to be described by him at the start of the next one. It is
-   the first item deliberately, ahead of the housekeeping below.
-2. **keychron-launcher.** New topic, not yet discussed. Two Keychron devices are
+1. **keychron-launcher.** New topic, not yet discussed. Two Keychron devices are
    in daily use here — a Q6 Max keyboard and an M6 8K mouse, both visible in
    `/proc/bus/input/devices` — and neither has any configuration in this repo.
    The M6 already appears once, indirectly: stage 4 turns pointer acceleration
@@ -15,6 +12,10 @@ _Last updated: 2026-07-31 (session 4 — the one command, and the application ph
    the Keychron configurator belongs on this machine at all, and if so which
    one (there is a web configurator using WebHID, and packaged VIA/QMK tooling)
    — plus whether any device config is worth carrying or lives on the keyboard.
+
+The complicated question from the end of session 4 — GitLab-style superprojects
+on GitHub — was answered and is closed; see LOG 2026-07-31. It produced one
+parked idea, `fixes/`, listed under "Later, with ulu" below.
 
 ## Done in session 4
 
@@ -135,6 +136,18 @@ this topology — until proven, the cap stays.
 
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
+- **`fixes/` — a curlable collection.** Parked by ulu on 2026-07-31 ("halte dir
+  den gedanken erstmal im hinterkopf"), not started. Two purposes he named:
+  publishing the fixes for others, and reaching them himself after a
+  distro-hop — `curl` the one script, done. Shape agreed if it ever happens: a
+  directory in THIS repo, not a second one, with the hard rule that a script
+  only qualifies if it runs on a machine that has never seen phoinix (no
+  `config.sh`, no `REPO_DIR`; parameters via arguments or environment). Where it
+  fits, the stages call the same script, so the installer stays the fixes' test
+  harness and no second copy can rot. Surveyed candidates: mpc-qt repair, the
+  nftables split-tunnel table, the QEMU harness — everything else in `scripts/`
+  reads `hosts/<host>/config.sh` and does not qualify. The bulk of what we
+  learned is knowledge, not scripts, and belongs in LOG.md either way.
 - ~~Evaluate haruna vs. mpc-qt~~ and ~~the VPN session~~ — both done 2026-07-31.
 
 ## Post-install manual steps (not scriptable)
