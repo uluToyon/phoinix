@@ -2672,3 +2672,28 @@ configs, the playlist, the KeePass database) exists and is current. The repo's
 sanitised `ulu@laptop` against what ssh-keygen wrote — while the key material
 hashes identically, so ssh access survives the reinstall. That check is now part
 of `check-drift.sh`, which had been blind to the file.
+
+## 2026-07-31 — mpc-qt becomes mpc-qt-bin, decided mid-install
+
+ulu called it during the first real run, watching the AUR phase: the mpc-qt
+source build (CMake, Qt, a full C++ compile) is the slow spot of stage 3, and
+the painless parts of the same phase — brave-bin, proton-ge-custom-bin — had
+just demonstrated what -bin feels like. "das compilen nervt."
+
+Checked before switching, not after:
+
+- **Version parity:** mpc-qt 26.07-1 and mpc-qt-bin 26.07-1, neither flagged
+  out of date. The -bin package repackages the upstream release AppImage, so it
+  tracks the same source, not a fork.
+- **Path dependencies:** the -bin PKGBUILD RENAMES the desktop file from
+  `io.github.mpc_qt.mpc-qt.desktop` to `mpc-qt.desktop`. A repo-wide grep found
+  exactly one consumer of those names: stage 4's KWin window rule, whose
+  `wmclass` line already matches both spellings. The config dir
+  (`~/.config/mpc-qt`) belongs to the binary, which is unchanged — the segfault
+  note in aur.txt (settings.json without geometry_v2.json) therefore stays.
+- `provides=(mpc-qt)` + `conflicts=(mpc-qt)` in the -bin package make the swap
+  clean on an installed system too; on a fresh run only the list entry matters.
+
+One thing this buys beyond speed: the AUR provider prompt for mpc-qt (three
+providers, stage 3 waits on a keypress) disappears — the list now names the
+exact package.

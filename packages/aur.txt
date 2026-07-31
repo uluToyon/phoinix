@@ -9,7 +9,12 @@ xivlauncher-rb        # FFXIV launcher (RB fork) via umu; game data on /mnt/Game
                       # ~/.xlcore is capture material; paths join the mount-path topic
 jdownloader2          # filehoster download manager; niche unmatched. Capture config selectively
                       # (hoster logins are secrets — never into the repo)
-mpc-qt                # video player; mpv engine in the beloved MPC-HC shape.
+mpc-qt-bin            # video player; mpv engine in the beloved MPC-HC shape.
+                      # -bin SINCE 2026-07-31 (ulu, during the first real run): the from-source
+                      # build was the slow spot of the AUR phase. Repackaged upstream AppImage,
+                      # same version (26.07), same binary — but it RENAMES the desktop file to
+                      # mpc-qt.desktop; stage 4's KWin rule matches both wmclass spellings, so
+                      # nothing else had to move. Checked before switching, see LOG.
                       # haruna EVALUATED AND REJECTED 2026-07-31 (ulu tried it, "vergiss es").
                       # KNOWN BUG in 26.07, worth remembering before blaming the config:
                       # with settings.json present but geometry_v2.json missing it segfaults
