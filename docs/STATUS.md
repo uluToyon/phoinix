@@ -1,79 +1,51 @@
 # STATUS
 
-_Last updated: 2026-07-31 (session 4 — the one command)_
+_Last updated: 2026-07-31 (session 4 — the one command, and the application phase finished)_
 
 ## Pick up here
 
-### DONE 2026-07-31 — the one command
+1. **The complicated question ulu wants to work through next.** Raised at the
+   end of session 4, to be described by him at the start of the next one. It is
+   the first item deliberately, ahead of the housekeeping below.
+2. **keychron-launcher.** New topic, not yet discussed. Two Keychron devices are
+   in daily use here — a Q6 Max keyboard and an M6 8K mouse, both visible in
+   `/proc/bus/input/devices` — and neither has any configuration in this repo.
+   The M6 already appears once, indirectly: stage 4 turns pointer acceleration
+   off for *every* pointer precisely so no mouse has to be named. Open: whether
+   the Keychron configurator belongs on this machine at all, and if so which
+   one (there is a web configurator using WebHID, and packaged VIA/QMK tooling)
+   — plus whether any device config is worth carrying or lives on the keyboard.
 
-`scripts/bootstrap.sh` exists and the whole install now runs from one line on
-the ISO:
+## Done in session 4
+
+**The one command.** The whole install runs from one line on the ISO:
 
 ```
 curl -fsSL https://raw.githubusercontent.com/uluToyon/phoinix/main/scripts/bootstrap.sh | bash -s desktop
 ```
 
-Each stage arms the next: bootstrap → 1 → 2 (chroot) → reboot → login hook →
-3 → reboot → systemd user unit → 4. Two human inputs remain, both by ulu's
-explicit choice: the password for the new user, later the sudo password.
-Rationale in `LOG.md`; the serial prompt is gone.
+Each stage arms the next: bootstrap → 1 → 2 (chroot) → reboot → login hook → 3
+→ reboot → systemd user unit → 4. Two human inputs remain, both ulu's explicit
+choice: the password for the new user, later the sudo password.
 
-**Tested end to end in QEMU on 2026-07-31: PASS.** The whole chain ran from the
-one-liner to a personalised Plasma session — stage 1 partitioned, stage 2
-installed and rebooted, the login hook started stage 3, the greeter login
-started the session, stage 4 built the panel. `scripts/qemu-test.sh` is the
-harness; `hosts/qemu/` is the throwaway machine. Details and the six defects it
-exposed are in `LOG.md`.
+**Tested end to end in QEMU: PASS**, and the run found six real defects, five of
+which would have hit the next reinstall — the worst being that `bootstrap.sh`
+did nothing at all under `curl | bash`. None was visible by reading the scripts.
+`scripts/qemu-test.sh` is the harness, `hosts/qemu/` the throwaway machine.
+Not covered there: captured configs (`CAPTURED_CONFIGS=0`), so the monitor fix
+and the audio state are exercised on the desktop only.
 
-**It found six real defects, five of which would have hit the next reinstall.**
-The worst: `bootstrap.sh` did nothing at all under `curl | bash`. Not one of
-them was visible by reading the scripts.
+**ProtonVPN as a split tunnel, live and measured.** Only qBittorrent uses the
+VPN; only through the VPN can it reach anything. Ordinary traffic leaves via
+`enp8s0`, group traffic via `proton0` with an exit inside Proton's network, drop
+counter 0 in normal use, and with the tunnel down the group is blocked by name
+and by raw IP while everything else keeps working. Getting there refuted the
+first design three times (`LOG.md`).
 
-Not covered by the QEMU run, and worth stating: no captured configs are
-restored there (`CAPTURED_CONFIGS=0`), so the monitor fix and the wireplumber
-audio state are exercised on the desktop only. The AUR phase downloads whatever
-is current, so a broken upstream package fails the test for reasons that are
-not ours.
-
-One live-system detail, harmless: this desktop has no `~/.zprofile` and no
-`stage3.done` marker, because both are new. Irrelevant unless stage 2 is ever
-re-run *here* — then the next login would start stage 3 once. `touch
-~/.local/state/phoinix/stage3.done` prevents that if it ever matters.
-
----
-
-**Application phase.** Done: Dolphin, Konsole, Strawberry, KeePassXC,
-ProtonVPN, qBittorrent. Not yet touched: **Brave, Discord, Steam, LibreOffice,
-XIVLauncher**.
-
-### ProtonVPN — LIVE ON THE DESKTOP AND MEASURED
-
-Applied and verified on the real machine 2026-07-31. Measured, not assumed:
-ordinary traffic leaves via `enp8s0`, group traffic via `proton0` with an exit
-inside Proton's network, the two exit addresses differ, the drop counter stays
-at 0 in normal use, switching CH → NL mid-session changes nothing, and **with
-the tunnel down the group is blocked by name and by raw IP while everything
-else keeps working**. That last one is the requirement ulu actually stated.
-
-Getting there refuted the first design three times — `never-default` does not
-restrain a WireGuard connection, the drop rule strangled the tunnel's own
-encapsulation, and the filter sat in a hook that runs before the reroute. All
-three are written up in `LOG.md`; none was visible on paper.
-
-**Port forwarding: dropped, not pending** (ulu 2026-07-31). It required
-qBittorrent's WebUI as its only delivery channel and both servers refuse
-NAT-PMP anyway. Reviving it means: two configs from servers carrying the
-double-arrow (P2P), `libnatpmp` back in the package list, the renewal service
-back from git history, and a WebUI with an install-time random password —
-qBittorrent will not enable the WebUI without credentials even when localhost
-auth is off. Torrenting works without any of it; it costs peers.
-
-**Open:** the QEMU host does not exercise the split tunnel at all
-(`VPN_CONFIG_DIR` is empty there), so it is only ever tested by hand on the
-desktop. And the guarantee depends on qBittorrent being started through the
-wrapper — the panel launcher and the autostart entry both are, but typing
-`qbittorrent` in a terminal still starts it unprotected. A shell alias would
-close the common path; not decided.
+**The application phase is finished** — all thirteen: Dolphin, Konsole,
+Strawberry, KeePassXC, ProtonVPN, qBittorrent, Discord, Brave, Steam,
+LibreOffice, mpc-qt, DZGUI, XIVLauncher. haruna was evaluated and rejected.
+`SETTINGS.md` is the inventory; the rounds and their findings are in `LOG.md`.
 
 ### Still open, deliberately: the old AirVPN files
 
@@ -81,20 +53,6 @@ close the common path; not decided.
 2024) with inline private keys, plus a Windows installer. The repo used to
 describe them as ulu's ProtonVPN profiles, which they never were. Deleting them
 is ulu's call.
-
-The method is settled — see "Working mode" below. In short: snapshot,
-ulu clicks, **close the application**, diff the whole config tree, decide per
-value whether it is a decision or a default, write it key by key, verify by
-reproducing it, document, commit.
-
-Two rules earned the hard way, both non-obvious:
-1. **Read every config file before importing it.** Two of four applications so
-   far had a secret in plain text (Strawberry: OAuth token; KeePassXC: an RSA
-   private key). Wholesale capture would have published both.
-2. **Diff the whole tree, not the application's own files.** Konsole's and
-   Strawberry's real settings were autostart entries and KWin rules, i.e.
-   nowhere near the application. Filter by path prefix, never by name —
-   a `strawberry` filter once hid the autostart entry that mattered.
 
 ## Where we are
 
@@ -130,18 +88,20 @@ change things, then diff.
 
 ## In discussion (not yet decided) — one topic at a time, per ulu
 
-- Stage 3 notes: alias `nano`→`micro`; zsh config (plugins, prompt) with the
-  dotfiles. **KDE shortcuts: done 2026-07-31** — media keys freed for
-  Strawberry, Spectacle's `Meta+Shift+S` moved to region capture. Written as
-  deviations, not captured; the file states its own defaults, so the next
-  change is found the same way (compare field 1 against field 2).
+- ~~Stage 3 notes: aliases, zsh config, KDE shortcuts.~~ **All done.** The
+  aliases now live in `~/.config/phoinix/aliases.zsh`, a file phoinix owns and
+  rewrites every run — the old inline block in `.zshrc` was written once and
+  could never gain an entry. Shortcuts are written as deviations, not captured.
 - **chezmoi: still undecided, no longer blocking.** The shell config lives in
   `dotfiles/` as plain files stage 3 installs directly, so the question is now
   only *how* those two files are managed — not whether the repo is complete.
 - **Mount-path legacy: DECIDED — clean re-wiring, no compat symlinks.**
-  Restored configs get new /mnt/<Label> paths written in during capture;
-  manual checklist: Steam "add library folder" → /mnt/Games/SteamLibrary,
-  re-run MateriaForge for 7th Heaven, set XIVLauncher game path.
+  Restored configs get new `/mnt/<Label>` paths. Checklist status:
+  Steam library **done**, XIVLauncher game path **done**
+  (`GamePath=/mnt/Games/FFXIV/`, and `GameConfigPath` now points at the games
+  disk so the character config survives by construction).
+  **Still open: re-run MateriaForge for 7th Heaven** — never touched, and the
+  only item of this decision left.
 
 ## Decided so far
 
@@ -175,11 +135,7 @@ this topology — until proven, the cap stays.
 
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
-- ~~Evaluate haruna vs. mpc-qt.~~ **DONE 2026-07-31: haruna rejected**, mpc-qt
-  stays. ulu tried it and dismissed it; haruna and mpvqt removed from the
-  machine so it matches the documented package set again.
-- ~~VPN session with ulu.~~ **Done 2026-07-31** — WireGuard split tunnel built and
-  verified in QEMU; see the ProtonVPN entry at the top of this file.
+- ~~Evaluate haruna vs. mpc-qt~~ and ~~the VPN session~~ — both done 2026-07-31.
 
 ## Post-install manual steps (not scriptable)
 
@@ -411,20 +367,23 @@ Still open:
 
 ## Next steps
 
-1. **Continue the application phase** — next application is ulu's choice; the
-   untouched list is at the top of this file.
-2. **Decide where `qemu-base` + `edk2-ovmf` belong.** They are installed on the
-   desktop now, for the test loop, but are in no package list — so the repo
-   currently cannot rebuild its own test rig. Either they go into a package
-   list (which makes `DESIGN.md`'s testing loop reproducible) or they get
-   removed again after use. ulu's call, deliberately not decided unilaterally.
-3. **Re-run the QEMU test after changes to stages 1-4.** It is one command now:
+1. **The complicated question**, then **keychron-launcher** — both at the top of
+   this file.
+2. **Decide where `qemu-base` + `edk2-ovmf` belong.** Installed on the desktop
+   for the test loop but in no package list, so the repo cannot currently
+   rebuild its own test rig. Either into a package list — which makes
+   `DESIGN.md`'s testing loop reproducible — or off the machine after use.
+3. **The soundbar question is no longer blocked.** It waited on FFXIV and DayZ
+   being installed; both are now here (DayZ 24 GB in the Steam library, FFXIV
+   via XIVLauncher). The choice stands: set the sink back to exactly −26 dB, the
+   value the old transcripts document as tested glitch-free, or test upward
+   deliberately to find where the glitching actually starts. See the entry under
+   "Still open".
+4. **Watch the 144 Hz experiment** on DP-1 — a few days without a black flash
+   confirms the bandwidth diagnosis. Running since 2026-07-31.
+5. **Quick wins**, none blocking: the `[KeeShare]` private key, the stale
+   `~/.config/pipewire/pipewire.conf`, the `konsolerc` re-check.
+6. **Re-run the QEMU test after changes to stages 1-4**:
    `scripts/qemu-test.sh --fresh`, then `--installed` after the reboot.
-3. **Quick wins waiting for ulu**, none of them blocking: the dialog-window-size
-   check (one `Shift+Del` in Dolphin), the `[KeeShare]` private key, the stale
-   `~/.config/pipewire/pipewire.conf`, the `konsolerc` re-check now that this
-   Konsole has been closed.
-4. **Watch the 144Hz experiment** on DP-1 — a few days without a black flash
-   confirms the bandwidth diagnosis.
-5. Decide the chezmoi question (no longer blocking anything).
-6. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.
+7. Decide the chezmoi question (no longer blocking anything).
+8. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.

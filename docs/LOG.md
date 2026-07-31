@@ -2242,3 +2242,51 @@ is the per-overlay reload action in Browsingway's own window.
 
 Recorded because it costs nothing to write and saves the next investigation:
 the symptom points at graphics, the cause is ordering.
+
+## 2026-07-31 — Session 4 closed: what the day produced
+
+Two large pieces and a phase finished.
+
+**The install became one command**, and the QEMU loop that `DESIGN.md` had
+prescribed since day one was finally run. It found six defects in a chain that
+read correctly — the worst being that `bootstrap.sh` did nothing whatsoever
+under `curl | bash`, because `exec < /dev/tty` destroys the very stdin bash is
+reading the script from. Not one of the six was visible by inspection.
+
+**ProtonVPN became a split tunnel with a kernel-enforced guarantee**, and that
+one refuted its own design three times before it worked: `never-default` does
+not restrain a WireGuard connection, the drop rule strangled the tunnel's own
+encapsulation, and the filter sat in a hook that runs before the reroute. Every
+correction came from a counter, never from a re-reading.
+
+**The application phase finished** — thirteen rounds. The pattern that held
+throughout: the settings are rarely in the application. Autostart entries, KWin
+rules, a desktop icon position, a launcher wrapper — the diffs kept landing
+outside the program whose round it was, which is why the method diffs the whole
+tree and filters by path prefix rather than by name.
+
+**The seeding question was asked four times and answered differently each
+time**, which is the through-line worth keeping: LibreOffice yes (verified),
+mpc-qt never (verified — a settings file without a geometry file segfaults),
+DZGUI emphatically yes (verified, and it saves retyping a Steam API key after
+every reinstall), XIVLauncher yes (verified end to end). Same question, four
+measurements, and the measurements disagreed with each other. Nothing about the
+applications' similarity predicted the answers.
+
+**Where testing beat reading, concretely:** a jq filter with a stray backslash
+that `bash -n` accepts; `kwriteconfig6` reading `-1` as an option; a `pgrep -f`
+pattern matching my own shell, twice, after I had written the lesson down; and
+`~/.xlcore` turning out to be a symlink, which would have made a
+perfect-looking backup restore into a directory the launcher never opens.
+
+**And where asking beat assuming:** the VRR rule looked like a Brave setting
+until ulu said mpc-qt does it too, which moved the finding into the display.
+The soundbar's −26 dB has this exact shape recorded from an earlier session —
+a value captured without its reason nearly being undone by the person it
+protected. Every setting scripted today carries why, not just what.
+
+Open at the close: a question ulu wants to work through next, keychron-launcher
+as a fresh topic, the `qemu-base`/`edk2-ovmf` package-list decision, the
+soundbar level (no longer blocked — DayZ and FFXIV are both installed now), the
+144 Hz experiment on DP-1, and MateriaForge for 7th Heaven, which is the last
+unfinished item of the mount-path decision.
