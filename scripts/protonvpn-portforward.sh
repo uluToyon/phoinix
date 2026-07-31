@@ -38,8 +38,15 @@ last_port=""
 
 # One mapping request. Prints the granted public port, or nothing on failure.
 # `-a <private> <public> <proto> <lifetime>`: public 0 means "whatever you have".
+#
+# Through `sg`, and that is not optional: VPN_GATEWAY lives INSIDE the tunnel,
+# and the tunnel's route sits in a table that only marked packets reach. A
+# plain natpmpc therefore sends its request out of the ordinary interface to
+# the LAN router — verified with `ip route get`, which resolved 10.2.0.1 via
+# the local gateway. Running in the group gets the packet marked, routed into
+# the tunnel, and answered by the right machine.
 request_port() {
-    natpmpc -a 1 0 "$1" "$LEASE" -g "$VPN_GATEWAY" 2>/dev/null |
+    sg "$VPN_GROUP" -c "natpmpc -a 1 0 $1 $LEASE -g $VPN_GATEWAY" 2>/dev/null |
         awk '/Mapped public port/ { print $4; exit }'
 }
 
