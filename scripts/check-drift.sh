@@ -101,6 +101,30 @@ fi
 check_pair "$REPO_DIR/dotfiles/zshrc"    "$HOME/.zshrc"    "~/.zshrc (minus the phoinix hook)" zshrc
 check_pair "$REPO_DIR/dotfiles/p10k.zsh" "$HOME/.p10k.zsh" "~/.p10k.zsh"
 
+# authorized_keys, compared by KEY MATERIAL only. The repo's copy deliberately
+# carries a sanitised comment (`ulu@laptop`) where the live file has whatever
+# ssh-keygen wrote — CLAUDE.md forbids a real name or address in any repo file,
+# and a leak of exactly that kind once reached 35 commits. Comparing whole lines
+# would therefore report drift forever and train everyone to ignore this check;
+# comparing field 2 still catches what matters, which is a key that exists on
+# one side and not the other. Found missing from this script on 2026-07-31,
+# while checking that SSH would survive the reinstall.
+keys_repo="$REPO_DIR/hosts/$HOST/authorized_keys"
+if [[ -f "$keys_repo" && -f "$HOME/.ssh/authorized_keys" ]]; then
+    a="$(awk '{print $2}' "$keys_repo" | sort | sha256sum | cut -d' ' -f1)"
+    b="$(awk '{print $2}' "$HOME/.ssh/authorized_keys" | sort | sha256sum | cut -d' ' -f1)"
+    if [[ "$a" == "$b" ]]; then
+        report same "authorized_keys (key material)"
+    else
+        report drift "authorized_keys (key material)" \
+            "a key exists on one side only — compare: awk '{print \$2}' on both files"
+    fi
+elif [[ -f "$keys_repo" ]]; then
+    report volatile "authorized_keys" "none on this system to compare against"
+else
+    report missing "authorized_keys" "not in the repo: $keys_repo"
+fi
+
 echo
 printf '  %d in sync, %d drifted, %d missing, %d expected to differ\n' \
     "$same" "$drifted" "$missing" "$volatile"
