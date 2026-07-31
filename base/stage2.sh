@@ -167,6 +167,10 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
     sed -e "s|@VPN_INTERFACE@|$VPN_INTERFACE|g" -e "s|@VPN_GROUP@|$VPN_GROUP|g" \
         "$REPO_DIR/system/nftables.conf" > /etc/nftables.conf
     chmod 644 /etc/nftables.conf
+    # The drop-in is what makes the unit's state honest — without it the
+    # launcher's safety check refuses on a healthy system. Reason in the file.
+    install -Dm644 "$REPO_DIR/system/nftables.service.d/phoinix-remain.conf" \
+        /etc/systemd/system/nftables.service.d/phoinix-remain.conf
     systemctl enable nftables.service
 
     # DNS per link instead of one global resolv.conf — the rationale is in the
