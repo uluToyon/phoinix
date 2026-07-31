@@ -203,6 +203,13 @@ this topology — until proven, the cap stays.
 
 ## Later, with ulu (wishlist)
 
+- **jdownloader2 and pcloud-drive: configure them.** Requested by ulu
+  2026-07-31 during the first real run. Both packages come in via stage 3
+  (AUR), but nothing about either is captured or decided yet — for jdownloader2
+  the download directory and clipboard watching, for pcloud-drive whatever goes
+  beyond the manual login that is already listed under "Post-install manual
+  steps". Same working mode as every app: apply on the live system, write into
+  the scripts in the same step.
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
 - **`fixes/` — a curlable collection.** Parked by ulu on 2026-07-31 ("halte dir
