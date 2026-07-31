@@ -438,6 +438,52 @@ rule_set "87ef503c-e43d-41b8-b5c5-701cbe71f854" \
     "wmclasscomplete=true" "wmclassmatch=1" \
     "adaptivesync=false" "adaptivesyncrule=2"
 
+# ------------------------------------------------- 5b. desktop icon position
+# Plasma stores Folder View icon positions keyed by SCREEN RESOLUTION, inside a
+# containment whose number and activity UUID are generated per installation.
+# So both are resolved here: the resolution from PANEL_MAIN_CONNECTOR, the
+# containment by finding the folder plugin that sits on that resolution.
+#
+# plasmashell CACHES this file and writes it back when it exits, so writing
+# underneath a running shell is discarded — the same trap the Kickoff
+# favourites hit. Hence stop, write, start.
+if [[ -n "${XIVLAUNCHER_DESKTOP:-}" ]]; then
+    icon_url="desktop:/$(basename "$XIVLAUNCHER_DESKTOP")"
+    main_geom="$(connector_geometry "$PANEL_MAIN_CONNECTOR")"
+    IFS=, read -r _ _ mw mh <<< "$main_geom"
+    if [[ "$mw" == "-1" ]]; then
+        echo "WARNING: $PANEL_MAIN_CONNECTOR not connected — desktop icon position skipped"
+    else
+        res="${mw}x${mh}"
+        IFS=, read -r cell_col cell_row <<< "${DESKTOP_ICON_CELL:-1,1}"
+        applets="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+
+        # Which containment is the Folder View on that screen? Read it from the
+        # file rather than guessing a number: `lastResolution` is written by
+        # Plasma itself and is the only stable link between screen and group.
+        cont="$(awk -F'[][]' -v res="$res" '
+            /^\[Containments\]\[[0-9]+\]\[General\]$/ { g = $4 }
+            $0 == "lastResolution=" res && g { print g; exit }' "$applets")"
+
+        if [[ -z "$cont" ]]; then
+            echo "WARNING: no folder containment found for $res — icon position skipped"
+        else
+            systemctl --user stop plasma-plasmashell.service || true
+            kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
+                --group Containments --group "$cont" --group General \
+                --key sortMode -- -1   # `--` or kwriteconfig6 reads -1 as an option
+            kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
+                --group Containments --group "$cont" --group General \
+                --key positions "{\"$res\":[\"2\",\"31\",\"$icon_url\",\"$cell_col\",\"$cell_row\"]}"
+            kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
+                --group Containments --group "$cont" --group General \
+                --key changedPositions "{\"$icon_url\":[\"$res\",\"$cell_col\",\"$cell_row\"]}"
+            systemctl --user start plasma-plasmashell.service || true
+            echo "desktop icon: $icon_url at cell $cell_col,$cell_row on $res (containment $cont)"
+        fi
+    fi
+fi
+
 # The order of this list is the order KWin applies the rules in, so it only
 # matters once two rules can match the SAME window. These match different
 # applications, hence any order is correct here.

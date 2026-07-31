@@ -597,6 +597,20 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
           "$HOME/.config/systemd/user/default.target.wants/phoinix-portforward.service"
 fi
 
+# --- XIVLauncher desktop link ----------------------------------------------
+# A SYMLINK, not a copy — that is what KDE creates when an entry is dragged
+# from the menu onto the desktop, and it means the launcher's own .desktop
+# stays the single source (icon, categories, StartupWMClass all follow updates).
+# Its POSITION is Plasma state and belongs to stage 4, which can resolve the
+# containment at runtime.
+if [[ -n "${XIVLAUNCHER_DESKTOP:-}" && -f "$XIVLAUNCHER_DESKTOP" ]]; then
+    install -d "$HOME/Desktop"
+    ln -sf "$XIVLAUNCHER_DESKTOP" "$HOME/Desktop/$(basename "$XIVLAUNCHER_DESKTOP")"
+    echo "desktop: XIVLauncher link placed"
+elif [[ -n "${XIVLAUNCHER_DESKTOP:-}" ]]; then
+    echo "WARNING: $XIVLAUNCHER_DESKTOP missing — no desktop link created"
+fi
+
 # --- DZGUI -----------------------------------------------------------------
 # Seeded, and seeding here is worth more than usual: without it the first run
 # opens a wizard that asks for a Steam Web API key, which means fetching it

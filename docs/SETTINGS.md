@@ -548,6 +548,35 @@ existing file, and it refuses while Steam is running, because Steam rewrites
 this file when it exits. Backing up rather than generating also means any later
 non-Steam game comes along by itself.
 
+## Desktop icon (stages 3 and 4)
+
+One icon on an otherwise empty desktop, and deliberately so — Steam's was
+deleted, this one is kept.
+
+| Setting | Value | Origin |
+|---|---|---|
+| `XIVLAUNCHER_DESKTOP` | `/usr/share/applications/XIVLauncher-RB.desktop` | dec |
+| `DESKTOP_ICON_CELL` | `1,1` — column,row in the Folder View grid | dec |
+
+**A symlink, not a copy** — which is what KDE itself creates when an entry is
+dragged from the menu, and it keeps the launcher's own `.desktop` as the single
+source for icon, categories and `StartupWMClass`.
+
+**The position needs three keys and two runtime lookups.** Plasma stores it in
+`plasma-org.kde.plasma.desktop-appletsrc` as `positions`, `changedPositions` and
+`sortMode=-1` (manual sorting; without it the other two are ignored), keyed by
+**screen resolution** and living in a containment whose number and activity UUID
+are generated per install. Stage 4 resolves the resolution from
+`PANEL_MAIN_CONNECTOR` and finds the containment by matching Plasma's own
+`lastResolution` — never by a hard-coded number.
+
+**plasmashell is stopped around the write**, because it caches this file and
+writes it back when it exits — the same trap the Kickoff favourites hit.
+
+Two things only a real run showed: `kwriteconfig6` reads `-1` as an option, so
+`sortMode` needs a `--` separator; and the presence of `changedPositions` at all
+is what proves ulu moved the icon rather than accepting a default placement.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and

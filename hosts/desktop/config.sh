@@ -146,3 +146,11 @@ DZGUI_NAME="uluToyon"        # in-game name; ulu's public handle anyway
 # adds entries. Backing it up means a reinstall restores whatever is in it,
 # not just the one shortcut that existed the day it was scripted.
 STEAM_SHORTCUTS_FILE="/mnt/Games/phoinix/shortcuts.vdf"
+
+# --- Desktop icon (stages 3 and 4) ------------------------------------------
+# The one icon ulu keeps on an otherwise empty desktop. Steam's was deleted;
+# this one is deliberate, so it is scripted — link in stage 3, position in
+# stage 4. The position is stored per SCREEN RESOLUTION by Plasma, which is
+# resolved from PANEL_MAIN_CONNECTOR at runtime rather than written here.
+XIVLAUNCHER_DESKTOP="/usr/share/applications/XIVLauncher-RB.desktop"
+DESKTOP_ICON_CELL="1,1"    # column,row in the Folder View grid
