@@ -202,6 +202,17 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
     install -Dm644 "$REPO_DIR/system/NetworkManager/10-phoinix-dns.conf" \
         /etc/NetworkManager/conf.d/10-phoinix-dns.conf
     systemctl enable systemd-resolved.service
+    # Under arch-chroot a plain `ln -sf` here fails: the chroot bind-mounts
+    # the ISO's /run and its resolv.conf over this path, so link target and
+    # destination are the same file (ln refuses) — and a mountpoint cannot be
+    # unlinked anyway. Drop the bind first, then link. Chroot DNS is gone
+    # from here on; nothing below needs the network. arch-chroot's teardown
+    # tolerates the missing mount (prints "not mounted", still exits 0 —
+    # verified on the real ISO 2026-07-31). QEMU never hit any of this: the
+    # test host declares no VPN, so this block never ran there.
+    if mountpoint -q /etc/resolv.conf; then
+        umount /etc/resolv.conf
+    fi
     ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 fi
 
