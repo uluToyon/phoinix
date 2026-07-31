@@ -125,3 +125,15 @@ PRINTER_NAME="SCX-4300"
 PRINTER_MATCH="SCX-4300"                                  # what to look for in `lpinfo -v`
 PRINTER_DRIVER="drv:///splix-samsung.drv/scx4300.ppd"     # splix, "Samsung SCX-4300, 2.0.0"
 PRINTER_OPTIONS=("PageSize=A4" "printer-is-shared=false")  # Letter is the driver default; sharing is not wanted
+
+# --- DZGUI (stage 3) --------------------------------------------------------
+# The DayZ launcher's config holds a Steam Web API key — a hard secret — and
+# ulu's server list, which says where he plays. Neither belongs in a public
+# repo, and both must survive a reinstall. So they live on a data disk phoinix
+# never touches, and only the PATH is versioned: the same anchor pattern as the
+# WireGuard configs and the Strawberry playlist.
+#
+# The file holds exactly {"steam_api": "...", "ip_list": [...]}, mode 0600.
+# Everything else in DZGUI's config is plain settings and is authored below.
+DZGUI_PRIVATE_FILE="/mnt/FilesMusic/DZGUI/dzgui-private.json"
+DZGUI_NAME="uluToyon"        # in-game name; ulu's public handle anyway

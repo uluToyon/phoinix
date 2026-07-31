@@ -2087,3 +2087,49 @@ That is recorded next to the setting rather than buried here, because of the
 failure mode it prevents: without it, the repo would say "printer configured,
 verified" and the day it stops working would look like a regression in phoinix
 rather than an upstream removal that was visible all along.
+
+## 2026-07-31 — Applications, round 13: DZGUI, a deferred dependency and a silent failure
+
+Three findings, and none of them was the settings round.
+
+**The dependency the package rounds deferred, arrived.** DZGUI 7.0.0b20 died at
+startup with `Typelib file for namespace 'xlib', version '2.0' not found`.
+`gobject-introspection-runtime` provides it and was not installed. `LOG.md` had
+recorded DZGUI 7 as "turnkey with bundled runtime, deps deferred to actual
+install" — this is that install. The structure is what matters: DZGUI is an
+upstream tarball, not a package, so it *cannot* declare dependencies, and its
+bundled Python still needs the system typelibs. For everything else in this repo
+pacman makes that class of failure impossible; here only the package list can.
+Checked before adding, since `kde.txt` rejects GTK on principle: 150 KB, one
+dependency, no GTK chain.
+
+**The config moved.** DZGUI 7 uses `~/.config/dzgui/`, not the `~/.config/dztui/`
+the package rounds noted. Small, but it is exactly the sort of stale detail that
+sends someone looking in the wrong directory.
+
+**Steam integration is broken and fails silently — read out of the source.**
+ulu reported that the wizard offered to add DZGUI to Steam and nothing appeared.
+There is no `shortcuts.vdf` at all, and the reason is in
+`Shortcuts._load_shortcuts()`: it opens the *existing* file for reading, and
+Steam only creates it once a non-Steam game has been added by hand. The
+resulting exception is caught and merely logged, and the wizard page carries its
+author's own comment: *"best-effort, permissive even on failure (page is already
+marked as complete)"*. So it reports success, does nothing, and says nothing.
+Worth recording as a shape rather than a bug report: a step that cannot fail
+visibly is a step that will be believed.
+
+**The settings themselves went to a data disk, at ulu's request — including the
+secret.** DZGUI's config holds a Steam Web API key and his server list. Both
+must survive a reinstall and neither belongs in a public repo, so both live in
+`/mnt/FilesMusic/DZGUI/dzgui-private.json` (0600) and only the path is
+versioned. Same anchor pattern as the WireGuard configs and the playlist. Asked
+rather than assumed: a DayZ server address is not secret, but it says where he
+plays, and that is his call to make about a public repo.
+
+**And seeding pays here more than anywhere so far.** Without a config the first
+run demands an API key — a trip to steamcommunity.com and 32 characters typed
+after every reinstall. Seeded, the wizard does not run at all. Verified rather
+than hoped: the seeded config was accepted unchanged, DZGUI adding not one field
+of its own. That makes three applications with three different answers to the
+same seeding question — LibreOffice yes, mpc-qt never, DZGUI emphatically yes —
+and in every case only the measurement decided it.

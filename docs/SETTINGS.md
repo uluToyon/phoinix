@@ -503,6 +503,41 @@ Everywhere. When Arch moves to CUPS 3 this queue stops working, and the fallback
 is a local IPP-Everywhere adapter or a print server in front. Recorded so the
 failure is not a mystery when it arrives.
 
+## DZGUI (stage 3)
+
+DayZ launcher, fetched as an upstream tarball rather than a package (see
+`aur.txt`). Config lives in `~/.config/dzgui/config.json` — note the name:
+DZGUI 7 uses `dzgui`, not the `dztui` recorded during the package rounds.
+
+| Setting | Value | Origin |
+|---|---|---|
+| `DZGUI_PRIVATE_FILE` | `/mnt/FilesMusic/DZGUI/dzgui-private.json`, mode 0600 — **path only**, never the contents | dec |
+| `DZGUI_NAME` | `uluToyon` | dec |
+| the rest | `client=steam`, `start_tab=1`, `fullscreen=false`, `use_miles=false`, Steam path derived from `$HOME` | dec |
+
+**The private file holds two things that must never enter a public repo**: the
+Steam Web API key (a hard secret) and ulu's server list (which says where he
+plays). Both must also survive a reinstall, so they sit on a data disk phoinix
+never touches — the same anchor pattern as the WireGuard configs and the
+Strawberry playlist.
+
+**Seeded, and here it earns its keep.** Without a config the first run opens a
+wizard that demands a Steam Web API key, i.e. a trip to steamcommunity.com and
+32 characters typed by hand after every reinstall. With the file in place the
+wizard does not run. Verified on the live machine: DZGUI accepted the seeded
+config unchanged and added no field of its own. Seeded **only when absent** —
+an existing config is ulu's, and DZGUI writes his server list into it as he
+plays.
+
+**Steam integration does not work, and fails silently.** DZGUI's wizard offers
+to add itself to Steam; it cannot, because `Shortcuts._load_shortcuts()` opens
+an existing `shortcuts.vdf` for reading and Steam only creates that file once a
+non-Steam game has been added by hand. The exception is swallowed
+(`except Exception: logger.critical(e)`) and the wizard page is, in its author's
+own comment, *"best-effort, permissive even on failure"* — so it reports success
+and does nothing. Workaround if wanted: add it once via Steam's *Add a
+Non-Steam Game*, pointing at `~/Applications/dzgui/dzgui`.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and

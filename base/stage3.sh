@@ -597,6 +597,41 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
           "$HOME/.config/systemd/user/default.target.wants/phoinix-portforward.service"
 fi
 
+# --- DZGUI -----------------------------------------------------------------
+# Seeded, and seeding here is worth more than usual: without it the first run
+# opens a wizard that asks for a Steam Web API key, which means fetching it
+# from steamcommunity.com and typing 32 characters after every reinstall.
+# With the config in place the wizard does not run at all — verified by
+# seeding it on the live machine, where DZGUI accepted the file unchanged and
+# added not a single field of its own.
+#
+# The secret and the server list come from a data disk (DZGUI_PRIVATE_FILE),
+# never from the repo. Everything else is authored here.
+#
+# Seeded ONLY when absent: an existing config is ulu's, and DZGUI writes his
+# server list into it as he plays. Overwriting that would discard exactly the
+# thing the private file exists to preserve.
+if [[ -n "${DZGUI_PRIVATE_FILE:-}" ]]; then
+    DZGUI_CONF="$HOME/.config/dzgui/config.json"
+    if [[ -e "$DZGUI_CONF" ]]; then
+        echo "dzgui: config exists — left alone"
+    elif [[ ! -f "$DZGUI_PRIVATE_FILE" ]]; then
+        # Loud, not fatal: the data disk may simply not be mounted. Without it
+        # DZGUI still works, it just asks for the API key again.
+        echo "WARNING: $DZGUI_PRIVATE_FILE missing — DZGUI will run its wizard and ask"
+        echo "         for a Steam API key. Nothing else breaks."
+    else
+        install -d "$(dirname "$DZGUI_CONF")"
+        jq -n --slurpfile priv "$DZGUI_PRIVATE_FILE" \
+              --arg name "$DZGUI_NAME" --arg steam "$HOME/.local/share/Steam" \
+              '{fav_server:"", fav_label:"", name:$name, fullscreen:false,
+                default_steam_path:$steam, client:"steam", use_miles:false,
+                start_tab:1} + $priv[0]' > "$DZGUI_CONF"
+        chmod 600 "$DZGUI_CONF"
+        echo "dzgui: config seeded from $DZGUI_PRIVATE_FILE (no wizard, no API key retyping)"
+    fi
+fi
+
 # ------------------------------------------------- 7c. printer
 # CUPS is enabled in section 10; this creates the queue.
 #
