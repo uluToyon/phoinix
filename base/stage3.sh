@@ -345,7 +345,7 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
 
         for cfg in "${vpn_configs[@]}"; do
             # NetworkManager names the connection after the file. Importing the
-            # same file twice would create "protonvpnCH-CH-919 1", so a re-run
+            # same file twice appends a counter ("<name> 1"), so a re-run
             # deletes the old one first — stage 3 is re-runnable by design.
             name="$(basename "$cfg" .conf)"
             if nmcli -g NAME connection show | grep -Fxq "$name"; then
