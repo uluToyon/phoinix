@@ -25,17 +25,21 @@ CLONE_DIR="${PHOINIX_CLONE_DIR:-/root/phoinix}"
 
 [[ $EUID -eq 0 ]] || { echo "ERROR: run as root (the Arch ISO logs you in as root)"; exit 1; }
 
-# Under `curl | bash` stdin IS the pipe, and it is at EOF by the time anything
-# runs. `passwd` reads /dev/tty itself and would survive, but anything that
-# reads stdin would silently get EOF instead of a human. Reattach the terminal
-# once, here, so every stage below behaves as if it had been started by hand.
-# The test has to be an actual open, in a subshell: `[[ -r /dev/tty ]]` reads
-# the permission bits and says yes even where there is no controlling terminal
-# at all (found in the dry run). And `exec` is a special builtin — a failed
-# redirection on it kills a non-interactive shell outright, so it must not be
-# reached speculatively.
+# Under `curl | bash` stdin is the pipe bash is READING THIS SCRIPT FROM, and
+# two separate things go wrong with it:
+#   - a child that reads stdin (pacman asking "Proceed with installation?")
+#     eats the script text instead of getting an answer;
+#   - `exec < /dev/tty` to fix that destroys the script source itself. bash
+#     then reads the rest of the "script" from the terminal and the installer
+#     silently does nothing. Verified in QEMU, then reduced to:
+#       printf 'echo A\nexec < /dev/null\necho B\n' | bash   # prints only A
+# So: never `exec` here, redirect PER COMMAND. The shell keeps reading the
+# script from the pipe, and each stage still gets a real terminal.
+# The test must be an actual open in a subshell — `[[ -r /dev/tty ]]` reads the
+# permission bits and says yes even where there is no controlling terminal.
+TTY_IN=/dev/null
 if ( : < /dev/tty ) 2>/dev/null; then
-    exec < /dev/tty
+    TTY_IN=/dev/tty
 fi
 
 # ------------------------------------------------------------------ clone
@@ -64,11 +68,11 @@ echo
 # Stage 1 is the destructive one and does its own confirming (see its header:
 # the target disk is identified by /dev/disk/by-id/, which does not exist on
 # the wrong machine, plus a countdown). Everything after it is re-runnable.
-"$CLONE_DIR/base/stage1.sh" "$HOST"
+"$CLONE_DIR/base/stage1.sh" "$HOST" < "$TTY_IN"
 
 # Stage 1 rsynced the repo to /mnt/root/phoinix — stage 2 runs from THAT copy,
 # not from ours, so the chroot is self-contained if this shell dies.
-arch-chroot /mnt /root/phoinix/base/stage2.sh "$HOST"
+arch-chroot /mnt /root/phoinix/base/stage2.sh "$HOST" < "$TTY_IN"
 
 # ----------------------------------------------------------------- reboot
 umount -R /mnt
