@@ -449,6 +449,18 @@ Still open:
 - **PARKED, ready to pick up — the KWin-script fix for the dialogs (option 5).**
   ulu's call: not now, but do not lose it. The investigation is finished, so
   this can be built without redoing any of it.
+  **New evidence, 2026-07-31 (session 7): the same cause has a second, opposite
+  symptom, and it hits every fresh install.** ulu reported Strawberry opening
+  across the whole monitor at first start while its "first start" message came
+  up at exactly half the width. That is the rule landing on the DIALOG (1920
+  wide, per `STRAWBERRY_SIZE`) while the main window came up at its own default
+  size — the mirror image of the documented "dialogs inherit the parent's
+  size". It corrects itself once Strawberry has saved its own geometry, and
+  the live windows were measured correct afterwards (`0,804 1920x2105`), so
+  the damage is one-time per installation.
+  **Agreed with ulu: look at it again after the next full script test**, while
+  the case is actually on screen rather than remembered. Deciding it now would
+  mean deciding it blind for a second time.
   **The finding it rests on:** KWin does not consider these dialogs dialogs.
   Asked directly via its scripting API, Strawberry's sponsoring dialog reports
   `dialog=false, normal=true, modal=false` — which is why `types=1` matched it

@@ -2797,3 +2797,168 @@ Everything else in stage 4's log succeeded: launchers, the 7 TV widgets,
 both side strips, Kickoff favourites, window rules, playlist import. ulu's
 "sieht schlecht aus" is not yet mapped to specifics — that question is asked
 and unanswered, and the next session starts there.
+
+## 2026-07-31 — FFXIV opens on the wrong monitor: a borrowed window class
+
+ulu reported FFXIV starting on the wrong screen, and the first diagnosis was
+wrong in an instructive way. `FFXIV.cfg` survived the reinstall intact — it
+lives on the games disk, `GameConfigPath` points there, and its display block
+is character-identical to `FFXIV.cfg.old`. So the game's own configuration was
+never the problem.
+
+**Which monitor is "the TCL" was itself ambiguous, and the repo caused it.**
+ulu asked for borderless on "my TCL 34\"", while `config.sh` called DP-2 the
+"TCL 4K" and DP-1 merely "ultrawide". The EDIDs settle it: DP-1 is a TCL
+34R83Q (797x333 mm, 34"), DP-2 a TCL 27R83U (597x336 mm, 27") — **both are
+TCLs**, which is exactly why the shorthand was dangerous. DP-3 is an Acer
+XZ322QU, HDMI-A-1 a Hisense. The connector comments now carry model names.
+
+**The Wayland toggle moves the ground under the whole question.** With
+`WaylandEnabled=true` a Wayland-native client cannot position itself and
+neither `ScreenLeft` nor any KWin position rule is the deciding factor — the
+compositor places it. ulu had switched the launcher to `WaylandEnabled=false`
+between two messages, so the game now runs over XWayland, where placement
+rules work normally. Recorded because the failure mode is silent: flip that
+toggle back and the rule below stops doing anything, with no error anywhere.
+
+**The finding worth keeping: the window class is not the game's.**
+
+    WM_CLASS = "steam_app_default", "steam_app_default"
+
+umu/Proton labels every non-Steam title it launches this way, because no Steam
+AppID is set. A class-only rule would therefore also catch DayZ under DZGUI
+and drag it onto the ultrawide. The rule matches on the **title** as well
+(`FINAL FANTASY XIV`), which is the only field separating them — a
+language-independent string the game sets itself. If it ever stops matching
+after a patch, that is where to look.
+
+Its size comes from `connector_geometry()` rather than a `*_SIZE` variable:
+borderless means exactly one monitor's resolution, so hardcoding 3440x1440
+would only create a second place to forget. `FFXIV_CONNECTOR="DP-1"` is the
+whole per-machine part. Verified by ulu on the running system.
+
+## 2026-07-31 — gamemode for FFXIV was two-thirds done already
+
+The wishlist entry asked for `gamemode` in the package lists and for a hook to
+make XIVLauncher invoke it. Both premises were wrong on inspection: the
+packages were installed AND already in `packages/gaming.txt`, and no wrapper is
+needed because the launcher has its own toggle. ulu set `GameModeEnabled=true`
+himself.
+
+The one real task was capture, and it is the kind that is easy to miss: stage 3
+restores `launcher.ini` from `XLCORE_BACKUP_DIR` on the games disk, so a change
+made in the live launcher is invisible to a reinstall until
+`scripts/xlcore-backup.sh desktop` has run. It has; the backup now carries both
+`GameModeEnabled=true` and `WaylandEnabled=false`. The rule this generalises to:
+**anything under `~/.local/share/dev.goats.xivlauncher` is only as durable as
+the last backup run.**
+
+## 2026-07-31 — qBittorrent would not start at all: `sg` no longer exists
+
+Two of ulu's complaints after the first real install ("qBittorrent starts not
+at all", "no autostart") were one defect: the panel launcher and the autostart
+entry both point at `scripts/qbittorrent-vpn.sh`, and that script ended in
+
+    exec sg "$VPN_GROUP" -c "$cmd"
+
+**`sg` is gone from Arch.** shadow no longer ships it; util-linux, which took
+`newgrp` over, never did; nothing else provides it. So the wrapper died with
+`exec: sg: not found` — a line that had been correct when written and was
+invalidated by a packaging change, with nothing in the repo to notice.
+
+The first suspicion was wrong and is recorded so nobody re-runs it: the
+WireGuard configuration is NOT missing on a fresh install. `/etc/wireguard/`
+being empty is by design — stage 3 imports Proton's configs from
+`VPN_CONFIG_DIR` into NetworkManager with `nmcli`, and the live tunnel is the
+NM connection `protonvpnCH-CH-919`. That part of the install worked.
+
+**One thing went right by construction:** it failed CLOSED. A missing switch
+meant no qBittorrent, not an unprotected qBittorrent — which is what the two
+guards at the top of the wrapper exist for.
+
+**The replacement is `newgrp`**, setuid root and part of util-linux. It takes no
+command argument, so the command arrives on stdin. The interesting part is what
+does NOT: the file arguments from `%U` would have to be quoted for the login
+shell — zsh here, not sh — and a torrent path containing a quote is exactly how
+that becomes a second argument or an executed command. They travel in the
+environment instead, NUL-separated and base64'd; `newgrp` was measured to pass
+the environment through byte for byte, special characters included. Only the
+script's own path and the host name are interpolated, both `%q`-quoted.
+
+**And the wrapper now VERIFIES the switch instead of trusting it.** Everything
+before that line only checks that the machinery is present; a single comparison
+of the effective gid against the group's establishes that it worked. This is
+the case that matters: a half-working switch fails OPEN — qBittorrent running,
+looking configured, past a kernel rule that matches nothing.
+
+Verified end to end on the live system: qBittorrent runs with `Gid: 967` in all
+four fields, ordinary traffic leaves over ulu's own line, and traffic inside the
+group exits at a Proton address in the same /24 as the peer endpoint.
+
+## 2026-07-31 — the playlist import reported success and did nothing
+
+ulu noticed his playlist was missing after the first real install. Stage 4's
+journal from that login says the opposite:
+
+    playlist: imported /mnt/FilesMusic/Musik/Default.m3u as 'Default'
+
+The database said otherwise: one empty "Playlist 1", no "Default", zero
+`playlist_items`, zero songs in the collection. The `.m3u` on the music disk
+was untouched, 321 lines.
+
+**Cause: `strawberry --create` is an IPC message to a RUNNING instance.** With
+no instance there it is dropped — and exits 0 regardless. Stage 4 runs at the
+first graphical login, when Strawberry has never started, so the one moment the
+import actually matters is the one moment it cannot work. Measured both ways:
+the identical command with Strawberry running produced the playlist with 160
+tracks within seconds.
+
+**The deeper defect is the success message, not the import.** The line hung on
+`&&` against an exit code that carries no information about the outcome. This
+is the second instance of the same mistake found in one evening — the
+qBittorrent wrapper checked that its machinery was *present* and not that it
+*worked* — and it is the more expensive of the two, because it printed a
+confirmation. A silent failure gets investigated; a false success does not.
+
+Stage 4 now: starts Strawberry itself if no process is running, imports, then
+polls the database and reports the actual track count, warning loudly when the
+playlist is absent or empty. The start uses `systemd-run --user --scope` rather
+than `strawberry &` — this stage is a `Type=oneshot` unit, so anything left in
+its cgroup is killed the moment ExecStart returns, and a plain background job
+would die with the stage, possibly before writing anything.
+
+Not a bug and worth separating: the collection is empty (`songs = 0`) because
+adding the music folder is a documented manual step. The playlist holds file
+paths and does not depend on it.
+
+## 2026-07-31 — desktop icons: matching the containment by screen, not resolution
+
+The stopper from the first real install is fixed. Stage 4 located the Folder
+View containment by `lastResolution`, a key Plasma writes only after icons have
+been arranged by hand — so a virgin install has none, the stage warned and
+skipped, and no amount of re-running could ever have helped. It had worked on
+the old system purely because ulu had arranged those icons years earlier.
+
+**The replacement matches on `lastScreen`,** which Plasma writes from the
+start. That key holds Plasma's own screen NUMBER, assigned in detection order,
+which this repo must not store — so it is resolved at runtime by asking the
+running shell which of its screens carries the geometry of
+`PANEL_MAIN_CONNECTOR`, the same trick `panels.js` already uses for panels.
+Measured on the live system: DP-1 is Plasma screen 0, and the matcher returns
+containment 1. The old matcher returns nothing on the same machine.
+
+**The activity is part of the match.** A second activity gets its own folder
+containment on the same screen — same plugin, same `lastScreen` — so matching
+without it would be a coin flip the day one is added.
+
+Applied to the live desktop, and Plasma's reaction is worth recording: after
+the restart it rewrote `positions` itself, kept both icons on their requested
+cells, replaced our leading value `2` with `5`, and added `steam.desktop` at
+0,0 on its own. That confirms the guess in the code comment — those two leading
+numbers are Plasma's bookkeeping, not ours, which is why carrying them over
+rather than inventing them is the right call.
+
+Still unverified by construction: the case this fixes is a FRESH install, and
+this machine is not one. What was verified is that the matcher finds the right
+containment where the old one found none, and that the write survives a
+plasmashell restart.
