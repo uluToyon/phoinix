@@ -16,3 +16,15 @@ PANEL_MAIN_HEIGHT=46
 
 # Clock-only strips on the remaining monitors: "<connector>:<thickness>".
 PANEL_SIDE=("DP-2:55" "DP-3:36")   # TCL 27" 4K, portrait 1440x2560
+
+# --- Dolphin Places sidebar (stage 4) --------------------------------------
+# Order of the DEVICE entries in the Places panel, by filesystem LABEL.
+# Labels, not device nodes and not UUIDs: KDE stores this ordering with both
+# (`/org/freedesktop/UDisks2/block_devices/sda1` plus the filesystem uuid), and
+# both are unusable here — device nodes are assigned in probe order, and the
+# root/home UUIDs are created fresh by every install. Stage 4 resolves each
+# label at runtime. Root and home carry the labels stage 1 gives them.
+# A label that is not present is skipped, so an unplugged disk costs its entry
+# and nothing else. Removable media (e.g. the install stick) is deliberately
+# absent — it has no business in a reproducible layout.
+PLACES_ORDER=(archroot archhome Games FilesMusic Downloads Video)

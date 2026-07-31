@@ -788,3 +788,45 @@ Still open from this round: the sidebar ordering. It encodes device node names
 home and are regenerated on every install. It needs runtime resolution from the
 disk labels rather than a captured file — same treatment as the panels and the
 pointer profile.
+
+## 2026-07-31 — Places sidebar order, resolved from labels
+
+The ordering KDE persists as `<separator>` markers, each naming its device
+twice over in identifiers the repo may not contain: a UDI carrying the device
+node (`/org/freedesktop/UDisks2/block_devices/sda1`) and the filesystem uuid.
+Device nodes are handed out in probe order; the root and home UUIDs are created
+fresh by every install. Capturing the file would produce an ordering that is
+half-dead on a rebuilt machine.
+
+What made it easy: **every disk already has a label**, including root and home
+— stage 1 gives them `archroot` and `archhome`, the four data disks carry
+their own. So `hosts/<host>/config.sh` stores an order of labels, and stage 4
+resolves each to device node and uuid at runtime via
+`/dev/disk/by-label/` plus `lsblk`, both unprivileged. No identifier in the
+repo, and the ordering survives a reinstall that renumbers everything.
+
+The install USB stick (`ARCH_202607`, still plugged in) had a marker of its own
+and is deliberately not scripted — removable media has no place in a
+reproducible layout. A label that is absent is skipped with a message, so an
+unplugged disk costs its entry and nothing more.
+
+Stage 4, not stage 3: the file must already exist. KDE creates it with its
+standard bookmarks, and writing it from scratch would mean authoring KDE's
+bookmark ids too. If it is missing, the step says so and asks for a re-run
+rather than inventing one.
+
+**A mistake worth keeping.** The first test wiped all seven markers and wrote
+nothing back. The cause was in the test harness, not the script: the config was
+sourced in one shell and the extracted snippet run with `bash` as a separate
+process, which does not inherit non-exported variables — `PLACES_ORDER` was
+empty there, the loop never ran, and the awk stripped everything. Restored from
+the copy taken beforehand.
+
+But it exposed a real flaw: with an empty list the script *would* have destroyed
+a working ordering, silently, and that could equally happen on a machine whose
+disks are not plugged in. There is now a guard — no separators resolved means
+the file is left untouched. The accident produced a better script than the
+review would have.
+
+Verified: the generated file matches ulu's hand-made state exactly, minus the
+install stick.
