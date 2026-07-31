@@ -14,4 +14,8 @@ base-devel            # build toolchain for AUR packages (paru bootstrap + every
 # linux-zen-headers rejected — zero DKMS candidates on this system (AMD GPU + MediaTek
 # wifi are in-kernel); any future DKMS package pulls headers automatically
 ttf-meslo-nerd        # MesloLGS Nerd Font: p10k prompt glyphs + eza icons (konsole default font)
+ddcutil               # DDC/CI over i2c — drives scripts/monitor-switch.sh, which flips all three
+                      # monitors between this machine and the laptop. Brings its own prerequisites:
+                      # modules-load.d loads i2c-dev and its udev rule tags the graphics i2c devices
+                      # with uaccess, so NO i2c group membership and no rule of ours is needed.
 # cpupower rejected — redundant next to gamemode (auto) + power-profiles-daemon (KDE click)

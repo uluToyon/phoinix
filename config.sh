@@ -51,7 +51,9 @@ DZGUI_PRIVATE_FILE=""      # DZGUI secrets/server list on a data disk; empty = n
 DZGUI_NAME=""
 STEAM_SHORTCUTS_FILE=""   # backup of Steam's non-Steam game list; empty = none
 XIVLAUNCHER_DESKTOP=""     # .desktop to link onto the desktop; empty = none
-DESKTOP_ICON_CELL="1,1"
+DESKTOP_ICONS=()          # "<basename>.desktop:col,row" per icon; empty = place none
+MONITOR_SWITCH=()         # "model:desktop_value:laptop_value"; empty = no switching
+MONITOR_SWITCH_REF=""     # which model is asked which side is live
 XLCORE_BACKUP_DIR=""       # XIVLauncher/Dalamud backup on a data disk; empty = none
 VPN_CONFIG_DIR=""         # WireGuard .conf files; empty = this host has no VPN
 

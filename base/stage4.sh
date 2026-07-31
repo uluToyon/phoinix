@@ -447,15 +447,13 @@ rule_set "87ef503c-e43d-41b8-b5c5-701cbe71f854" \
 # plasmashell CACHES this file and writes it back when it exits, so writing
 # underneath a running shell is discarded — the same trap the Kickoff
 # favourites hit. Hence stop, write, start.
-if [[ -n "${XIVLAUNCHER_DESKTOP:-}" ]]; then
-    icon_url="desktop:/$(basename "$XIVLAUNCHER_DESKTOP")"
+if [[ ${#DESKTOP_ICONS[@]} -gt 0 ]]; then
     main_geom="$(connector_geometry "$PANEL_MAIN_CONNECTOR")"
     IFS=, read -r _ _ mw mh <<< "$main_geom"
     if [[ "$mw" == "-1" ]]; then
         echo "WARNING: $PANEL_MAIN_CONNECTOR not connected — desktop icon position skipped"
     else
         res="${mw}x${mh}"
-        IFS=, read -r cell_col cell_row <<< "${DESKTOP_ICON_CELL:-1,1}"
         applets="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
 
         # Which containment is the Folder View on that screen? Read it from the
@@ -468,18 +466,45 @@ if [[ -n "${XIVLAUNCHER_DESKTOP:-}" ]]; then
         if [[ -z "$cont" ]]; then
             echo "WARNING: no folder containment found for $res — icon position skipped"
         else
+            # `positions` is {res: [a, b, url, col, row, url, col, row, …]}.
+            # What the two LEADING values mean is not understood: a scripted
+            # one-icon desktop carried "2","31", ulu's hand-arranged two-icon
+            # desktop carried "5","31". Since Plasma writes them itself, they
+            # are carried over from whatever is already there for this
+            # resolution, and only invented when there is nothing to carry.
+            existing="$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
+                --group Containments --group "$cont" --group General \
+                --key positions 2>/dev/null || true)"
+            lead_a="2"; lead_b="31"
+            if [[ "$existing" == *"\"$res\""* ]]; then
+                IFS='"' read -r _ _ _ ex_a _ ex_b _ <<< "$existing"
+                [[ -n "${ex_a:-}" ]] && lead_a="$ex_a"
+                [[ -n "${ex_b:-}" ]] && lead_b="$ex_b"
+            fi
+
+            pos_items=""; chg_items=""; placed=""
+            for icon in "${DESKTOP_ICONS[@]}"; do
+                icon_name="${icon%%:*}"
+                IFS=, read -r cell_col cell_row <<< "${icon##*:}"
+                icon_url="desktop:/$icon_name"
+                pos_items+=",\"$icon_url\",\"$cell_col\",\"$cell_row\""
+                if [[ -n "$chg_items" ]]; then chg_items+=","; fi
+                chg_items+="\"$icon_url\":[\"$res\",\"$cell_col\",\"$cell_row\"]"
+                placed+=" $icon_name@$cell_col,$cell_row"
+            done
+
             systemctl --user stop plasma-plasmashell.service || true
             kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
                 --group Containments --group "$cont" --group General \
                 --key sortMode -- -1   # `--` or kwriteconfig6 reads -1 as an option
             kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
                 --group Containments --group "$cont" --group General \
-                --key positions "{\"$res\":[\"2\",\"31\",\"$icon_url\",\"$cell_col\",\"$cell_row\"]}"
+                --key positions "{\"$res\":[\"$lead_a\",\"$lead_b\"$pos_items]}"
             kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
                 --group Containments --group "$cont" --group General \
-                --key changedPositions "{\"$icon_url\":[\"$res\",\"$cell_col\",\"$cell_row\"]}"
+                --key changedPositions "{$chg_items}"
             systemctl --user start plasma-plasmashell.service || true
-            echo "desktop icon: $icon_url at cell $cell_col,$cell_row on $res (containment $cont)"
+            echo "desktop icons on $res (containment $cont):$placed"
         fi
     fi
 fi

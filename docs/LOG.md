@@ -2380,3 +2380,71 @@ Left unexplained honestly: `install` reported exit 1 on the second file while
 writing it correctly. Both files in `/etc` are byte-identical to the repo
 (sha256 verified) with `-rw-r--r-- root:root`, so the outcome is right; the
 exit code is not understood and is not being papered over.
+
+## 2026-07-31 — Monitor switching: one icon instead of two scripts
+
+ulu has three monitors wired to both this machine and the Fedora laptop, and
+switched them with two hand-written scripts on a data disk. `SwitchToDesktop.sh`
+was deleted with that folder (deliberately, on his word); `SwitchToLaptop.sh` he
+had moved one directory up, which is why it appeared to vanish mid-inspection —
+the disk was fine and my alarm about it was wrong.
+
+Both scripts addressed the monitors by i2c bus number, and the numbers HAD
+ALREADY DRIFTED: the desktop-side script carried a commented-out `--bus 8`
+directly above its replacement `--bus 10`, i.e. ulu had renumbered it by hand
+after a reboot moved things. That is exactly the discovered-identifier trap
+CLAUDE.md exists to prevent. `ddcutil detect` gives a stable handle instead:
+
+    bus 9  DP-1  TCL:34R83Q:X2412000442
+    bus 10 DP-2  TCL:27R83U:X2414000091
+    bus 11 DP-3  ACR:XZ322QU V3:14110A5B13W01
+    bus 7  HDMI  HEC:HISENSE:  — "Invalid display", no DDC/CI
+
+So selection is by MODEL now, which comes from the EDID and travels with the
+panel. Verified that `--model` works for all three, including the Acer whose
+model string contains a space.
+
+**Decided: a toggle, not two scripts.** The reference monitor is asked what it
+is showing and everything moves to the other side. One icon does both jobs, and
+there is no state file that can disagree with the hardware. ulu's counterpart
+script on the Fedora laptop is what brings the monitors back, so in practice
+this side almost always runs one way — noted at the time, built anyway because
+it is self-correcting and costs nothing.
+
+**Why a reference monitor rather than asking each panel:** the two TCLs report
+input source 0x07 whatever is written to them, and their own capabilities list
+advertises only 0x0f/0x10/0x11/0x12 — it does not contain 6 or 8, the values
+that demonstrably switch them. They can be DRIVEN but not BELIEVED. The Acer is
+standards-conformant (0x0f DisplayPort-1, 0x11 HDMI-1), so it decides for all
+three. The 6 and 8 stay in the host config as bare measured numbers with a
+warning not to "correct" them to the advertised codes.
+
+Tested without touching the monitors, by shimming `ddcutil` on PATH so `setvcp`
+was logged and `getvcp` went to the real hardware. All three cases came out
+right, and the toggle reproduces BOTH original scripts exactly:
+
+    reference reads 0x0f (desktop) -> 8, 8, 17   = ulu's SwitchToLaptop.sh
+    reference reads 0x11 (laptop)  -> 6, 6, 15   = the deleted SwitchToDesktop.sh
+    reference reads 0x07 (unclear) -> to laptop
+
+The ambiguous case going to the laptop is deliberate: this is triggered from a
+desktop icon, so whoever clicked it is sitting at the desktop, and "I could not
+tell" should still do what they asked.
+
+`ddcutil` went into `packages/cli.txt` — it was missing entirely, so a fresh
+install had neither the tool nor the script. It needs nothing else from us: the
+package ships `modules-load.d/ddcutil.conf` for i2c-dev and a udev rule that
+tags the graphics i2c devices with `uaccess`. That is the second time today the
+answer was uaccess rather than a group.
+
+**Stage 4 generalised from one desktop icon to a list.** `DESKTOP_ICON_CELL`
+became `DESKTOP_ICONS=("<basename>.desktop:col,row" …)`. Two findings there:
+
+- The `positions` value is `{res:[a, b, url, col, row, url, col, row, …]}`, and
+  what the two LEADING values mean is not understood. Stage 4 hardcoded "2","31";
+  ulu's hand-arranged desktop carries "5","31". Since Plasma writes them itself
+  they are now CARRIED OVER from whatever exists for that resolution, and only
+  invented when there is nothing to carry. Verified against his live file.
+- The icon cell was going to be my invention (1,2) until his running config was
+  read: he had put it at 4,3. Captured reality beats an authored guess, so 4,3
+  it is.

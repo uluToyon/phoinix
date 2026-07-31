@@ -1,0 +1,14 @@
+[Desktop Entry]
+# Written by stage 3 from this template — @REPO_DIR@ and @HOST@ are substituted
+# there, the same way the user services are. Running straight out of the repo
+# rather than from a copy in ~/.local/bin is deliberate: the repo IS the live
+# working copy on this machine, so editing the script takes effect on the next
+# click with no reinstall step to forget.
+Type=Application
+Name=Switch monitors
+GenericName=Monitor input switch
+Comment=Flip all monitors between this machine and the laptop
+Exec=@REPO_DIR@/scripts/monitor-switch.sh @HOST@
+Icon=video-display
+Terminal=false
+Categories=Utility;System;

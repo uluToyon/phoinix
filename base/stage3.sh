@@ -650,6 +650,24 @@ elif [[ -n "${XIVLAUNCHER_DESKTOP:-}" ]]; then
     echo "WARNING: $XIVLAUNCHER_DESKTOP missing — no desktop link created"
 fi
 
+# --- Monitor switch icon ----------------------------------------------------
+# Unlike XIVLauncher's, this .desktop does not exist until we make one: it has
+# to name the repo path and the host, so it is generated from the template with
+# the same substitution the user services use. It points INTO the repo on
+# purpose — that is the live working copy on this machine, so editing the
+# script takes effect on the next click with no reinstall step to forget.
+if [[ ${#MONITOR_SWITCH[@]} -gt 0 ]]; then
+    apps_dir="$HOME/.local/share/applications"
+    install -d "$apps_dir" "$HOME/Desktop"
+    sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
+        "$REPO_DIR/system/applications/phoinix-monitor-switch.desktop" \
+        > "$apps_dir/phoinix-monitor-switch.desktop"
+    chmod 644 "$apps_dir/phoinix-monitor-switch.desktop"
+    ln -sf "$apps_dir/phoinix-monitor-switch.desktop" \
+        "$HOME/Desktop/phoinix-monitor-switch.desktop"
+    echo "desktop: monitor switch link placed"
+fi
+
 # --- DZGUI -----------------------------------------------------------------
 # Seeded, and seeding here is worth more than usual: without it the first run
 # opens a wizard that asks for a Steam Web API key, which means fetching it
