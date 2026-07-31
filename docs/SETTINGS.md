@@ -524,8 +524,9 @@ Strawberry playlist.
 **Seeded, and here it earns its keep.** Without a config the first run opens a
 wizard that demands a Steam Web API key, i.e. a trip to steamcommunity.com and
 32 characters typed by hand after every reinstall. With the file in place the
-wizard does not run. Verified on the live machine: DZGUI accepted the seeded
-config unchanged and added no field of its own. Seeded **only when absent** —
+wizard does not run — **confirmed by ulu, who saw the server browser and no
+wizard at all**, on top of the measurement that DZGUI accepted the seeded config
+unchanged and added no field of its own. Seeded **only when absent** —
 an existing config is ulu's, and DZGUI writes his server list into it as he
 plays.
 
@@ -535,8 +536,17 @@ an existing `shortcuts.vdf` for reading and Steam only creates that file once a
 non-Steam game has been added by hand. The exception is swallowed
 (`except Exception: logger.critical(e)`) and the wizard page is, in its author's
 own comment, *"best-effort, permissive even on failure"* — so it reports success
-and does nothing. Workaround if wanted: add it once via Steam's *Add a
-Non-Steam Game*, pointing at `~/Applications/dzgui/dzgui`.
+and does nothing. Workaround, and the one ulu took: add it once via Steam's *Add a Non-Steam
+Game*, pointing at `~/Applications/dzgui/dzgui`.
+
+**The resulting shortcut is backed up rather than recreated.**
+`STEAM_SHORTCUTS_FILE` points at a copy on the games disk, and stage 3 restores
+it into `userdata/<id>/config/` — but only once Steam has a place for it, since
+that directory exists solely after a login. On a fresh install stage 3 says so
+and the second run (after logging in) does the work. It never overwrites an
+existing file, and it refuses while Steam is running, because Steam rewrites
+this file when it exits. Backing up rather than generating also means any later
+non-Steam game comes along by itself.
 
 ## Known gaps and open items
 

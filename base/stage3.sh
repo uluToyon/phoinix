@@ -632,6 +632,34 @@ if [[ -n "${DZGUI_PRIVATE_FILE:-}" ]]; then
     fi
 fi
 
+# --- Steam non-Steam shortcuts ---------------------------------------------
+# Restored, but only when Steam has a place to put it. `userdata/<id>/config`
+# exists solely after a Steam login, which is a manual post-install step — so
+# on a fresh install this finds nothing and says so, and the SECOND stage 3 run
+# (after logging in) does the work. No separate command to remember.
+#
+# Never overwrites: an existing shortcuts.vdf is Steam's, and it holds every
+# non-Steam game ulu has added since. Losing those to restore one is the wrong
+# trade — and Steam rewrites this file when it exits, so a restore underneath a
+# running Steam would be discarded anyway.
+if [[ -n "${STEAM_SHORTCUTS_FILE:-}" && -f "$STEAM_SHORTCUTS_FILE" ]]; then
+    steam_cfg=""
+    for d in "$HOME/.local/share/Steam/userdata"/*/config; do
+        [[ -d "$d" ]] && { steam_cfg="$d"; break; }
+    done
+    if [[ -z "$steam_cfg" ]]; then
+        echo "steam: no userdata yet — log in once, then re-run stage 3 to restore shortcuts"
+    elif [[ -e "$steam_cfg/shortcuts.vdf" ]]; then
+        echo "steam: shortcuts.vdf exists — left alone"
+    elif pgrep -x steam >/dev/null; then
+        echo "WARNING: Steam is running — it rewrites shortcuts.vdf on exit."
+        echo "         Quit Steam and re-run stage 3 to restore the shortcuts."
+    else
+        install -Dm644 "$STEAM_SHORTCUTS_FILE" "$steam_cfg/shortcuts.vdf"
+        echo "steam: non-Steam shortcuts restored"
+    fi
+fi
+
 # ------------------------------------------------- 7c. printer
 # CUPS is enabled in section 10; this creates the queue.
 #

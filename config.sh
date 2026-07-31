@@ -49,6 +49,7 @@ PRINTER_DRIVER=""
 PRINTER_OPTIONS=()
 DZGUI_PRIVATE_FILE=""      # DZGUI secrets/server list on a data disk; empty = no DZGUI
 DZGUI_NAME=""
+STEAM_SHORTCUTS_FILE=""   # backup of Steam's non-Steam game list; empty = none
 VPN_CONFIG_DIR=""         # WireGuard .conf files; empty = this host has no VPN
 
 # --- ProtonVPN split tunnel (stages 2 and 3) -------------------------------

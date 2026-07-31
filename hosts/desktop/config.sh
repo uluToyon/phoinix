@@ -137,3 +137,12 @@ PRINTER_OPTIONS=("PageSize=A4" "printer-is-shared=false")  # Letter is the drive
 # Everything else in DZGUI's config is plain settings and is authored below.
 DZGUI_PRIVATE_FILE="/mnt/FilesMusic/DZGUI/dzgui-private.json"
 DZGUI_NAME="uluToyon"        # in-game name; ulu's public handle anyway
+
+# --- Steam non-Steam shortcuts (stage 3) ------------------------------------
+# Steam's list of non-Steam games (currently: DZGUI). Kept on the games disk
+# rather than in the repo — not because it holds secrets (it holds a name and
+# two paths) but because it lives under userdata/<steam-account-id>/, i.e. in a
+# directory that only exists after a Steam login, and because it grows as ulu
+# adds entries. Backing it up means a reinstall restores whatever is in it,
+# not just the one shortcut that existed the day it was scripted.
+STEAM_SHORTCUTS_FILE="/mnt/Games/phoinix/shortcuts.vdf"

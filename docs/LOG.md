@@ -2133,3 +2133,31 @@ than hoped: the seeded config was accepted unchanged, DZGUI adding not one field
 of its own. That makes three applications with three different answers to the
 same seeding question — LibreOffice yes, mpc-qt never, DZGUI emphatically yes —
 and in every case only the measurement decided it.
+
+## 2026-07-31 — DZGUI, the aftermath: a shortcut backed up rather than rebuilt
+
+Two follow-ups to the DZGUI round, both small and both about the same principle.
+
+**The seeding claim is now observed, not just measured.** ulu confirmed that the
+seeded config produced the server browser and no wizard. The measurement (DZGUI
+accepted the file unchanged, adding no field) had said so; his eyes settled it.
+
+**And the Steam shortcut he added by hand is backed up, not regenerated.** It
+could be generated — the format is a small binary VDF and the only computed part
+is a CRC32-derived appid — but that would be self-written machinery replacing
+something Steam writes anyway, and it would not touch the real obstacle:
+`userdata/<account-id>/config/` exists only after a Steam login, so stage 3 has
+nowhere to write on a fresh install regardless.
+
+So the file is copied to the games disk and stage 3 restores it when it can,
+with three guards that each cover a way this could go wrong: no `userdata` yet
+(say so, wait for the second run), a file already there (leave it — it holds
+every non-Steam game added since), and Steam running (refuse, because Steam
+rewrites this file on exit and the restore would vanish). All four branches
+exercised.
+
+Backing up rather than generating has a second benefit worth naming: whatever
+ulu adds later comes along by itself, where a generator would only ever recreate
+the one entry that existed the day it was written.
+
+Also cleaned up: `~/.config/haruna/`, left behind when the package was removed.

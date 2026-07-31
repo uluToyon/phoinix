@@ -44,7 +44,7 @@ re-run *here* — then the next login would start stage 3 once. `touch
 
 **Application phase.** Done: Dolphin, Konsole, Strawberry, KeePassXC,
 ProtonVPN, qBittorrent. Not yet touched: **Brave, Discord, Steam, LibreOffice,
-DZGUI, XIVLauncher**.
+XIVLauncher**.
 
 ### ProtonVPN — LIVE ON THE DESKTOP AND MEASURED
 
@@ -198,7 +198,9 @@ this topology — until proven, the cap stays.
   reappear without re-downloading — the library carries its own identity in
   `/mnt/Games/SteamLibrary/libraryfolder.vdf`, and Steam matches on it.
   Then **delete `~/Desktop/steam.desktop`**, which Steam creates on first
-  launch. Not scripted, for a reason worth recording: no suppression flag
+  launch — and **re-run stage 3 once**, which restores the non-Steam shortcuts
+  (DZGUI) now that `userdata/` exists. Quit Steam first; it rewrites that file
+  on exit. Not scripted, for a reason worth recording: no suppression flag
   exists (Steam's `registry.vdf` has no such key and `/usr/bin/steam` does not
   create the file — the client does, during its first run), and both stage 3
   and stage 4 run *before* Steam has ever started, so neither can delete a file
