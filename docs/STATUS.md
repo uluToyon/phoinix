@@ -150,13 +150,16 @@ Verified on the desktop (session 2):
 
 Still open:
 
-- **Soundbar −26 dB: reason recorded, effect not confirmed.** The Teufel route
-  runs at `channelVolumes 0.068923` because full scale caused **audio glitches
-  in games (FFXIV, DayZ)** — that reason was missing from the docs until
-  2026-07-31 and is now in `DESIGN.md`. ulu is **not** fully convinced the
-  problem is gone; he raised the volume to 100% and it was restored. Open: test
-  deliberately in FFXIV or DayZ whether full scale still glitches, instead of
-  carrying the fix forever on faith.
+- **Soundbar: the captured value is NOT the verified one.** The old transcripts
+  (recovered 2026-07-31, see `LOG.md`) document the tested fix as
+  `channelVolumes 0.050120` = **−26.00 dB**, glitch-free across 30+ minutes of
+  FFXIV. Repo and live system carry `0.068923` = **−23.23 dB**, i.e. 2.77 dB
+  louder. The level crept up between the investigation and the backup.
+  **This is the likeliest explanation for ulu's doubt that the glitching is
+  gone.** Decide: set it back to exactly −26 dB (`pactl set-sink-volume
+  <teufel> -26dB`, then re-capture), or test upward deliberately to find where
+  the glitches actually start. Full rationale and the operating rules are in
+  `DESIGN.md`.
 - **Application phase — process rules learned on Dolphin:** close a KDE
   application before diffing (they write their config on exit), and treat a
   file that merely grew with suspicion rather than dismissing it as noise.

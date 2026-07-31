@@ -196,6 +196,23 @@ with `chpasswd -e`, or prompt interactively. Encrypt with `age`/`sops` if stored
 
 ---
 
+## Audio: operating rules for the Teufel CONCEPT 12
+
+Recovered from the pre-phoinix investigation (docs/LOG.md 2026-07-31). These
+are not preferences — each one is the residue of a specific failure:
+
+1. **Never run the bar at 100%.** Full hardware gain produced broadband static
+   in FFXIV and DayZ. The bar's own DSP misbehaves at maximum; it is not a
+   PipeWire problem and cannot be fixed there. Raise the *source* level and
+   leave the sink attenuated.
+2. **Pass dB to `pactl`, never percentages.** They are cubic:
+   `percent = 10^(dB/60)`. `2000%` is +78 dB, not +26 dB — that mistake
+   hard-clipped at 0 dBFS mid-game once.
+3. **Lower the sink first, raise the stream second** when re-staging gain, so
+   there is never a moment where both are up.
+4. **Resolve the card by id, never by index** — it has already drifted
+   `hw:5` → `hw:3`. (The general rule below, with a scar to show for it.)
+
 ## Don't encode discovered identifiers
 
 Learned the hard way on this machine: the Teufel soundbar was `hw:5` on

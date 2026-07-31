@@ -967,3 +967,65 @@ And a JSON parser is not a diff tool — the first comparison here ran both file
 through `json.load`, which fails on wireplumber's format, and dutifully
 reported "no difference" between two empty outputs. A wrong "identical" is
 worse than an error.
+
+## 2026-07-31 — The soundbar investigation, recovered from the old transcripts
+
+The pre-phoinix Claude sessions were backed up with `~/.claude` on the
+Downloads disk, and they contain a full write-up of the four-day audio hunt.
+Extracted here as findings; the transcripts themselves stay out of the repo,
+per the decision of 2026-07-30 (secret- and name-scrubbing burden). This is
+what that decision assumed would happen instead — mine the transcript for
+knowledge, keep the knowledge, discard the transcript.
+
+**Symptoms.** Broadband static during FFXIV *and* DayZ, never in FF7 Remake.
+That ruled out game, Dalamud, XIVLauncher and Proton early: whatever it was
+lived below all of them.
+
+**Cause.** The Teufel driven at 100% hardware gain. The variable connecting all
+three games was simply how far the bar was turned up — FFXIV runs with in-game
+sound off, leaving only Dalamud TTS and Browsingway at roughly −73 dBFS, so the
+bar was at maximum to compensate; DayZ was cranked for footsteps; FF7 has
+normally loud audio and never needed it.
+
+**Ruled out by measurement, not by argument** — the durable part:
+5.1 channel-order mismatch (ALSA's `USB-Audio.conf` already routes correctly),
+xruns and the quantum floor (sink errors 0, DSP ~10–15 µs against a 5.3 ms
+period), garbage or clipping in the surround channels (RL/RR/FC/LFE captured
+bit-exact zero), the 6-channel USB mode itself, the host `faudio` package, and
+the Wayland driver. A 40 s in-game capture measured FL/FR peak −72.8 dBFS with
+no zero-runs: **what PipeWire hands to ALSA is numerically pristine.** The noise
+was never in software.
+
+**Mechanism, honestly unexplained.** The tempting story — a very quiet signal
+lifted by huge analog gain — is contradicted by ulu's own observation that
+perceived loudness did *not* change at −26 dB. So the USB volume control is not
+an output attenuator; it changes the bar's internal DSP state, and leaving
+maximum exits some regime where the CONCEPT 12's own automatic gain or limiter
+misbehaves. Firmware behaviour, which is why every software hypothesis failed.
+
+**Operating rules that came out of it** (also in DESIGN.md):
+
+1. Never run this bar at 100%. Raise the *source*, keep the sink attenuated.
+2. Pass dB to `pactl`, never percentages — they are cubic,
+   `percent = 10^(dB/60)`, so `2000%` is +78 dB, not +26 dB. That mistake once
+   hard-clipped at 0 dBFS mid-game.
+3. When re-staging gain: lower the sink first, raise the stream second, so
+   there is never a moment of combined gain.
+4. Resolve the card by id, never by index — it has already drifted `hw:5` →
+   `hw:3`.
+
+**A discrepancy the recovery turned up.** The verified fix was
+`channelVolumes 0.050120`, i.e. exactly **−26.00 dB**. What the repo and the
+live system actually carry is `0.068923` = **−23.23 dB**, 2.77 dB louder than
+the value that was tested glitch-free over 30+ minutes of FFXIV. Somewhere
+between the investigation and the backup the level crept up. That is a
+plausible explanation for ulu's doubt that the problem is really gone — and it
+means the captured "−26 dB fix" is not, in fact, the −26 dB fix.
+
+**Bonus: a mystery from earlier tonight, solved.** The transcript documents a
+*separate* problem from 07-25 — `force-clock.sh` pinning a non-power-of-two
+`clock.force-quantum 500` on the AMD HDMI batch device, causing dropouts in
+FF7 Remake, fixed by disabling it in favour of a clean `10-clock.conf`. That is
+exactly the `disabled-forceclock.bak/` directory found in the PipeWire config
+during the repo import and excluded as switched-off leftovers. The call was
+right; now the reason is on record too.
