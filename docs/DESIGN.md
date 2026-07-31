@@ -212,6 +212,7 @@ These encode hours of debugging and are easy to forget:
 ```
 ~/.local/state/wireplumber/default-profile      # analog-surround-51 pin
 ~/.local/state/wireplumber/default-routes        # the -26dB fix (bar must NOT run at max)
+                                                 # WHY: audio glitches in games (FFXIV, DayZ)
 ~/.config/pipewire/pipewire.conf.d/10-clock.conf
 ~/.config/kwinrc
 ~/.local/share/kscreen/                          # 4-monitor layout, VRR, HDR

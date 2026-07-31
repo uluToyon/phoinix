@@ -931,3 +931,39 @@ collection directories in its database, not in the config, and that database is
 state: absolute paths, rebuilt by a rescan. It currently holds zero directories
 and zero songs, so the music folder still has to be added by hand. Recorded as
 a manual post-install step rather than pretended away.
+
+## 2026-07-31 — The −26 dB soundbar fix: the reason, finally written down
+
+ulu pulled the Teufel to 100% in the KDE volume applet and asked for it to be
+captured. It was not captured, because it collided with a documented fix — and
+that collision is the whole point of writing things down.
+
+What actually changed, in the wireplumber route state:
+
+```
+before:  channelVolumes: [0.068923, …]   (≈ −23…−26 dB, the fix)
+after:   channelVolumes: [1.000000, …]
+```
+
+`DESIGN.md` listed the file under "encodes hours of debugging" with the note
+"bar must NOT run at max" — but **no reason**. It was lost in the move from the
+pre-phoinix notes, which is exactly how a hard-won setting turns into an
+inexplicable quirk that someone eventually undoes.
+
+ulu had it: **audio glitches in games, specifically FFXIV and DayZ.** Now in
+`DESIGN.md` next to the file, where the next person to look will find it. He
+also notes he is not fully convinced the problem is solved — parked in
+STATUS.md rather than treated as settled.
+
+Restored by stopping wireplumber, putting the repo's copy back, and starting it
+again — in that order, because wireplumber writes its in-memory state on
+shutdown and would otherwise overwrite the file we just replaced. Verified:
+`wpctl` shows 0.41, which is the cubic display mapping of linear 0.0689, and
+the live file matches the repo byte for byte again.
+
+Two lessons, both cheap to state and expensive to relearn: a captured fix needs
+its *reason* captured with it, or it will be undone by the person it protects.
+And a JSON parser is not a diff tool — the first comparison here ran both files
+through `json.load`, which fails on wireplumber's format, and dutifully
+reported "no difference" between two empty outputs. A wrong "identical" is
+worse than an error.

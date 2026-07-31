@@ -243,6 +243,16 @@ kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
     --group Backend --key channels_enabled true
 kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
     --group Backend --key channels 6
+
+# Playback mode: shuffle everything, repeat the whole playlist. Both are enums
+# compiled into Strawberry; the values are confirmed against what ulu selected
+# in the GUI, not guessed — shuffle_mode 1 = "Shuffle all",
+# repeat_mode 3 = "Repeat playlist". Unlike the rest of strawberry.conf this
+# section is written immediately rather than on exit.
+kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
+    --group PlaylistSequence --key shuffle_mode 1
+kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
+    --group PlaylistSequence --key repeat_mode 3
 # Strawberry keeps its config user-readable only; kwriteconfig6 creates a fresh
 # file with default permissions when none exists yet.
 chmod 600 "$HOME/.config/strawberry/strawberry.conf"

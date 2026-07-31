@@ -4,6 +4,9 @@ discord               # official client; ulu uses voice+chat only — vesktop is
 qbittorrent           # torrent client; Qt-native, config in ~/.config/qBittorrent (paths touch the mount-path topic)
 strawberry            # music player; HARD requirement: stereo→5.1 upmix ONLY for music (player-internal,
                       # never system-wide — games/movies keep native channels). Dated layout accepted.
+noto-fonts-cjk        # CJK glyphs — without it Japanese track titles in Strawberry render as boxes.
+                      # noto-fonts covers Latin/Greek/Cyrillic only; CJK is a separate 299 MB package.
+                      # Consumer is Strawberry today, but it fixes CJK everywhere (browser, file names).
 # mpc-qt moved to aur.txt — not in official repos (learned during stage 3)
 keepassxc             # password vault ("denk"); database lives on FilesMusic and survives reinstalls
 networkmanager-openvpn # ProtonVPN via .ovpn files (on FilesMusic) in the plasma-nm applet; official
