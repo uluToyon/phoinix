@@ -1,39 +1,69 @@
 # STATUS
 
-_Last updated: 2026-07-31 late (session 6 — the first real run: three stoppers fixed, stage 4's icon bug caught)_
+_Last updated: 2026-08-01 early (session 7 — every defect ulu reported from the first real run is fixed; the next run is the test)_
 
 ## Pick up here
 
-**The next session runs on the desktop, in `~/phoinix` on the new install.
-`git pull` first** — the installer cloned the repo before this handoff was
-committed.
+**ulu reinstalls the machine first thing on 2026-08-01, by himself, to test
+this session's fixes.** Nothing is expected from the assistant until that run
+is done — the next conversation starts AFTER the installation, with its
+results. `git pull` in `~/phoinix` once the new system is up; everything below
+is already committed and pushed-ready.
 
-**The installer has rebuilt the desktop for real.** Run 3 went ISO → KDE
-without a single stop: stages 1–3 clean, each earlier stopper fixed the run
-before (LOG 2026-07-31: resolv.conf under arch-chroot, the CUPS probe,
-the umount holder). Stage 4 finished and did the big work (launchers, 7 TV
-widgets, both side panels, Kickoff favourites, window rules, playlist), but
-left two warnings:
+Session 7 closed ulu's whole list from the first real run. All of it was
+applied to the live system as well, but **the live proof is worth little** —
+these fixes exist for the fresh-install case, and this machine is not one.
+That is exactly what tomorrow's run measures.
 
-1. ~~**Desktop icons were NOT positioned.**~~ **FIXED 2026-07-31 (session 7).**
-   Stage 4 matched the Folder View containment on `lastResolution`, which
-   Plasma writes only after icons have been arranged by hand — absent on every
-   virgin install. It now matches on `lastScreen` plus the activity, with the
-   screen number resolved at runtime from `PANEL_MAIN_CONNECTOR` (DP-1 = Plasma
-   screen 0 here) instead of being stored. Applied live; both icons sit on
-   their configured cells. The fresh-install case itself remains unverified by
-   construction — see `LOG.md`.
-2. **Places order skipped** — `user-places.xbel` exists only after Dolphin
-   has run once. Open Dolphin, delete stage 4's marker, re-run. Known, benign.
+### What the next run must verify — the point of the exercise
 
-**OPEN QUESTION to ulu, asked and not yet answered:** he reported stage 4
-"sieht schlecht aus" — whether that means only the unpositioned icons or more
-than the log admits is unknown. Ask before fixing.
+1. **Desktop icons get positioned.** The stopper. Stage 4 now finds the Folder
+   View containment by `lastScreen` + activity instead of `lastResolution`
+   (which Plasma writes only after icons were arranged by hand, so a virgin
+   install never had it). Expect the log line `desktop icons on 3440x1440
+   (containment N)` and the two icons on cells 2,2 and 4,4. A `WARNING: no
+   folder containment for DP-1 (screen ?)` means the screen lookup failed, not
+   the matcher.
+2. **qBittorrent starts at all.** It could not, because `sg` no longer exists
+   on Arch; the wrapper uses `newgrp` now and VERIFIES the resulting gid.
+   Launcher and autostart both go through it, so both of ulu's reports hang on
+   this one line.
+3. **The playlist import reports a track count.** It used to print success
+   while doing nothing (`strawberry --create` is IPC to a running instance;
+   there was none). Expect `playlist: imported … ('Default') (N tracks)` with
+   N ≈ 160 — a bare warning now means it genuinely failed.
+4. **Stage 3 sets the commit identity.** `git: repo-local identity set to
+   uluToyon <…>` must appear, and afterwards `git var GIT_AUTHOR_IDENT` in
+   `~/phoinix` must answer. On the run just made it did NOT exist at all.
+5. **KeePassXC autostarts and lands bottom-right on DP-2**, below qBittorrent.
+6. **FFXIV opens borderless on DP-1** once XIVLauncher has run. Note the rule
+   depends on `WaylandEnabled=false` in `launcher.ini`, which now travels in
+   the xlcore backup.
+7. **Places order: expect this one to be SKIPPED again, and watch it.**
+   `user-places.xbel` did not exist when stage 4 ran at 22:44:00 — but the file
+   carries mtime 22:44, i.e. it appeared within the same minute. This is a
+   RACE, not a hard ordering: stage 4 may win or lose it. If it warns again,
+   the fix is a wait/retry in that step or moving it later, and the decision
+   needs the observation first. (It was applied by hand on the old system.)
+8. **Watch Strawberry's first start** — see the parked KWin-script item under
+   "Still open". This is the one chance to see the dialog case live: ulu saw
+   the main window at full monitor width while the "first start" message took
+   the rule's 1920. Decide the parked fix with that on screen.
 
-**The post-install manual list has not been started** — see "Post-install
-manual steps" below (Steam first: login → library → delete steam.desktop →
-stage-3 re-run; mpc-qt once + re-run; Strawberry folder; Brave sync;
-KDE Connect; pCloud login; printer test page).
+### After the run — manual steps, unchanged
+
+Steam first: log in → Settings → Storage → add `/mnt/Games/SteamLibrary` →
+quit Steam → delete `~/Desktop/steam.desktop` → **re-run stage 3 once** (it
+restores the DZGUI shortcut now that `userdata/` exists). Then mpc-qt once +
+re-run, the Strawberry music folder, Brave sync, KDE Connect pairing, pCloud
+login, printer switched on before stage 3.
+
+### Was NOT reproduced by a script and must not be forgotten
+
+The live desktop currently carries hand-made state that this session captured
+into the repo — KWin rules for KeePassXC, its autostart, the icon cells, the
+Places order. If any of it is missing after the reinstall, the capture was
+incomplete, and that is a finding worth logging rather than repairing by hand.
 
 **Identity leak on the laptop, contained, follow-ups open** (LOG
 2026-07-31): the laptop's shell profile exports `GIT_AUTHOR_NAME` etc. with
@@ -42,6 +72,11 @@ with it for ~2 minutes before amend + force-push. Open: whether GitHub's
 retention of the orphaned commit warrants the same response as last time
 (repo re-created), and a durable guard for laptop commits — until then every
 commit from the laptop needs the env override by hand.
+**Session 7 narrowed this, but not for the laptop.** Stage 3 now sets the
+repo-local identity itself and warns when a global identity or `GIT_AUTHOR_*`
+in the environment would override it (LOG 2026-08-01) — which closes the hole
+on any machine the installer touches. The laptop is deliberately not one of
+them, so there the manual override still stands.
 
 Also still queued: **`fixes/`** — the curlable collection, parked by ulu on
 2026-07-31 and described under "Later, with ulu".
