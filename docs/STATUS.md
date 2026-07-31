@@ -1,23 +1,40 @@
 # STATUS
 
-_Last updated: 2026-07-31 (session 2 — running ON the desktop)_
+_Last updated: 2026-07-31, ~03:40 (session 3 — the long night)_
+
+## Pick up here
+
+Session 3 ended mid-way through the **application phase**. Done so far:
+Dolphin, Konsole, Strawberry, KeePassXC. Not yet touched: **Brave,
+qBittorrent, Discord, Steam, LibreOffice, DZGUI, XIVLauncher, mpc-qt/haruna,
+CUPS/printer, ProtonVPN**.
+
+The method is settled — see "Working mode" below. In short: snapshot,
+ulu clicks, **close the application**, diff the whole config tree, decide per
+value whether it is a decision or a default, write it key by key, verify by
+reproducing it, document, commit.
+
+Two rules earned the hard way, both non-obvious:
+1. **Read every config file before importing it.** Two of four applications so
+   far had a secret in plain text (Strawberry: OAuth token; KeePassXC: an RSA
+   private key). Wholesale capture would have published both.
+2. **Diff the whole tree, not the application's own files.** Konsole's and
+   Strawberry's real settings were autostart entries and KWin rules, i.e.
+   nowhere near the application. Filter by path prefix, never by name —
+   a `strawberry` filter once hid the autostart entry that mattered.
 
 ## Where we are
 
-- **The system is installed and in daily use.** Stages 1-3 all ran; the
-  desktop boots into Plasma on `linux-zen`, Wayland session, zero failed
-  services. Session 2 runs locally on the desktop in `~/phoinix`.
-- `base/stage1.sh`, `stage2.sh`, `stage3.sh` all exist, all executed, all
-  fixed up with the field lessons from install night (see `LOG.md`).
-- Backup of old system's Claude data + config captures is on the `Downloads`
-  disk: `backup-nvme1n1-20260730/`. Old-system Claude data was restored to
-  `~/.claude`; project memory was ported.
-- **Post-install verification is complete** — every test point below passes,
-  including the two that needed a real reboot (stage 4 firing from a login,
-  and the shutdown hang). Remaining work: the config-capture phase (KDE
-  settings etc.). The chezmoi question from DESIGN.md is still undecided —
-  discuss before capturing.
-
+- **The system is installed and in daily use.** All four stages exist, all
+  have run, and stage 4 has now fired from a real login. Sessions run locally
+  on the desktop in `~/phoinix`.
+- **Post-install verification is complete** — every test point below passes.
+- **The repo is self-contained** (since 2026-07-31): captured config lives in
+  `hosts/<host>/home/` and `dotfiles/`, not in an external backup. A missing
+  source is a hard error rather than a silent skip.
+- Backup of the old system's Claude data + config captures is on the
+  `Downloads` disk: `backup-nvme1n1-20260730/`. It has proven useful beyond
+  restoring — the soundbar investigation was mined out of those transcripts.
 - Repo is live: https://github.com/uluToyon/phoinix (public; commits use
   the GitHub noreply address, author name `uluToyon`). Rule: curated config
   imports + secret scan before pushing anything captured from a live system.
@@ -169,6 +186,20 @@ Still open:
   **Blocked for now:** both reference titles (FFXIV, DayZ) are not installed
   yet, so neither option can be judged. Revisit once gaming is set up — ulu's
   call, deliberately deferred.
+- **DECISION NEEDED — ulu's real name and work e-mail are on GitHub.**
+  `hosts/desktop/authorized_keys` carried the SSH key's comment field
+  (`<realname>@<employer>.de`), which violates the standing rule that no real
+  name appears in any repo file. The comment is now `ulu@laptop` in the working
+  tree, but the original is in commit `42e99b4`, and that commit **is already
+  in `origin/main`**. Nothing cryptographic is exposed — it is a *public* key
+  and SSH ignores the comment — but the name and the work address are
+  published.
+  Options: (a) leave it, the fix stops it spreading further; (b) rewrite
+  history with `git filter-repo` and force-push, which also rewrites every
+  later commit, and note that GitHub can keep unreferenced objects reachable by
+  SHA for a while — a support request is needed to be sure.
+  **Also worth checking**: a public repo tied to a work address is exactly the
+  sort of thing search engines index. ulu's call.
 - **KeePassXC: a pointless private key sits in `keepassxc.ini`.** KeePassXC
   generated a KeeShare signing key when that settings page was opened; the
   share list is empty, so it protects nothing. Deleting the `[KeeShare]`
@@ -235,6 +266,13 @@ Still open:
 
 ## Next steps
 
-1. Continue the post-install manual steps with ulu.
-2. Start the config-capture phase — decide the chezmoi question first.
-3. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.
+1. **Continue the application phase** — next application is ulu's choice; the
+   untouched list is at the top of this file.
+2. **Quick wins waiting for ulu**, none of them blocking: the dialog-window-size
+   check (one `Shift+Del` in Dolphin), the `[KeeShare]` private key, the stale
+   `~/.config/pipewire/pipewire.conf`, the `konsolerc` re-check now that this
+   Konsole has been closed.
+3. **Watch the 144Hz experiment** on DP-1 — a few days without a black flash
+   confirms the bandwidth diagnosis.
+4. Decide the chezmoi question (no longer blocking anything).
+5. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.

@@ -1152,6 +1152,51 @@ Noted for ulu, not done: deleting the `[KeeShare]` section would remove the
 pointless private key from disk. It regenerates only if that settings page is
 opened again.
 
+## 2026-07-31 — Session 3 closed: what the night actually produced
+
+Handoff note. The session ran from post-install verification into the
+application phase; four applications are done and the method is settled.
+
+**The repo became self-contained.** Stage 3 used to restore seven config items
+from a dated backup directory on a data disk, guarded by a bare
+`if [[ -d "$BACKUP" ]]` — a missing disk skipped everything, including the
+monitor fix, without a word. That was the single worst defect found tonight: a
+clean stage-3 run followed by a black first login. Captured config now lives in
+the repo and a missing source is a hard error.
+
+**Three latent bugs, all found by testing rather than reading:**
+`connector_geometry()` would have aborted stage 4 on every install the moment
+its result was used in an assignment (awk `exit` → SIGPIPE); the Places
+ordering step would have silently destroyed a working sidebar when no label
+resolved; and the `[General] rules` index in `kwinrulesrc` would eventually
+have had two stages overwrite each other's entries. None of these were visible
+by inspection.
+
+**Two secrets caught before they were published**, in two consecutive
+applications. That ratio is the argument for the read-before-import rule.
+
+**Knowledge recovered rather than re-derived.** The soundbar's −26 dB fix had
+its *reason* lost; it was mined back out of the old Claude transcripts, along
+with the finding that the value actually in use is −23.23 dB rather than the
+verified −26.00 dB. That discrepancy is the most likely explanation for ulu's
+long-standing doubt that the glitching was ever fixed.
+
+**A years-old bug characterised**: the sporadic black flash on the ultrawide is
+in-service DP link retraining, not software — the link runs at the DP 1.4
+ceiling with no DSC and no FEC, and the flash leaves no journal trace at all.
+The 144Hz experiment is running.
+
+**One tool rather than a setting.** `scripts/strawberry-playlist-export.sh` is
+the first program in the repo: it writes the playlist back to its file on
+session exit, which closes the gap between "the file survives a reinstall" and
+"the file is current".
+
+Small lesson worth keeping, since it cost two rounds of confusion: **newly
+installed fonts only reach processes started afterwards.** Kanji rendered as
+boxes in Konsole and in the Plasma widget while Strawberry showed them fine —
+the difference was purely process age. Irrelevant on a fresh install (the
+package is in `packages/apps.txt`), relevant every time a font is added live.
+
 While at it, a correction to something claimed earlier tonight: `sqlite3` is
 *not* missing on this system. An earlier check queried an empty table, printed
 nothing, and was misread as "tool absent".
