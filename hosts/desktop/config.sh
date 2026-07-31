@@ -49,3 +49,9 @@ DOLPHIN_SIZE="1295,839"       # size only, no position
 # loses; this re-imports the file into a fresh database.
 PLAYLIST_FILE="/mnt/FilesMusic/Musik/Default.m3u"
 PLAYLIST_NAME="Default"
+
+# --- KeePassXC (stage 3) ---------------------------------------------------
+# The password database lives on a data disk and survives reinstalls on its
+# own; phoinix only needs to point KeePassXC at it. The database itself is
+# never touched, copied or backed up by anything in this repo.
+KEEPASS_DB="/mnt/FilesMusic/KeePassXC/Passwords.kdbx"

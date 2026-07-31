@@ -149,6 +149,21 @@ selection, not guessed.
 | Strawberry | `~/.config/autostart/…strawberry.desktop` | — | starts at login | dec |
 | Strawberry | `strawberry.conf` | `Backend/channels_enabled` | `true` | dec |
 | Strawberry | `strawberry.conf` | `Backend/channels` | `6` — stereo→5.1 **in the player only** | dec |
+| KeePassXC | `keepassxc.ini` | `Browser/Enabled` | `true` | dec |
+| KeePassXC | `keepassxc.ini` | `GUI/ApplicationTheme` | `dark` | dec |
+| KeePassXC | `keepassxc.ini` | `GUI/TrayIconAppearance` | `monochrome-light` | dec |
+| KeePassXC | `keepassxc.ini` | `Security/LockDatabaseIdle` | `false` — **deliberate**, single-user machine | dec |
+| KeePassXC | `~/.cache/keepassxc/keepassxc.ini` | `General/Last*Database*` | `KEEPASS_DB`, seeded only when absent | dec |
+
+**`keepassxc.ini` is never captured whole.** KeePassXC writes a KeeShare RSA
+**private key** plus signer name into it the first time that settings page is
+opened — used or not, and here it is not (the share list is empty). Individual
+keys only; `[KeeShare]` is never touched.
+
+**The database preselection is seeded state, on purpose.** The recent-database
+path lives in `~/.cache`, so a fresh install has nothing to preselect whatever
+the settings say. Stage 3 writes it only when `LastDatabases` is absent, so a
+database opened later survives a re-run.
 
 **`strawberry.conf` is never captured whole.** It holds a plain-text OAuth
 access token for a streaming service. Only individual keys are written, so the

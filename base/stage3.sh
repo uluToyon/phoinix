@@ -257,6 +257,37 @@ kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
 # file with default permissions when none exists yet.
 chmod 600 "$HOME/.config/strawberry/strawberry.conf"
 
+# --- KeePassXC -------------------------------------------------------------
+# NEVER capture keepassxc.ini as a whole: KeePassXC generates a KeeShare RSA
+# PRIVATE KEY into it the first time that settings page is opened, together
+# with a signer name. It sits there in plain text whether KeeShare is used or
+# not — and here it is not, the share list is empty. Individual keys only, and
+# the [KeeShare] section is never written or read by us.
+kwriteconfig6 --file "$HOME/.config/keepassxc/keepassxc.ini" --group Browser --key Enabled true
+kwriteconfig6 --file "$HOME/.config/keepassxc/keepassxc.ini" --group GUI --key ApplicationTheme dark
+kwriteconfig6 --file "$HOME/.config/keepassxc/keepassxc.ini" --group GUI --key TrayIconAppearance monochrome-light
+
+# Idle locking OFF — deliberate (ulu, 2026-07-31): single-user machine, and the
+# screen lock and session lock are switched off for the same reason. Written
+# explicitly because a fresh install would otherwise silently re-enable it, and
+# an unexpectedly locking password manager is the kind of change that gets
+# blamed on everything except the reinstall.
+kwriteconfig6 --file "$HOME/.config/keepassxc/keepassxc.ini" --group Security --key LockDatabaseIdle false
+
+# Preselect the database. This one deliberately writes STATE, not settings:
+# KeePassXC keeps the recent-database list in ~/.cache, and on a fresh install
+# there is nothing to preselect no matter which options are set. Seeded only
+# when absent, so a database opened later is never overwritten by a re-run.
+if [[ -n "${KEEPASS_DB:-}" ]] \
+   && ! grep -q '^LastDatabases=' "$HOME/.cache/keepassxc/keepassxc.ini" 2>/dev/null; then
+    install -d "$HOME/.cache/keepassxc"
+    for k in LastDatabases LastOpenedDatabases LastActiveDatabase; do
+        kwriteconfig6 --file "$HOME/.cache/keepassxc/keepassxc.ini" \
+            --group General --key "$k" "$KEEPASS_DB"
+    done
+    echo ">> KeePassXC preselects $KEEPASS_DB"
+fi
+
 # NOTE: the music collection itself is NOT scriptable here. Strawberry stores
 # collection directories in its database (~/.local/share/strawberry/), not in
 # the config, and that database is state — absolute paths, rebuilt by a rescan.

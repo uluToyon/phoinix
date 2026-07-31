@@ -1105,6 +1105,53 @@ Two guards, both earned earlier tonight:
 Plus one generation of backup (`.m3u.bak`) before each write, because this file
 is years of curation and a bad export must never be the only thing left.
 
+## 2026-07-31 — Applications, round 4: KeePassXC (and a private key in a config)
+
+**The find that matters: `keepassxc.ini` contains an RSA private key.**
+KeePassXC generates a KeeShare signing key — private key, public key and signer
+name — into its plain config file the first time that settings page is opened,
+whether or not KeeShare is ever used. Here it is *not* used: the share list is
+`<KeeShare><Active/></KeeShare>`, i.e. empty. So a key that serves no purpose
+sits in a world-readable-format file, and capturing that file the way `kwinrc`
+is captured would have published it.
+
+This is the second application in a row where wholesale capture would have
+leaked a secret (Strawberry had an OAuth token). The rule from the start of the
+application phase — read every file before importing it — has now paid for
+itself twice. `[KeeShare]` is never read or written by phoinix.
+
+Scripted: browser integration on, dark theme, monochrome-light tray icon, and
+`Security/LockDatabaseIdle=false`. That last one is deliberate and was
+confirmed rather than assumed — single-user machine, screen lock and session
+lock are off for the same reason. It is written explicitly *because* a fresh
+install would otherwise silently re-enable idle locking, and a password manager
+that suddenly starts locking gets blamed on everything except the reinstall.
+
+**Preselecting the database meant deliberately seeding state.** ulu wanted
+KeePassXC to come up with his database already selected. That path lives in
+`~/.cache/keepassxc/` (`LastDatabases`, `LastOpenedDatabases`,
+`LastActiveDatabase`) — state, not settings — and on a fresh install it is
+empty no matter which options are set. So stage 3 seeds those three keys, and
+only when `LastDatabases` is absent, so a database opened later is never
+overwritten by a re-run.
+
+**Proven without looking at the screen.** Two failed attempts first, both worth
+recording: checking open file descriptors showed nothing, because KeePassXC
+reads the database header and closes the file again while asking for the
+password; and the first test instance exited immediately because KeePassXC runs
+single-instance and simply handed off to the running one (`SingleInstance=false`
+in the test config fixed that). The atime trick then failed too — `/mnt` is
+`relatime`, and the database's atime was already newer than its mtime.
+
+What worked: point the seeded config at a **dummy file** with a deliberately
+old atime. Starting KeePassXC moved that atime to now, proving it opened the
+file named only in the seeded state — and ulu's real database was never touched
+by the test at all.
+
+Noted for ulu, not done: deleting the `[KeeShare]` section would remove the
+pointless private key from disk. It regenerates only if that settings page is
+opened again.
+
 While at it, a correction to something claimed earlier tonight: `sqlite3` is
 *not* missing on this system. An earlier check queried an empty table, printed
 nothing, and was misread as "tool absent".

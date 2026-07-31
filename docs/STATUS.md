@@ -169,6 +169,16 @@ Still open:
   **Blocked for now:** both reference titles (FFXIV, DayZ) are not installed
   yet, so neither option can be judged. Revisit once gaming is set up — ulu's
   call, deliberately deferred.
+- **KeePassXC: a pointless private key sits in `keepassxc.ini`.** KeePassXC
+  generated a KeeShare signing key when that settings page was opened; the
+  share list is empty, so it protects nothing. Deleting the `[KeeShare]`
+  section removes it; it only comes back if the page is opened again. phoinix
+  never touches that section either way. ulu's call.
+- **KeePassXC databases: 4 conflict copies deleted 2026-07-31** (ulu's call —
+  sizes grew monotonically, so divergence was unlikely). Full backup of all six
+  files at `/mnt/Downloads/keepassxc-pre-merge-2026-07-31/`; keep it until the
+  database has been in use for a while. Syncthing (which caused the conflicts)
+  was retired years ago and is deliberately not part of phoinix.
 - **Application phase — process rules learned on Dolphin:** close a KDE
   application before diffing (they write their config on exit), and treat a
   file that merely grew with suspicion rather than dismissing it as noise.
