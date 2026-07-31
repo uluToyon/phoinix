@@ -2962,3 +2962,39 @@ Still unverified by construction: the case this fixes is a FRESH install, and
 this machine is not one. What was verified is that the matcher finds the right
 containment where the old one found none, and that the write survives a
 plasmashell restart.
+
+## 2026-08-01 — the defence against the name leak was not installed at all
+
+Found while making this session's commits: `git var GIT_AUTHOR_IDENT` on the
+freshly installed desktop answered **"Author identity unknown"**. No local
+identity, no global one — nothing. `CLAUDE.md` and `STATUS.md` both describe
+the repo-local `uluToyon` + GitHub noreply address as the standing protection
+against ulu's real name reaching GitHub, and on the machine rebuilt by this
+installer that protection did not exist.
+
+**Why, precisely:** the identity lives in `.git/config`, which is not
+versioned. `bootstrap.sh` does a fresh `git clone`, stage 1 rsyncs the tree,
+stage 2 copies it to `~/phoinix` with `cp -a` — that copy WOULD have carried a
+local identity, but there was never one to carry. It had been set by hand on
+the old install years of commits ago, and no script ever knew about it.
+
+Fixed by making it a setting like any other: `GIT_IDENTITY_NAME` and
+`GIT_IDENTITY_EMAIL` in the repo-wide `config.sh` (the identity belongs to the
+person, not the machine), written repo-locally by stage 3 — early, before
+anything else in that stage can fail, and re-runnable, unlike stage 2's
+one-shot copy step.
+
+The noreply address in the repo is not a secret. It appears in every commit of
+this public repository; it is the substitute for a secret.
+
+**Two warnings ship with it, one per leak this repo has actually suffered.**
+A global git identity is reported loudly (that is how 35 commits acquired the
+real name), and so is `GIT_AUTHOR_*`/`GIT_COMMITTER_*` in the environment (the
+laptop case, where a shell profile overrode the repo-local setting). Warnings,
+not aborts: both states can be legitimate on a machine not dedicated to
+phoinix, but neither may pass unnoticed, because both override or pre-empt the
+setting stage 3 just made.
+
+All three paths were tested. The global-identity branch was exercised against a
+throwaway `HOME`, because creating a real global identity to test it is the
+exact thing the repo forbids — the live system still has no `~/.gitconfig`.

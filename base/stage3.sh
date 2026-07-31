@@ -33,6 +33,39 @@ trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null' EXIT
 
 read_list() { grep -hvE '^\s*(#|$)' "$@" | awk '{print $1}'; }
 
+# ------------------------------------------------- 0. commit identity
+# Early, before anything can fail: this is the one setting whose absence is a
+# privacy incident rather than an inconvenience.
+#
+# Nothing used to set it. bootstrap clones fresh, stage 2 copies the tree to
+# ~/phoinix, and `.git/config` is not versioned — so the repo-local identity
+# was hand-made on the old install and simply absent after the reinstall.
+# Found on 2026-07-31 with `git var GIT_AUTHOR_IDENT` answering "Author
+# identity unknown", i.e. the guard that CLAUDE.md calls the defence against
+# the name leak was not there at all.
+if [[ -d "$REPO_DIR/.git" ]]; then
+    git -C "$REPO_DIR" config user.name  "$GIT_IDENTITY_NAME"
+    git -C "$REPO_DIR" config user.email "$GIT_IDENTITY_EMAIL"
+    echo "git: repo-local identity set to $GIT_IDENTITY_NAME <$GIT_IDENTITY_EMAIL>"
+
+    # Both leaks this repo has actually suffered, each with its own warning.
+    # Warn rather than abort: either state can be legitimate on a machine that
+    # is not only used for phoinix — but neither may pass unnoticed, because
+    # both silently OVERRIDE or PRE-EMPT the line above.
+    if git config --global user.email >/dev/null 2>&1 \
+       || git config --global user.name >/dev/null 2>&1; then
+        echo "WARNING: a GLOBAL git identity exists —"
+        echo "         $(git config --global user.name 2>/dev/null) <$(git config --global user.email 2>/dev/null)>"
+        echo "         Repo-local wins for THIS repo, but that is how 35 commits"
+        echo "         once acquired ulu's real name. Check other clones."
+    fi
+    if [[ -n "${GIT_AUTHOR_NAME:-}${GIT_AUTHOR_EMAIL:-}${GIT_COMMITTER_NAME:-}${GIT_COMMITTER_EMAIL:-}" ]]; then
+        echo "WARNING: GIT_AUTHOR_*/GIT_COMMITTER_* are set in the environment."
+        echo "         These OVERRIDE the repo-local identity — the laptop case"
+        echo "         from 2026-07-31. Unset them before committing."
+    fi
+fi
+
 # ------------------------------------------------- 1. official packages
 mapfile -t PKGS < <(read_list "$REPO_DIR"/packages/{kde,gaming,audio,cli,apps,dev}.txt)
 sudo pacman -S --needed --noconfirm "${PKGS[@]}"

@@ -221,6 +221,7 @@ rule and must grow when another one is added.
 
 | Setting | Value | Origin |
 |---|---|---|
+| Commit identity | `GIT_IDENTITY_NAME`/`_EMAIL` written **repo-locally** into `~/phoinix`, plus warnings for a global identity and for `GIT_AUTHOR_*` in the environment | dec |
 | Shell aliases | own file `~/.config/phoinix/aliases.zsh`, sourced from `.zshrc`: `nano`→`micro`, `yay`→`paru`, `qbittorrent`→the VPN wrapper | dec |
 | `environment.d/10-phoinix-locale.conf` | `LANG` + nine `LC_*` on `de_DE.UTF-8` | dec |
 | `plasma-localerc` | the same, so the KCM shows the truth | dec |

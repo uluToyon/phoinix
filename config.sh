@@ -20,6 +20,25 @@ LOCALE="en_US.UTF-8"          # LANG / LC_MESSAGES — the language of the UI
 FORMAT_LOCALE="de_DE.UTF-8"   # dates, numbers, currency, paper size
 LOCALES=("$LOCALE" "$FORMAT_LOCALE")
 
+# --- Commit identity for the user's copy of this repo ----------------------
+# Set REPO-LOCALLY by stage 3, never globally. This is the whole defence
+# against ulu's real name reaching GitHub, and it has failed twice: once
+# through a global git identity (35 commits, docs/LOG.md 2026-07-31) and once
+# through GIT_AUTHOR_* exported by a shell profile.
+#
+# It lives here rather than in hosts/<host>/config.sh because it belongs to the
+# person, not the machine — and it lives in the repo at all because it was NOT
+# reproducible before: bootstrap clones fresh, `.git/config` is not versioned,
+# so the identity was set by hand on the old install and simply gone after the
+# reinstall. `git var GIT_AUTHOR_IDENT` said "Author identity unknown"
+# (found 2026-07-31, session 7, while committing).
+#
+# The address is not a secret. It is the GitHub noreply address that already
+# appears in every commit of this public repo — it is the substitute for a
+# secret, not one.
+GIT_IDENTITY_NAME="uluToyon"
+GIT_IDENTITY_EMAIL="47314345+uluToyon@users.noreply.github.com"
+
 # Partition defaults (override per host if needed)
 ESP_SIZE="1G"      # 1 GB, not 512 MB — multiple kernels + fallback initramfs outgrow it
 ROOT_SIZE="200G"   # /home gets the rest of the disk
