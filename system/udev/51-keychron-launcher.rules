@@ -1,0 +1,18 @@
+# Keychron Q6 Max (3434:0861) and M6 8K (3434:d049) — raw HID access so that
+# launcher.keychron.com can see them in Brave.
+#
+# Without this every /dev/hidraw* is crw------- root:root, the browser runs as
+# ulu and cannot open any of them. WebHID does not report that as an error: the
+# device picker simply comes up EMPTY, which reads as "nothing happens at all".
+# That is exactly how this was found.
+#
+# uaccess, not a group: systemd-logind puts an ACL on the node for whoever holds
+# the active local session, so access ends with the logout instead of living on
+# in a group membership. It needs a local seat — fine here, ulu is on seat0.
+#
+# Matched by VENDOR, not by product: a third Keychron device should not need a
+# rule change. Both devices are used WIRED here without exception (ulu, session
+# 5) — over the 2.4 GHz dongle the keyboard may enumerate under a different id
+# and would need its own line, and over Bluetooth the launcher cannot reach it
+# at all.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3434", TAG+="uaccess"

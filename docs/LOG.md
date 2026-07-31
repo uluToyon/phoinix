@@ -2332,3 +2332,51 @@ Parked at ulu's request, not built. The agreed shape is recorded in STATUS.md
 under "Later, with ulu". If it ever outgrows a directory it can move out with
 `git filter-repo` and keep its history; merging back a premature split is the
 harder direction, which is why the directory comes first.
+
+## 2026-07-31 — keychron-launcher: it was never the keyboard, it was udev
+
+Symptom: on launcher.keychron.com in Brave, pressing connect did nothing at all
+for both the Q6 Max (3434:0861) and the M6 8K (3434:d049). ulu had a
+`50-qmk.rules` lying on the data disk because "you usually have to fiddle with
+udev rules" — so the suspicion was in the right area, but the file was not.
+
+Measured before touching anything:
+
+- `/etc/udev/rules.d/` was **empty**. The rule had never been installed on this
+  system at all.
+- Consequently every `/dev/hidraw*` was `crw------- root:root`. Brave runs as
+  ulu and cannot open any of them. WebHID does not surface that as an error —
+  the device picker just comes up EMPTY, which is precisely "nothing happens".
+
+The data-disk file would not have fixed it either. It contains **no Keychron id**
+(`3434`: zero hits) because it is qmk_firmware's *bootloader* rule set, for the
+id a board takes on while being flashed. The only line that would have applied
+was line 71, `KERNEL=="hidraw*", MODE="0660", GROUP="plugdev"` — a catch-all
+over every hidraw device on the machine (ASRock LED controller, Focusrite, USB
+audio, the Microsoft receiver) that also names a group Arch does not have.
+
+Decided: keep the 32 upstream bootloader rules — ulu **does** update firmware,
+and only they cover the bootloader ids. Drop line 71. Add one rule of our own,
+by vendor, for the launcher. Both files go in the repo under `system/udev/`,
+split by provenance, installed by stage 2. The data-disk copy was only ever
+there because there was nowhere else; a udev rule is a setting, not a secret.
+
+**The lesson is in how I got it wrong, not in the fix.** My first handover
+chained the install with `&&` and ended in
+`udevadm trigger …; getfacl … 2>/dev/null | grep`. Two mistakes compounded:
+`2>/dev/null | grep` swallowed the very error that would have explained the
+empty output, and — the real one — **`udevadm trigger` only QUEUES events and
+returns immediately**. The `getfacl` ran before udevd had executed the uaccess
+builtin, so I reported the rule as not working while it already was. Minutes
+later all four Keychron nodes carried `user:ulutoyon:rw-`, and ulu confirmed
+the launcher had been working the whole time.
+
+This is the same failure as the soundbar and the FIFO: a measurement taken
+under the wrong condition, reported as a finding. Any check after
+`udevadm trigger` needs `udevadm settle` first — the counters do not settle
+just because the command returned.
+
+Left unexplained honestly: `install` reported exit 1 on the second file while
+writing it correctly. Both files in `/etc` are byte-identical to the repo
+(sha256 verified) with `-rw-r--r-- root:root`, so the outcome is right; the
+exit code is not understood and is not being papered over.

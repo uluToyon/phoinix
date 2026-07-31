@@ -86,6 +86,27 @@ and the journal confirms an early update (`Updated early from: 0x0a601209`).
 Do not "fix" this by adding the line — it would be redundant. `amd-ucode` is
 in `pacstrap.txt`, which is what actually matters.
 
+**udev rules for the Keychron devices** (`system/udev/` → `/etc/udev/rules.d/`,
+decided 2026-07-31). Two files, split by provenance so the vendored one can be
+refreshed without losing our edit:
+
+| File | Covers | Origin |
+|---|---|---|
+| `50-qmk.rules` | bootloader ids while FLASHING (Atmel DFU, Caterina, STM32, …) | vendored from qmk_firmware, minus upstream line 71 |
+| `51-keychron-launcher.rules` | raw HID of the RUNNING devices, for launcher.keychron.com | ours, one rule |
+
+Both grant through `TAG+="uaccess"`, so logind puts an ACL on the node for the
+holder of the active local session — no group, no world-readable device, access
+ends at logout. Ours matches by VENDOR (`ATTRS{idVendor}=="3434"`), found on the
+USB parent, so a third Keychron device needs no rule change. Upstream line 71
+was dropped deliberately: it was a catch-all over *every* hidraw device on the
+machine and named `GROUP="plugdev"`, which does not exist on Arch. The other 32
+upstream rules use `uaccess` correctly and were kept — ulu does flash firmware.
+
+Both devices are used WIRED here without exception (ulu). Over the 2.4 GHz
+dongle the keyboard may enumerate under a different id and would need its own
+line; over Bluetooth the launcher cannot reach it at all.
+
 ## Stage 3 — user system (first boot, unprivileged)
 
 Packages, `paru` (built from source), DZGUI, then:

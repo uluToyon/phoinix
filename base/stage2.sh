@@ -68,6 +68,16 @@ pacman -Sy
 # --------------------------------------------------------------------- zram
 install -m644 "$REPO_DIR/system/zram-generator.conf" /etc/systemd/zram-generator.conf
 
+# --------------------------------------------------------------------- udev
+# Keychron: 51-* gives the launcher raw HID access to the running devices,
+# 50-* covers the bootloader ids a board takes on while being flashed. Both
+# grant via uaccess, so nothing here depends on a group existing. No reload is
+# needed in the chroot — these are read at the next boot, which is the one
+# after this script.
+for r in "$REPO_DIR"/system/udev/*.rules; do
+    install -Dm644 "$r" "/etc/udev/rules.d/$(basename "$r")"
+done
+
 # --------------------------------------------------------------------- user
 if ! id "$USERNAME" &>/dev/null; then
     useradd -m -G wheel -s /usr/bin/zsh "$USERNAME"

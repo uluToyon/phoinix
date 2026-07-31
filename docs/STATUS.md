@@ -4,18 +4,25 @@ _Last updated: 2026-07-31 (session 4 — the one command, and the application ph
 
 ## Pick up here
 
-1. **keychron-launcher.** New topic, not yet discussed. Two Keychron devices are
-   in daily use here — a Q6 Max keyboard and an M6 8K mouse, both visible in
-   `/proc/bus/input/devices` — and neither has any configuration in this repo.
-   The M6 already appears once, indirectly: stage 4 turns pointer acceleration
-   off for *every* pointer precisely so no mouse has to be named. Open: whether
-   the Keychron configurator belongs on this machine at all, and if so which
-   one (there is a web configurator using WebHID, and packaged VIA/QMK tooling)
-   — plus whether any device config is worth carrying or lives on the keyboard.
+Both items that stood here at the start of session 5 are closed:
 
-The complicated question from the end of session 4 — GitLab-style superprojects
-on GitHub — was answered and is closed; see LOG 2026-07-31. It produced one
-parked idea, `fixes/`, listed under "Later, with ulu" below.
+- **keychron-launcher** — done. The launcher was failing because
+  `/etc/udev/rules.d/` was empty, not because of anything on the keyboards.
+  `system/udev/50-qmk.rules` (flashing) and `system/udev/51-keychron-launcher.rules`
+  (raw HID) are in the repo and installed by stage 2; verified working on the
+  running machine, ulu confirmed the launcher sees both devices. See SETTINGS
+  under stage 2 and LOG 2026-07-31.
+- **The complicated question** — GitLab-style superprojects on GitHub. Answered
+  and closed (they are git submodules; phoinix stays one repo). It produced one
+  parked idea, `fixes/`, listed under "Later, with ulu" below.
+
+Still open on the Keychron topic, deliberately not pursued yet: **no device
+configuration is carried in this repo.** Key mapping and DPI live on the devices
+themselves, so a distro-hop does not lose them — but a factory reset would. Ask
+ulu whether he has remapped anything worth exporting from the launcher.
+
+The M6 already appears once elsewhere, indirectly: stage 4 turns pointer
+acceleration off for *every* pointer precisely so no mouse has to be named.
 
 ## Done in session 4
 
