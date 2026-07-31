@@ -18,11 +18,22 @@ Each stage arms the next: bootstrap → 1 → 2 (chroot) → reboot → login ho
 explicit choice: the password for the new user, later the sudo password.
 Rationale in `LOG.md`; the serial prompt is gone.
 
-**Not yet tested end to end.** Every piece was verified in isolation (guards,
-login hook, bootstrap dry run — see `LOG.md`), but the chain has never run on
-real hardware or in QEMU. The QEMU loop in `DESIGN.md` is the right place for
-that, and it is the highest-value open item in the repo: a broken bootstrap is
-only discovered on the day the machine is already wiped.
+**Tested end to end in QEMU on 2026-07-31: PASS.** The whole chain ran from the
+one-liner to a personalised Plasma session — stage 1 partitioned, stage 2
+installed and rebooted, the login hook started stage 3, the greeter login
+started the session, stage 4 built the panel. `scripts/qemu-test.sh` is the
+harness; `hosts/qemu/` is the throwaway machine. Details and the six defects it
+exposed are in `LOG.md`.
+
+**It found six real defects, five of which would have hit the next reinstall.**
+The worst: `bootstrap.sh` did nothing at all under `curl | bash`. Not one of
+them was visible by reading the scripts.
+
+Not covered by the QEMU run, and worth stating: no captured configs are
+restored there (`CAPTURED_CONFIGS=0`), so the monitor fix and the wireplumber
+audio state are exercised on the desktop only. The AUR phase downloads whatever
+is current, so a broken upstream package fails the test for reasons that are
+not ours.
 
 One live-system detail, harmless: this desktop has no `~/.zprofile` and no
 `stage3.done` marker, because both are new. Irrelevant unless stage 2 is ever
@@ -277,8 +288,9 @@ Still open:
   the session runs inside Konsole, so nothing there could be verified. Nothing
   appeared changed in this round, but confirm once this window has been closed.
 - **Live system is behind the repo on one point:** the boot entry on disk still
-  reads `video=DP-2:...` only. The DP-1 cap was added to `stage2.sh` but stage 2
-  has not been re-run, so the kernel arg is not active. Irrelevant for the
+  reads `video=DP-2:...` only. The DP-1 cap lives in `KERNEL_PARAMS` in
+  `hosts/desktop/config.sh` (moved there 2026-07-31, it used to be inline in
+  `stage2.sh`) but stage 2 has not been re-run, so the kernel arg is not active. Irrelevant for the
   running test (KWin holds 144Hz in-session) — it matters at the next reinstall,
   where it will be applied from the script anyway.
 - **Live-system cleanup, not yet done:** `~/.config/pipewire/pipewire.conf` is
@@ -289,10 +301,15 @@ Still open:
 
 ## Next steps
 
-1. **Test the one-command chain in QEMU** (see "Pick up here"). Highest value
-   in the repo right now — every part is verified, the whole is not.
-2. **Continue the application phase** — next application is ulu's choice; the
+1. **Continue the application phase** — next application is ulu's choice; the
    untouched list is at the top of this file.
+2. **Decide where `qemu-base` + `edk2-ovmf` belong.** They are installed on the
+   desktop now, for the test loop, but are in no package list — so the repo
+   currently cannot rebuild its own test rig. Either they go into a package
+   list (which makes `DESIGN.md`'s testing loop reproducible) or they get
+   removed again after use. ulu's call, deliberately not decided unilaterally.
+3. **Re-run the QEMU test after changes to stages 1-4.** It is one command now:
+   `scripts/qemu-test.sh --fresh`, then `--installed` after the reboot.
 3. **Quick wins waiting for ulu**, none of them blocking: the dialog-window-size
    check (one `Shift+Del` in Dolphin), the `[KeeShare]` private key, the stale
    `~/.config/pipewire/pipewire.conf`, the `konsolerc` re-check now that this

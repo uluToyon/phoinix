@@ -1344,3 +1344,112 @@ disk stage" and the matching DESIGN.md caveat are gone, replaced by a section
 that names where the protection actually sits. Both had been written for the
 one-off SSH-driven first install and then generalised into a rule that
 contradicted the reason this repo exists.
+
+## 2026-07-31 — The QEMU run: six defects, five of them waiting for the next reinstall
+
+`DESIGN.md` has called the QEMU loop "the thing that makes hand-rolling viable"
+since day one, and it had never been run. It got run. The result is the
+strongest argument in this repo for testing over reading: **none of the six
+defects below was visible by inspecting the scripts, and five of them would
+have hit the next real reinstall.**
+
+Harness: `scripts/qemu-test.sh` plus `hosts/qemu/`, a throwaway machine whose
+`DISK` is a by-id path built from the serial the script hands to QEMU — so
+stage 1's real guard is exercised rather than bypassed. Verified both ways: a
+made-up by-id path exits "does not exist", and pointed at the running desktop it
+exits "has mounted partitions — refusing". The ISO boots on a serial console
+with its own boot options read out of the ISO (`archisosearchuuid` changes with
+every monthly image), so the whole run is scriptable and logged.
+
+**1. `bootstrap.sh` did nothing at all.** The one-liner returned to a prompt in
+silence. Under `curl | bash`, stdin is the pipe bash is reading the script FROM,
+and the `exec < /dev/tty` added to give the stages a terminal replaced exactly
+that source: bash lost the rest of the script and read the remainder from the
+terminal. Reduced to three lines afterwards:
+
+```
+printf 'echo A\nexec < /dev/null\necho B\n' | bash     # prints only A
+```
+
+Fixed by redirecting per command. That closes a second hole in passing: a child
+reading stdin (pacman's "Proceed with installation?") would have eaten the
+script text.
+
+Two false leads on the way, both worth recording. The console echo showed
+`/m aain/` and was read as a mangled URL — it is zsh redrawing at the line wrap,
+`^M^[[K`, and the URL was always intact. And the second attempt was probably
+working when it was aborted for being "silent": `git` is **not** on the current
+Arch ISO, so `pacman -Sy --noconfirm git` runs first and its database sync takes
+longer than the patience it was given. `STATUS.md` had claimed "git and curl are
+both on the Arch ISO". Only the fallback saved that.
+
+**2. Host-specific kernel parameters were hardcoded in `stage2.sh`.** The boot
+entry carried `video=DP-2:… video=DP-1:…` inline, so the test VM was configured
+for monitors it does not have. Invisible while one host existed; obvious the
+moment a second did. Now `KERNEL_PARAMS` per host, and the desktop's rendered
+entry is unchanged, checked rather than assumed.
+
+**3. The sudo keepalive in `stage3.sh` died on its first failure.** Three
+password prompts in one run. `sudo -n true` sat in the loop BODY and the
+subshell inherits `set -e`, so a single failed refresh ended it silently. As the
+loop CONDITION, a lost ticket ends the loop instead of aborting it. Measured
+afterwards: the prompts that remain are both from the paru bootstrap
+(`makepkg -si`), which by definition runs before paru exists; the AUR phase
+itself, now with `--sudoloop`, asks **zero** times. So this is not "one password
+and walk away" — the paru bootstrap asks twice on a fresh install, and that is
+now a documented property rather than a surprise.
+
+**4. Stage 3 assumed every host has captured configs.** It aborted after
+completing every package phase because `hosts/qemu/home/` does not exist — and
+should not, since the desktop's captured files are keyed to four monitors' EDID
+hashes and to a soundbar the VM lacks. Relaxing the hard error to "skip if
+absent" would have reopened exactly the hole it was written for (a missing
+source, a clean run, a black first login). So the host **declares** it:
+`CAPTURED_CONFIGS`, and an undeclared host is an error too. Adding a host is now
+a decision rather than an omission.
+
+**5. Stage 4 died with `PANEL_MAIN_CONNECTOR: unbound variable`** — true,
+useless, and two hundred lines from the file that had to change. It now checks
+the required declarations by name and says which are missing. The TV clone, the
+side strips and `PLACES_ORDER` became optional, defaulted in `config.sh`: a
+machine with one screen is the normal case rather than an incomplete one, and
+the laptop this repo already plans for has exactly one. An undeclared screen
+yields the same "not connected" geometry as an unplugged one, which `panels.js`
+already skips — absence needs no second code path.
+
+**6. `ROOT_SIZE=12G` for the test host.** Mine, not the repo's: the first guess
+assumed the test only had to reach a booting system, and stage 3 ran for half an
+hour before dying on disk space mid-AUR. A test host has to be sized for the
+real package set or it tests the installer only up to where it runs out of room.
+
+**What the harness gained on the way.** Stage 4's result — a greeter, a panel —
+is not observable on a serial line, and an unobservable test proves nothing. So
+`qemu-test.sh` opens a QEMU monitor on its own socket: `screendump` to look,
+`sendkey` to type. That turned out to be worth more than planned. The intention
+was to skip the greeter and start a session by hand; instead the password was
+typed into the real PLM greeter (14 dots for 14 characters, checked on the
+screenshot), so the **greeter login is covered too**.
+
+**The chain, verified end to end:** one-liner → clone → stage 1 → stage 2 →
+reboot → login hook → stage 3 → greeter login → stage 4. Stage 4's evidence is
+worth keeping, because it is the fresh-install path that never existed before:
+Kickoff favourites written against a freshly generated activity UUID, the flat
+pointer profile applied to a mouse discovered at runtime, `archroot`/`archhome`
+resolved from labels to `vda2`/`vda3`, window rules placed at `Virtual-1`'s
+origin, marker written. The panel came up with exactly the seven pinned
+launchers in order, where Plasma's default had been before.
+
+Also confirmed in passing, none of it planned: the restored `.zshrc` is active
+(the `ls`→`eza` alias broke one of my own commands), Strawberry autostarts, the
+panel clock reads `31.07.26` from the German format locale, and stage 3 is
+genuinely re-runnable — it was re-run after the fix and completed from where it
+had failed.
+
+One process lesson, cheap and recurring: a watcher that greps a whole console
+log finds the ERROR from the PREVIOUS run and reports a failure that did not
+happen. Match from a mark, not from the top of the file.
+
+And one that this repo has now learned twice: `${!v}` is bash-only indirect
+expansion, and this session's shell is zsh, so testing a bash snippet at the
+prompt reported "bad substitution" for code that is perfectly correct in the
+file it lives in.
