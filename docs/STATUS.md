@@ -4,6 +4,40 @@ _Last updated: 2026-07-31, ~03:40 (session 3 — the long night)_
 
 ## Pick up here
 
+### FIRST, BEFORE ANYTHING ELSE — the curl one-liner
+
+**The repo contradicts its own goal and has to be fixed.** `README.md:55` and
+`docs/DESIGN.md:186` tell the reader *not* to `curl | bash` the disk stage,
+while `docs/LOG.md:23` cites "keeps the curl workflow simple" as part of the
+reason encryption was dropped. Being able to curl the installer **was the
+point**. The warning came from the "SSH-driven install" section, where it was
+scoped to that one remote first run, and then got lifted into the README as a
+general rule.
+
+Also true and independent of that: **`stage1.sh` cannot be `curl | bash`ed as
+it stands.** It sources `config.sh` and `hosts/<host>/config.sh`, reads
+`packages/pacstrap.txt`, and rsyncs the whole repo to `/mnt/root/phoinix/` for
+stage 2. A single piped file has none of that.
+
+So the one-liner needs a bootstrap: fetch a small script, clone the repo, run
+stage 1 — e.g.
+
+```
+curl -fsSL https://raw.githubusercontent.com/uluToyon/phoinix/main/scripts/bootstrap.sh | bash -s desktop
+```
+
+`git` and `curl` are both on the Arch ISO. To do:
+
+1. Write `scripts/bootstrap.sh` (clone — optionally at a tag — then exec stage 1).
+2. Rewrite `README.md` and the DESIGN.md caveat so the curl path is the
+   **documented, intended** route, not a discouraged one.
+3. Keep tag-pinning as an *option* for reproducible runs, not as a commandment.
+4. The real guard rail already exists and should be named as such: stage 1
+   refuses without UEFI, refuses a mounted target, refuses the ISO's own disk,
+   and demands the target disk's **serial** typed by hand.
+
+---
+
 Session 3 ended mid-way through the **application phase**. Done so far:
 Dolphin, Konsole, Strawberry, KeePassXC. Not yet touched: **Brave,
 qBittorrent, Discord, Steam, LibreOffice, DZGUI, XIVLauncher, mpc-qt/haruna,
