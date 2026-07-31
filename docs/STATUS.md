@@ -175,7 +175,9 @@ this topology — until proven, the cap stays.
 
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
-- Evaluate haruna vs. mpc-qt BEFORE finalizing the scripts (ulu wants a look).
+- ~~Evaluate haruna vs. mpc-qt.~~ **DONE 2026-07-31: haruna rejected**, mpc-qt
+  stays. ulu tried it and dismissed it; haruna and mpvqt removed from the
+  machine so it matches the documented package set again.
 - ~~VPN session with ulu.~~ **Done 2026-07-31** — WireGuard split tunnel built and
   verified in QEMU; see the ProtonVPN entry at the top of this file.
 

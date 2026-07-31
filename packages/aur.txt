@@ -11,6 +11,12 @@ xivlauncher-rb        # FFXIV launcher (RB fork) via umu; game data on /mnt/Game
 jdownloader2          # filehoster download manager; niche unmatched. Capture config selectively
                       # (hoster logins are secrets — never into the repo)
 mpc-qt                # video player; mpv engine in the beloved MPC-HC shape.
-                      # TODO before script finalization: ulu wants to evaluate haruna as alternative
+                      # haruna EVALUATED AND REJECTED 2026-07-31 (ulu tried it, "vergiss es").
+                      # KNOWN BUG in 26.07, worth remembering before blaming the config:
+                      # with settings.json present but geometry_v2.json missing it segfaults
+                      # in QScreen::availableGeometry() straight out of main — and the crashing
+                      # run leaves exactly that state behind, so it never starts again.
+                      # Cure: remove ~/.config/mpc-qt/settings.json once and let a clean run
+                      # write all six profile files. See docs/LOG.md 2026-07-31.
 splix                 # Samsung printer driver (SCX-4300); dropped from official repos
 claude-code           # the co-author of this repo; updates via paru like everything else
