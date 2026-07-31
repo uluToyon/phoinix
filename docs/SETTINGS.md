@@ -405,6 +405,26 @@ retraining.
 **`~/.config/brave-flags.conf` is deliberately absent.** `/usr/bin/brave` reads
 it for start-up flags; ulu needs none, so there is nothing to write.
 
+## Steam (nothing in stages 3 and 4)
+
+The round produced **no scriptable setting at all**, and that is the entry.
+Steam's durable state lives in `~/.local/share/Steam` and `~/.steam`, is bound
+to the account, and includes auth tokens — never captured. Nothing appeared in
+`~/.config` except Plasma bookkeeping (a notification source marked seen, and
+the screen mapping for the desktop icon Steam created).
+
+| Item | Where it stands |
+|---|---|
+| Library `/mnt/Games/SteamLibrary` | manual, by design — see `STATUS.md` for why |
+| `~/Desktop/steam.desktop` | manual removal after first launch; no suppression flag exists |
+| Gamepad | needs nothing: `xpad` binds it, `uaccess` grants the session access |
+| `steam-devices`, `game-devices-udev` | correctly absent — verified with the pad switched on |
+
+**The library carries its own identity.** `/mnt/Games/SteamLibrary/libraryfolder.vdf`
+holds the `contentid` that Steam matches against, so the games survive a
+reinstall as long as the folder is re-added. That is what makes the manual step
+cheap rather than a re-download.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and

@@ -191,6 +191,25 @@ this topology — until proven, the cap stays.
   exit, so the file tracks the playlist by itself. Stage 4 imports it back on a
   fresh install. Accepted cost (ulu's call): a crash or power cut loses that
   session's additions.
+- **Steam, in this order** (verified 2026-07-31): log in, then Settings →
+  Storage → add drive → `/mnt/Games/SteamLibrary`. The 39 installed games
+  reappear without re-downloading — the library carries its own identity in
+  `/mnt/Games/SteamLibrary/libraryfolder.vdf`, and Steam matches on it.
+  Then **delete `~/Desktop/steam.desktop`**, which Steam creates on first
+  launch. Not scripted, for a reason worth recording: no suppression flag
+  exists (Steam's `registry.vdf` has no such key and `/usr/bin/steam` does not
+  create the file — the client does, during its first run), and both stage 3
+  and stage 4 run *before* Steam has ever started, so neither can delete a file
+  that does not exist yet.
+- **Why the Steam library is not scripted.** It could nearly be: the
+  `contentid` is not invented per install, it lives with the disk in
+  `/mnt/Games/SteamLibrary/libraryfolder.vdf`. But `libraryfolders.vdf` only
+  exists once Steam has run and logged in — and at that moment the user is
+  already in the UI where two clicks do it. Scripting the case that matters,
+  the fresh install, would mean fabricating the whole file before Steam's first
+  start, which cannot be verified here (the QEMU host has neither a Steam
+  account nor the games disk). An unverifiable script whose failure silently
+  hides 837 GB is the worse trade against twenty seconds of clicking.
 - Brave: join the sync chain by hand (profile comes via Brave Sync).
 - pCloud: log in by hand (credentials in KeePassXC on FilesMusic).
 - ~~ProtonVPN: import .ovpn profiles by hand.~~ **Obsolete 2026-07-31** — replaced by the

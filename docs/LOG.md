@@ -1904,3 +1904,54 @@ Recorded explicitly to keep two things apart that share an output: this flicker
 is continuous, only during video, and cured by disabling VRR. The black FLASH
 in STATUS.md is instantaneous, happens with nothing playing, and is diagnosed as
 DP link retraining. Conflating them would send the next investigation sideways.
+
+## 2026-07-31 — Applications, round 9: Steam, which yielded nothing to script
+
+The first round that produced no setting at all — and that is worth an entry,
+because "nothing to do here" is a result rather than an omission.
+
+Steam had never been started on this machine. Its durable state lives in
+`~/.local/share/Steam` (3.2 GB) and `~/.steam`, is bound to the account, and
+carries auth tokens, so none of it is captured. After ulu's round `~/.config`
+held two changes, both Plasma bookkeeping: a notification source marked seen,
+and a screen mapping for the desktop icon Steam had just created. No autostart,
+no window rule, no preference worth a line.
+
+**The library re-attached exactly as the mount-path decision intended.** 39
+games, 837 GB, no re-download. And the reason it is that cheap turned out to be
+a fact worth recording: the identity is not invented per install —
+`/mnt/Games/SteamLibrary/libraryfolder.vdf` carries the `contentid` that Steam
+matches on, so it travels with the disk.
+
+That nearly makes the step scriptable, and it was deliberately left manual.
+`libraryfolders.vdf` only comes into existence once Steam has run and logged
+in, and at that moment the user is already in the UI where two clicks do it.
+Automating the case that actually matters — the fresh install — would mean
+fabricating the entire file before Steam's first start, which cannot be
+verified here: the QEMU host has neither a Steam account nor the games disk. An
+unverifiable script whose failure silently hides 837 GB is the worse trade
+against twenty seconds of clicking.
+
+**The desktop shortcut is manual for a similar timing reason.** Steam creates
+`~/Desktop/steam.desktop` during its first run; there is no flag to suppress it
+(`registry.vdf` has no such key, and `/usr/bin/steam` does not create the file —
+the client does), and both stage 3 and stage 4 run before Steam has ever
+started, so neither can delete something that does not exist yet. It joins the
+first-launch checklist, which ulu has to walk anyway.
+
+**And the gamepad test point closed, after I got it wrong first.** Measured
+with the pad switched off, the ACRUX dongle is a plain HID device called
+"Receiver Update" with a root-only hidraw node and no input device at all;
+`xpad`'s device table does not contain vendor `1a34` either. On that evidence I
+reported that the decision to drop `steam-devices` / `game-devices-udev` did not
+hold. Switched on, the dongle re-enumerates entirely: the ACRUX id disappears,
+the kernel loads `xpad`, and the pad appears as `Microsoft X-Box 360 pad` on
+`event27`/`js1` with a `uaccess` ACL for the session owner. The original
+decision was right; I had measured the wrong device state. The measurement
+condition is now written next to the test point, because the same trap is set
+for whoever checks it next.
+
+Separate finding, harmless until it is not: **`/dev/input/js0` is the ASRock LED
+controller.** The board's RGB controller is tagged as a joystick, so the pad is
+`js1`, and anything that grabs "the first joystick" gets the motherboard
+lighting instead.
