@@ -21,6 +21,12 @@ keepassxc             # password vault ("denk"); database lives on FilesMusic an
 nftables              # the kernel-side guarantee that qBittorrent can only ever leave through the
                       # tunnel. Explicit BECAUSE it was already installed as someone else's dependency
                       # and therefore one `pacman -Rns` away from vanishing (same lesson as socat)
+gobject-introspection-runtime  # DZGUI dependency. It is fetched as an upstream tarball, not a
+                      # package, so it cannot declare dependencies at all — and its bundled Python
+                      # still needs the SYSTEM typelibs. Without this it dies at startup with
+                      # "Typelib file for namespace 'xlib', version '2.0' not found".
+                      # This is the dependency LOG.md deferred "to actual install" in the package
+                      # rounds; the actual install is where it turned up.
 cups                  # printing daemon; printer: Samsung SCX-4300 (USB), print only — no scan stack
 # splix moved to aur.txt — dropped from official repos (learned during stage 3)
 print-manager         # KDE printing UI (settings + job viewer)
