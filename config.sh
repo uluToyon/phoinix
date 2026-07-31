@@ -50,6 +50,7 @@ PRINTER_OPTIONS=()
 DZGUI_PRIVATE_FILE=""      # DZGUI secrets/server list on a data disk; empty = no DZGUI
 DZGUI_NAME=""
 STEAM_SHORTCUTS_FILE=""   # backup of Steam's non-Steam game list; empty = none
+MIRROR_COUNTRY="Germany"  # reflector filter in stage 1; both machines live here
 XIVLAUNCHER_DESKTOP=""     # .desktop to link onto the desktop; empty = none
 DESKTOP_ICONS=()          # "<basename>.desktop:col,row" per icon; empty = place none
 MONITOR_SWITCH=()         # "model:desktop_value:laptop_value"; empty = no switching

@@ -1,7 +1,6 @@
 # AUR packages — installed by stage 3 via paru (bootstrapped first: clone + makepkg;
 # base-devel comes via cli.txt). Alias yay->paru in dotfiles (muscle memory).
 # Prefer -bin variants for huge builds (see docs/LOG.md on AUR variants).
-umu-launcher          # run Proton outside Steam — required by xivlauncher-rb / DZGUI
 proton-ge-custom-bin  # Proton-GE prebuilt: extra codecs (FFXIV cutscenes), faster fixes
 brave-bin             # browser + PDF viewer (xdg-mime default); profile via Brave Sync,
                       # manual step post-install: join the sync chain (never capture the local profile)

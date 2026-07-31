@@ -14,6 +14,11 @@ base-devel            # build toolchain for AUR packages (paru bootstrap + every
 # linux-zen-headers rejected — zero DKMS candidates on this system (AMD GPU + MediaTek
 # wifi are in-kernel); any future DKMS package pulls headers automatically
 ttf-meslo-nerd        # MesloLGS Nerd Font: p10k prompt glyphs + eza icons (konsole default font)
+reflector             # re-sort /etc/pacman.d/mirrorlist by hand later. Stage 1 already sorts the
+                      # list on the ISO (pacstrap copies it into the target), so this is only for
+                      # refreshing it on a long-lived install. Its TIMER is deliberately not
+                      # enabled: an unattended weekly re-sort can also pick WORSE mirrors, and a
+                      # reinstall regenerates the list anyway.
 ddcutil               # DDC/CI over i2c — drives scripts/monitor-switch.sh, which flips all three
                       # monitors between this machine and the laptop. Brings its own prerequisites:
                       # modules-load.d loads i2c-dev and its udev rule tags the graphics i2c devices

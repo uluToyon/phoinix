@@ -43,6 +43,14 @@ Anything Plasma only accepts while its shell is running is stage 4, not 3.
 | Data disks | mounted by label under `/mnt/<Label>`, **never formatted** | dec |
 | Data disk fstab options | `nofail,x-systemd.device-timeout=30s` | dec |
 | Confirmation | disk **serial** must be typed, not `y/N` | dec |
+| Mirrorlist | `reflector --country Germany --protocol https --age 12 --latest 20 --sort rate` | dec |
+
+**The mirrorlist is sorted BEFORE pacstrap, and that position is the point.**
+pacstrap copies the ISO's `/etc/pacman.d/mirrorlist` into the new system, so one
+sort pays twice: for the ~1 GB pacstrap pulls, and for everything stage 3
+installs later. Guarded on both ends — no reflector on the ISO, or a failed run,
+falls back to the ISO's own list with a message instead of aborting an install
+over a download speed. `MIRROR_COUNTRY` lives in `config.sh`.
 
 ESP is 1G rather than 512M because several kernels plus fallback initramfs
 outgrow the smaller size. The 30s device timeout is not cosmetic: 5s silently

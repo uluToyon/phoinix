@@ -17,3 +17,8 @@ lib32-gamemode
 # mangohud rejected for now — Steam's built-in FPS counter + FFXIV addon suffice
 # wine-staging/winetricks/faudio rejected — evidence: 7th Heaven runs via
 # MateriaForge inside the FF7 Proton prefix (compatdata/3837340); no system wine user left
+
+# umu-launcher — run Proton outside Steam; required by xivlauncher-rb and DZGUI.
+# Was in aur.txt until 2026-07-31, when it turned out to ship in [multilib]
+# (1.4.4-1). Building it through paru was pure waste; pacman has it.
+umu-launcher

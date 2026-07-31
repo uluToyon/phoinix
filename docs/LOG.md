@@ -2490,3 +2490,43 @@ Left alone deliberately: Plasma's `positions` still names `desktop:/SwitchToLapt
 for this resolution. Rewriting it means stopping and starting plasmashell in the
 middle of ulu's session, and stage 4 writes the whole list correctly on the next
 run anyway.
+
+## 2026-07-31 — Mirrorlist, umu-launcher, and two things dropped
+
+Four small decisions from ulu, in one breath: drop the QEMU run, drop the work
+to make the harness unattended, do the mirrorlist, move umu-launcher.
+
+**Mirrorlist.** The repo had never touched `/etc/pacman.d/mirrorlist` — every
+install simply took whatever ordering the ISO happened to ship. That worked, but
+by luck rather than by decision. `reflector` now runs in stage 1, and the
+POSITION is the point: it runs BEFORE pacstrap, because pacstrap copies the
+ISO's mirrorlist into the target. One sort pays twice — for the ~1 GB pacstrap
+pulls and for everything stage 3 installs afterwards.
+
+Guarded rather than assumed, on both ends. `command -v reflector` first, because
+a download-speed optimisation must never be the reason an install aborts; and a
+failed run falls back to the ISO's list with a warning instead of `set -e`
+killing the install. `MIRROR_COUNTRY="Germany"` lives in `config.sh` — a
+location fact, and the same for both of ulu's machines.
+
+Verified what could be verified from here: `reflector` is not installed on this
+desktop, so the command itself was NOT run. What was checked is the one thing
+that would silently produce an empty list — the country name — against the same
+source reflector reads: archlinux.org's mirror status JSON has "Germany" and 58
+active https mirrors, so `--latest 20` has room. `reflector` also went into
+`packages/cli.txt` for re-sorting by hand later; its timer is deliberately NOT
+enabled, since an unattended weekly re-sort can pick worse mirrors and a
+reinstall regenerates the list anyway.
+
+**umu-launcher** moved from `aur.txt` to `gaming.txt`: it ships in [multilib]
+now (1.4.4-1), so building it through paru was pure waste. Found while checking
+every package name in every list against the repos after ulu asked for
+"kconnect" — which does not exist either; the package is `kdeconnect`. All other
+names are valid, and the eight that pacman cannot see are exactly the AUR ones.
+
+**Dropped: the QEMU run and the pty work.** ulu's call, after the harness
+refused to be driven from a background session. The consequence is recorded in
+STATUS rather than buried here: stage 4's multi-icon `positions` JSON has never
+been written by the script, only computed and compared against his running
+Plasma. It is the single piece of today with no proof behind it, and it is the
+first place to look if desktop icons come back in the wrong cells.

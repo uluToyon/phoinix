@@ -106,6 +106,33 @@ for label in "${DATA_LABELS[@]}"; do
     mount --mkdir "/dev/disk/by-label/$label" "/mnt/mnt/$label"
 done
 
+# ------------------------------------------------------------ mirrorlist
+# Sorted BEFORE pacstrap, and that ordering is the whole point: pacstrap copies
+# the ISO's /etc/pacman.d/mirrorlist into the new system, so whatever is in
+# place at this moment is also what the installed machine keeps afterwards. One
+# sort therefore pays twice — for the ~1 GB pacstrap pulls here, and for every
+# package stage 3 installs later.
+#
+# Until 2026-07-31 the repo did not touch this at all: every install simply took
+# whatever ordering the ISO happened to ship with. That worked, but it was luck
+# rather than a decision, and luck is not what this repo is for.
+#
+# GUARDED, not assumed: archiso ships reflector today, but a download-speed
+# optimisation must never be the reason an install aborts. No mirrors, no
+# network, reflector gone — all of it falls through to the ISO's own list.
+if command -v reflector >/dev/null 2>&1; then
+    echo "sorting mirrors (${MIRROR_COUNTRY})..."
+    if reflector --country "$MIRROR_COUNTRY" --protocol https --age 12 \
+                 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist 2>&1
+    then
+        echo "  mirrorlist: $(grep -c '^Server' /etc/pacman.d/mirrorlist) servers"
+    else
+        echo "  WARNING: reflector failed — keeping the ISO's mirrorlist"
+    fi
+else
+    echo "no reflector on this ISO — keeping its mirrorlist as shipped"
+fi
+
 # -------------------------------------------------------------- pacstrap
 mapfile -t PACKAGES < <(grep -vE '^\s*(#|$)' "$REPO_DIR/packages/pacstrap.txt")
 pacstrap -K /mnt "${PACKAGES[@]}"

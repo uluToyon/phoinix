@@ -4,42 +4,40 @@ _Last updated: 2026-07-31 (session 5 — keychron, the superproject question, th
 
 ## Pick up here
 
-**Open, parked 2026-07-31: the QEMU run for session 5's changes.** Stage 2
-(udev rules), stage 3 (the monitor-switch `.desktop`) and stage 4 (multi-icon
-positions) all changed and none has been through the VM. Nothing is known to be
-broken — the udev rules and the switch are verified on the real desktop — but
-the stage 4 icon JSON exists only as arithmetic checked against ulu's running
-Plasma, never written by the script itself. That is the one piece of the day
-carrying no proof.
+**`kdeconnect` is in `packages/kde.txt` but not installed on the desktop yet.**
+`sudo pacman -S --needed kdeconnect`, then pair the phone by hand.
 
-Two things stand in the way, both found while trying:
+### Dropped on purpose, 2026-07-31 (ulu's call)
 
-1. **The harness cannot be driven unattended.** `qemu-test.sh` puts the serial
-   console on stdio via `-nographic`, and QEMU does not read a stdin that is not
-   a terminal — verified three ways (direct, via a log, via a FIFO with a
-   persistent writer; `/proc/<pid>/fd/0` pointed at the FIFO each time and
-   neither LF nor CR reached the guest). `qemu-mon.sh type` is no way around it:
-   it handles `[a-z0-9]` only, on purpose, and the test line needs `:` `/` `|`.
-   A pseudo-terminal instead of stdio would fix this and is the actual work item.
-2. **Driving it by hand is a long sequence** across two terminals, including a
-   `pkill qemu-system` between stage 2's reboot and `--installed`, and a
-   password that must be `[a-z0-9]` only so the KDE greeter can be typed into
-   later. ulu ran out of patience on 2026-07-31, fairly.
+**The QEMU run for session 5's changes, and the work to make the harness
+runnable unattended — both discarded.** Recorded rather than deleted, because
+the consequence outlives the decision:
 
-Fixtures are already in place for whenever it runs: `hosts/qemu/config.sh` now
-sets `MONITOR_SWITCH` and `DESKTOP_ICONS`, without which the run would have
-skipped both new paths and passed while proving nothing.
+Stage 2 (udev rules), stage 3 (the monitor-switch `.desktop`) and stage 4
+(multi-icon `positions`) changed and never went through the VM. Two of the three
+are verified on the real desktop — the udev rules by the launcher working, the
+switch by ulu watching all three monitors flip. **Stage 4's icon JSON is not.**
+It exists only as arithmetic checked against ulu's running Plasma; the script
+has never written it. If desktop icons land in the wrong place after the next
+reinstall, that is where to look first.
 
-**Three smaller things found on 2026-07-31, none blocking:**
+Why the harness could not simply be automated, so nobody re-derives it:
+`qemu-test.sh` puts the serial console on stdio via `-nographic`, and QEMU does
+not read a stdin that is not a terminal — checked three ways (direct, via a log
+file, via a FIFO with a persistent writer; `/proc/<pid>/fd/0` pointed at the
+FIFO every time and neither LF nor CR reached the guest). `qemu-mon.sh type` is
+no way round it: `[a-z0-9]` only, deliberately, and the bootstrap line needs
+`:` `/` `|`. A pseudo-terminal instead of stdio would fix it. That is the work
+item that was dropped, not a mystery.
 
-- **The repo does not manage the pacman mirrorlist at all** — no `reflector`,
-  nothing in `base/`. Every install takes whatever the ISO happens to ship,
-  which costs download speed on a fresh machine. Five lines of work.
-- **`umu-launcher` sits in `packages/aur.txt` but now lives in `multilib`**
-  (1.4.4-1). It is no longer an AUR package and goes through paru for nothing.
-  One line to move — unless the AUR variant is wanted deliberately.
-- **`kdeconnect` is in `packages/kde.txt` but not installed on the desktop yet.**
-  `sudo pacman -S --needed kdeconnect`, then pair the phone by hand.
+Driving it by hand still works and is documented in `qemu-test.sh` — it just
+takes two terminals, a `pkill qemu-system` between stage 2's reboot and
+`--installed`, and a password of `[a-z0-9]` only so the KDE greeter can be typed
+into afterwards.
+
+The fixtures stay: `hosts/qemu/config.sh` sets `MONITOR_SWITCH` and
+`DESKTOP_ICONS`, so if anyone ever does run it, it exercises those paths instead
+of skipping them and passing for nothing.
 
 Both items that stood here at the start of session 5 are closed:
 
