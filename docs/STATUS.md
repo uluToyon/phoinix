@@ -90,8 +90,13 @@ this topology — until proven, the cap stays.
 
 - Strawberry: add the music folder to the collection by hand. The path lives in
   Strawberry's database, not its config, and that database is state (absolute
-  paths, rebuilt by a rescan) — so it is deliberately not scripted. Currently
-  the collection is empty: zero directories, zero songs.
+  paths, rebuilt by a rescan) — so it is deliberately not scripted.
+  (Done on this machine 2026-07-31: `/mnt/FilesMusic/Musik`, 55 559 tracks.)
+- Strawberry: **re-save the playlist after adding tracks.** Stage 4 imports
+  `/mnt/FilesMusic/Musik/Default.m3u`, but Strawberry never updates that file
+  by itself — saving is a one-off export, and the dialog starts in the home
+  directory with "Playlist 1.m3u" rather than offering to overwrite. Save with
+  **relative paths** so the file stays independent of the mount point.
 - Brave: join the sync chain by hand (profile comes via Brave Sync).
 - pCloud: log in by hand (credentials in KeePassXC on FilesMusic).
 - ProtonVPN: import .ovpn profiles (FilesMusic/OpenVPNConfigs) into the

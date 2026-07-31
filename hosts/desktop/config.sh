@@ -39,3 +39,13 @@ KONSOLE_SIZE="1440,1262"      # its full width, about half its height
 STRAWBERRY_CONNECTOR="DP-2"   # TCL 4K — Strawberry opens at its origin
 STRAWBERRY_SIZE="1920,2105"   # its left half, nearly full height
 DOLPHIN_SIZE="1295,839"       # size only, no position
+
+# --- Strawberry playlist (stage 4) -----------------------------------------
+# ulu's curated playlist lives WITH the music, on a data disk this repo never
+# touches — so it survives a reinstall by construction and has no business
+# being in the repo. Saved with RELATIVE paths, which makes it independent of
+# where the disk is mounted (the mount paths already changed once).
+# Strawberry keeps playlists in its database, i.e. in state that a reinstall
+# loses; this re-imports the file into a fresh database.
+PLAYLIST_FILE="/mnt/FilesMusic/Musik/Default.m3u"
+PLAYLIST_NAME="Default"

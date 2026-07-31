@@ -198,6 +198,7 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Window rule: Dolphin | size `1295,839`, Apply Initially | dec |
 | Window rule: Konsole | origin of `KONSOLE_CONNECTOR`, size `1440,1262` | dec |
 | Window rule: Strawberry | origin of `STRAWBERRY_CONNECTOR`, size `1920,2105` | dec |
+| Strawberry playlist | `PLAYLIST_FILE` imported as `PLAYLIST_NAME` | dec |
 | Final step | `systemctl --user restart plasma-plasmashell.service` | dec |
 
 **All window rules live in stage 4, none in stage 3.** `count` and `rules` in

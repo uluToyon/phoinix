@@ -1022,6 +1022,45 @@ between the investigation and the backup the level crept up. That is a
 plausible explanation for ulu's doubt that the problem is really gone — and it
 means the captured "−26 dB fix" is not, in fact, the −26 dB fix.
 
+## 2026-07-31 — Strawberry: the playlist as an anchor outside the repo
+
+ulu's idea, and it is a good shape for this problem: keep a curated playlist as
+a **file in the music folder**, extend it over time, and have a reinstall pick
+it up again.
+
+What the system says, checked rather than assumed:
+
+- Strawberry keeps playlists in its **database** (`playlists`,
+  `playlist_items`), not in the config — so a reinstall loses them.
+- It can import and export playlist **files**, and the CLI exposes that:
+  `--create <name> <file>`, `--load`, `--append`, `--play-playlist`.
+- It has **no** auto-export setting. Saving is a one-off snapshot; there is no
+  link between the running playlist and the file. Checked in the binary: only
+  actions (`SaveCurrentPlaylist`, `SaveAllPlaylists`), no config key.
+- It can write **relative paths** (`path_type`, "Relative path" in the save
+  dialog), which is what makes the whole idea robust — the mount paths already
+  changed once, from `/mnt/nvme0n1` to `/mnt/FilesMusic`.
+
+So the file lives on a data disk this repo never touches: it survives by
+construction, it grows with ulu's taste rather than with the repo, and it never
+needs scrubbing. Only the **import** belongs to phoinix. Verified result: 159
+entries, UTF-8, zero absolute paths, Japanese titles intact.
+
+Stage 4 imports it as `Default`, guarded against creating a second playlist of
+the same name on a re-run — names compared with `grep -Fxq` against
+`SELECT name FROM playlists`, which keeps the name out of the SQL entirely.
+`sqlite3` is safe to depend on here because `strawberry` depends on it, so it
+exists wherever this step can do anything. Both paths tested: first run
+imported 159 tracks, second run declined.
+
+The honest limitation, recorded rather than hidden: **the file is an anchor,
+not a mirror.** Adding tracks in Strawberry does not update it; re-saving over
+the same path stays a manual step.
+
+While at it, a correction to something claimed earlier tonight: `sqlite3` is
+*not* missing on this system. An earlier check queried an empty table, printed
+nothing, and was misread as "tool absent".
+
 **Bonus: a mystery from earlier tonight, solved.** The transcript documents a
 *separate* problem from 07-25 — `force-clock.sh` pinning a non-power-of-two
 `clock.force-quantum 500` on the AMD HDMI batch device, causing dropouts in

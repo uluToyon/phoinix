@@ -323,7 +323,38 @@ qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null \
     && echo "window rules: KWin reconfigured" \
     || echo "WARNING: could not ask KWin to reload its rules — they apply at next login"
 
-# ------------------------------------------------- 7. restart the shell
+# ------------------------------------------------- 7. Strawberry playlist
+# Re-imports ulu's playlist file into a fresh Strawberry database. The file
+# itself is not ours — it lives with the music on a data disk, grows over time,
+# and survives reinstalls on its own. Only the import belongs to phoinix.
+#
+# Strawberry does NOT keep the file in sync with the running playlist: saving
+# is a one-off export. So the file is an anchor, not a mirror, and re-saving it
+# after adding tracks stays a manual step (STATUS.md).
+#
+# sqlite3 is safe to rely on here: strawberry depends on it directly, so it
+# exists wherever this step can do anything at all.
+if [[ -n "${PLAYLIST_FILE:-}" && -f "$PLAYLIST_FILE" ]]; then
+    SB_DB="$HOME/.local/share/strawberry/strawberry/strawberry.db"
+
+    # Guard against a second import. Stage 4 is single-shot, but it gets re-run
+    # by hand during development, and `--create` would happily build a second
+    # playlist with the same name every time. Names are compared with grep -Fx
+    # rather than an SQL WHERE clause, which keeps the playlist name out of the
+    # query string entirely.
+    if [[ -f "$SB_DB" ]] && sqlite3 "file:$SB_DB?mode=ro" "SELECT name FROM playlists;" 2>/dev/null \
+         | grep -Fxq "$PLAYLIST_NAME"; then
+        echo "playlist: '$PLAYLIST_NAME' already exists — not importing again"
+    else
+        strawberry --create "$PLAYLIST_NAME" "$PLAYLIST_FILE" >/dev/null 2>&1 \
+            && echo "playlist: imported $PLAYLIST_FILE as '$PLAYLIST_NAME'" \
+            || echo "WARNING: could not import $PLAYLIST_FILE"
+    fi
+elif [[ -n "${PLAYLIST_FILE:-}" ]]; then
+    echo "playlist: $PLAYLIST_FILE not present — skipped"
+fi
+
+# ------------------------------------------------- 8. restart the shell
 # Freshly created task-manager widgets read their launcher list once, when
 # they are built — writing the config afterwards reaches the file but not the
 # running instance, so the panel would show the built-in default (with its
