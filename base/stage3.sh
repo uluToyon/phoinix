@@ -343,27 +343,48 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
         shopt -u nullglob
         (( ${#vpn_configs[@]} )) || echo "WARNING: no *.conf in $VPN_CONFIG_DIR"
 
-        for cfg in "${vpn_configs[@]}"; do
-            # NetworkManager names the connection after the file. Importing the
-            # same file twice appends a counter ("<name> 1"), so a re-run
-            # deletes the old one first — stage 3 is re-runnable by design.
-            name="$(basename "$cfg" .conf)"
-            if nmcli -g NAME connection show | grep -Fxq "$name"; then
-                sudo nmcli connection delete "$name" >/dev/null
-            fi
-            sudo nmcli connection import type wireguard file "$cfg" >/dev/null
+        # NetworkManager derives the interface name from the FILE NAME and
+        # rejects anything that is not a valid one — at most 15 characters.
+        # Proton's downloads are longer than that ("The name of the WireGuard
+        # config must be a valid interface name followed by .conf"), so the
+        # import cannot read them where they lie. Renaming ulu's files would be
+        # the wrong fix: they are his, and the next download would bring the
+        # problem straight back. Each is therefore imported through a copy
+        # named after VPN_INTERFACE — which also hands us the interface name we
+        # wanted anyway, instead of having to correct it afterwards.
+        # The copy carries a private key, so it lives in a 0700 directory and
+        # is deleted immediately after the loop.
+        vpn_tmp="$(mktemp -d)"
+        chmod 700 "$vpn_tmp"
 
-            # BOTH connections get the SAME interface name. Only one can be up
-            # at a time, and this way qBittorrent's binding and the nftables
-            # rule stay valid whichever country is active — no per-server
-            # bookkeeping anywhere.
-            sudo nmcli connection modify "$name" \
-                connection.interface-name "$VPN_INTERFACE" \
+        for cfg in "${vpn_configs[@]}"; do
+            name="$(basename "$cfg" .conf)"
+            install -m600 "$cfg" "$vpn_tmp/$VPN_INTERFACE.conf"
+
+            # Re-runnable: drop both the final name and the transient one, or a
+            # second run would collect "<name> 1" duplicates.
+            for stale in "$name" "$VPN_INTERFACE"; do
+                if nmcli -g NAME connection show | grep -Fxq "$stale"; then
+                    sudo nmcli connection delete "$stale" >/dev/null
+                fi
+            done
+
+            sudo nmcli connection import type wireguard file "$vpn_tmp/$VPN_INTERFACE.conf" >/dev/null
+
+            # The import named it after the file; give it back the name of the
+            # server it actually is, so the applet shows CH and NL rather than
+            # two identical entries. BOTH keep the same interface name — only
+            # one can be up at a time, and that is what lets qBittorrent's
+            # binding and the nftables rule stay valid whichever is active.
+            sudo nmcli connection modify "$VPN_INTERFACE" \
+                connection.id "$name" \
                 connection.autoconnect no \
                 ipv4.never-default yes \
                 ipv6.never-default yes
             echo "vpn: imported $name -> $VPN_INTERFACE"
         done
+
+        rm -rf "$vpn_tmp"
 
         # Exactly one connection autoconnects, otherwise both would race for
         # the same interface name at boot. The first file alphabetically is an
