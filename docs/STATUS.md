@@ -160,6 +160,9 @@ Still open:
   <teufel> -26dB`, then re-capture), or test upward deliberately to find where
   the glitches actually start. Full rationale and the operating rules are in
   `DESIGN.md`.
+  **Blocked for now:** both reference titles (FFXIV, DayZ) are not installed
+  yet, so neither option can be judged. Revisit once gaming is set up — ulu's
+  call, deliberately deferred.
 - **Application phase — process rules learned on Dolphin:** close a KDE
   application before diffing (they write their config on exit), and treat a
   file that merely grew with suspicion rather than dismissing it as noise.
