@@ -1864,3 +1864,43 @@ still running after ulu had closed it, and I passed that on as a warning. The
 bracket trick only defeats self-matching for the *pattern's* own process, not
 for a shell that happens to carry the word for other reasons. `pgrep -x` on the
 exact process name is the check that means something.
+
+## 2026-07-31 — Applications, round 8: Brave, and a flicker that is not Brave's
+
+ulu's round produced exactly one line worth keeping, and it took a question to
+find out what it meant.
+
+Everything else was profile: bookmarks, Local Storage, half a dozen LevelDB
+logs. That profile returns through Brave Sync and contains `Login Data`,
+`Cookies`, `Web Data` and `Local State`, so none of it is captured — the same
+shape as Discord, where the settings live in the account rather than on the
+disk. No `brave-flags.conf` was created (`/usr/bin/brave` reads one for start-up
+flags; ulu needs none), and no autostart entry.
+
+What remained was a KWin rule with a single key: `adaptivesync=false`, forced.
+
+**Asking why was the whole value of the round.** A bare `adaptivesync=false`
+reads like an accident in two years, and `LOG.md` already records what that
+costs: the soundbar's −26 dB was captured without its reason, the reason was
+lost, and ulu nearly undid the fix himself. So the reason was asked for before
+the line was written down.
+
+It is video. A constant slight flicker while watching, YouTube being the case
+that drove him up the wall — **and mpc-qt does exactly the same**. Those two
+share nothing except playing video, which moves the finding out of Brave
+entirely.
+
+The mechanism that fits, inferred rather than measured: DP-1's VRR range is
+48–170 Hz, video runs at 24/25/30 fps, so the content sits *below* the range,
+the display duplicates frames to compensate, and the refresh rate oscillates
+between two states. Games never show it because they stay inside the range.
+
+That makes per-application the right level, not a workaround for the lack of
+something better. Switching VRR off at the output would cure the flicker and
+simultaneously discard the reason VRR is enabled on a gaming machine. And it
+predicts recurrence: every video player will want this rule, mpc-qt first.
+
+Recorded explicitly to keep two things apart that share an output: this flicker
+is continuous, only during video, and cured by disabling VRR. The black FLASH
+in STATUS.md is instantaneous, happens with nothing playing, and is diagnosed as
+DP link retraining. Conflating them would send the next investigation sideways.

@@ -396,6 +396,38 @@ else
         "size=$DISCORD_SIZE" "sizerule=3"
 fi
 
+# Brave: adaptive sync (VRR) forced OFF for its windows, and nothing else —
+# no size, no position, no monitor.
+#
+# The reason, because a bare `adaptivesync=false` reads like an accident two
+# years from now: ulu gets a constant slight flicker watching video, YouTube
+# being the case that drove him up the wall. It is NOT a Brave problem — mpc-qt
+# shows exactly the same thing, and those two share nothing but playing video.
+#
+# The mechanism that fits (inferred, not measured): DP-1's VRR range is
+# 48-170 Hz, while video runs at 24/25/30 fps. Below the range the display has
+# to duplicate frames, the refresh rate oscillates between two states, and that
+# is what the eye reads as flicker. Games stay inside the range, so they never
+# show it.
+#
+# Which is why this is per-application rather than per-output. Turning VRR off
+# on the monitor would fix the flicker and throw away the reason VRR is on a
+# gaming machine at all. Expect this rule to recur for every video player —
+# mpc-qt is already known to need it.
+#
+# NOT to be confused with the sporadic black FLASH on DP-1 (see STATUS.md):
+# that one is a full blank lasting an instant, diagnosed as DP link retraining,
+# and it happens with no video playing at all. Two different phenomena on the
+# same output; conflating them would send the next investigation sideways.
+#
+# `adaptivesyncrule=2` is Force, not Apply Initially — the setting has to hold
+# for the window's whole life, not just when it opens.
+rule_set "e259a1ad-617f-4de3-b357-fbd289793312" \
+    "Description=Application settings for brave-browser" \
+    "wmclass=brave brave-browser" \
+    "wmclasscomplete=true" "wmclassmatch=1" \
+    "adaptivesync=false" "adaptivesyncrule=2"
+
 # The order of this list is the order KWin applies the rules in, so it only
 # matters once two rules can match the SAME window. These match different
 # applications, hence any order is correct here.

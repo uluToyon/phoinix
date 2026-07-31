@@ -376,6 +376,35 @@ in a directory it owns, so updating works — and pinning it would freeze the
 client until Discord's servers refuse it, producing the very failure the
 setting was meant to avoid.
 
+## Brave (stages 3 and 4)
+
+Like Discord, almost everything lives elsewhere: the profile comes back through
+Brave Sync, and it holds `Login Data`, `Cookies`, `Web Data` and `Local State`
+— never captured, never in the repo.
+
+| Setting | Value | Origin |
+|---|---|---|
+| Default browser | `kdeglobals` `BrowserApplication=brave-browser.desktop` | old |
+| PDF handler | `xdg-mime default brave-browser.desktop application/pdf` | dec |
+| KWin rule (stage 4) | `adaptivesync=false`, `adaptivesyncrule=2` (**Force**) — VRR off for Brave windows | dec |
+| Per-app volume | Brave's stream volume, in the captured wireplumber state | old |
+
+**The VRR rule is about video, not about Brave.** ulu gets a constant slight
+flicker watching video — YouTube being the case that drove it — and mpc-qt shows
+the same. The likely mechanism (inferred): DP-1's VRR range is 48–170 Hz while
+video runs at 24/25/30 fps, so below the range the display duplicates frames and
+the refresh rate oscillates. Per-application rather than per-output on purpose:
+switching VRR off at the monitor would also remove it from games, which is the
+reason it is enabled at all. **Expect this rule to recur for every video
+player** — mpc-qt is already known to need it.
+
+Not the same thing as the sporadic black **flash** on DP-1 (see `STATUS.md`),
+which is an instantaneous full blank with no video playing, diagnosed as DP link
+retraining.
+
+**`~/.config/brave-flags.conf` is deliberately absent.** `/usr/bin/brave` reads
+it for start-up flags; ulu needs none, so there is nothing to write.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and
