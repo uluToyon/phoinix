@@ -326,6 +326,16 @@ sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
 ln -sf ../phoinix-stage4.service \
     "$USER_UNIT_DIR/plasma-workspace.target.wants/phoinix-stage4.service"
 
+# Export the Strawberry playlist on session exit — same symlink reasoning as
+# above. Wanted by graphical-session.target so it is stopped (and therefore
+# runs its ExecStop) when the session ends.
+sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
+    "$REPO_DIR/system/user/phoinix-playlist-export.service" \
+    > "$USER_UNIT_DIR/phoinix-playlist-export.service"
+install -d "$USER_UNIT_DIR/graphical-session.target.wants"
+ln -sf ../phoinix-playlist-export.service \
+    "$USER_UNIT_DIR/graphical-session.target.wants/phoinix-playlist-export.service"
+
 # Drop-in against the 40s shutdown hang (plasmashell outlives its compositor
 # and never processes SIGTERM) — rationale in the file itself.
 install -d "$USER_UNIT_DIR/plasma-plasmashell.service.d"

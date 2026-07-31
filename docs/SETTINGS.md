@@ -179,6 +179,7 @@ rule and must grow when another one is added.
 | Default PDF handler | `brave-browser.desktop` | dec |
 | Services | `bluetooth`, `cups`, `power-profiles-daemon` | dec |
 | Stage-4 unit | rendered + symlinked into `plasma-workspace.target.wants` | dec |
+| Playlist export unit | rendered + symlinked into `graphical-session.target.wants`; exports on session exit | dec |
 | plasmashell drop-in | `After=` kwin, `TimeoutStopSec=10s` — 40s shutdown hang | dec |
 | Graphical login | enabled **last**, after everything above exists | dec |
 

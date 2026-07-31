@@ -1,0 +1,37 @@
+# Template — stage 3 installs this with @REPO_DIR@ and @HOST@ substituted.
+# Writes the Strawberry playlist back out to its .m3u file, ON SESSION EXIT.
+#
+# Why this exists: Strawberry exports a playlist only when asked, and never
+# updates the file afterwards. The file is the copy that survives a reinstall,
+# so as the playlist grows it silently falls behind. This closes that gap from
+# the other side.
+#
+# Why on shutdown rather than on a timer (ulu's call): a periodic job would run
+# all day to catch a change that only matters at reinstall time. Losing the last
+# session to a crash or a power cut is an accepted cost — the alternative is a
+# background job running forever for a file nobody reads in between.
+#
+# Strawberry writes playlist changes to its database immediately (verified:
+# adding a track raised the row count with the application still open and
+# nothing saved), so the database is complete whenever this runs. Ordering
+# against Strawberry itself is therefore unnecessary.
+#
+# The mechanics: a oneshot that does nothing on start and stays "active" via
+# RemainAfterExit, so systemd runs ExecStop when the session goes down.
+
+[Unit]
+Description=phoinix — export the Strawberry playlist on session exit
+Documentation=file://@REPO_DIR@/scripts/strawberry-playlist-export.sh
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=@REPO_DIR@/scripts/strawberry-playlist-export.sh @HOST@
+# The export is a database read and one file write; anything longer than this
+# means something is wrong and shutdown should not wait for it.
+TimeoutStopSec=30
+
+[Install]
+WantedBy=graphical-session.target

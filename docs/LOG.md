@@ -1057,6 +1057,54 @@ The honest limitation, recorded rather than hidden: **the file is an anchor,
 not a mirror.** Adding tracks in Strawberry does not update it; re-saving over
 the same path stays a manual step.
 
+## 2026-07-31 — …and the anchor becomes a mirror
+
+The manual re-save was the weak point: "remember to export after adding
+tracks" is exactly the kind of resolution that quietly fails, and the file only
+matters at reinstall time, which is precisely when nobody checks it. So phoinix
+now writes it — `scripts/strawberry-playlist-export.sh`, the first tool in this
+repo that is not a captured setting but a program of its own.
+
+It reads Strawberry's database and rewrites the `.m3u`. Two facts made it
+straightforward, both checked rather than assumed: playlist items reference the
+collection by `collection_id` rather than carrying a path, so `songs` has to be
+joined in and `pi.ROWID` is the ordering (there is no position column); and
+lengths are stored in nanoseconds. URLs are percent-encoded `file://`, decoded
+in shell by turning every `%` into `\x` and letting `printf %b` do the work —
+which handles UTF-8 correctly because each byte is encoded separately.
+
+`sqlite3` rather than python: `strawberry` depends on sqlite directly, so it
+exists wherever this script can do anything at all, while python is in none of
+our package lists and would only arrive as somebody else's dependency.
+
+**Verified against the application itself**: run over the untouched playlist it
+produced a file byte-identical to Strawberry's own export. That is the strongest
+check available here — not "looks right" but "indistinguishable from what the
+program writes".
+
+**Trigger: session exit, not a timer** (ulu's call, and the better one). A
+periodic job would run all day for a file that is read once per reinstall.
+Losing the last session to a crash is an accepted cost. Implemented as a
+oneshot with `RemainAfterExit=yes` and the real work in `ExecStop`, wanted by
+`graphical-session.target`. Tested by starting the unit (nothing happens) and
+stopping it (160 tracks written, including one added minutes earlier).
+
+Ordering against Strawberry is unnecessary: it writes playlist changes to the
+database immediately — verified by adding a track with the application still
+open and nothing saved, and watching the row count rise.
+
+Two guards, both earned earlier tonight:
+
+- **Never write an empty result.** A missing or empty playlist leaves the file
+  alone. The Places ordering was destroyed exactly this way a few hours ago.
+- **Never write into a missing mount.** At session exit the data disks may
+  already be going; writing into an unmounted `/mnt/FilesMusic` would create
+  the file on the root filesystem, where it would then shadow the real disk at
+  the next boot. The directory is checked first.
+
+Plus one generation of backup (`.m3u.bak`) before each write, because this file
+is years of curation and a bad export must never be the only thing left.
+
 While at it, a correction to something claimed earlier tonight: `sqlite3` is
 *not* missing on this system. An earlier check queried an empty table, printed
 nothing, and was misread as "tool absent".
