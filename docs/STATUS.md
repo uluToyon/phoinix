@@ -215,6 +215,11 @@ this topology — until proven, the cap stays.
   only path dependency is stage 4's KWin rule, which already matches both
   wmclass spellings). `packages/aur.txt` carries the switch and the caveat
   (the -bin package renames the desktop file). Rationale in `LOG.md`.
+- **gamemode for FFXIV.** Requested by ulu 2026-07-31. Not just a package-list
+  entry: `gamemode` (+ `lib32-gamemode`) must land in packages, and XIVLauncher
+  has to actually invoke it — where that hook lives (xlcore settings vs. a
+  wrapper) is part of the work. Decide and wire it together with ulu, then
+  capture like every other setting.
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
 - **`fixes/` — a curlable collection.** Parked by ulu on 2026-07-31 ("halte dir
