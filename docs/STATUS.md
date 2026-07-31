@@ -210,6 +210,11 @@ this topology — until proven, the cap stays.
   beyond the manual login that is already listed under "Post-install manual
   steps". Same working mode as every app: apply on the live system, write into
   the scripts in the same step.
+- **mpc-qt: switch to the binary package (`mpc-qt-bin`) if possible.** ulu,
+  2026-07-31, during the first real run: the from-source build is the slow
+  spot of the AUR phase and annoys him. To check before switching: that the
+  -bin package tracks the same version and that nothing (mpv scripts, the
+  settings stage 3 writes) depends on the source build's paths.
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
 - **`fixes/` — a curlable collection.** Parked by ulu on 2026-07-31 ("halte dir
