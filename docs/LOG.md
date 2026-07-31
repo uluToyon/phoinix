@@ -1453,3 +1453,51 @@ And one that this repo has now learned twice: `${!v}` is bash-only indirect
 expansion, and this session's shell is zsh, so testing a bash snippet at the
 prompt reported "bad substitution" for code that is perfectly correct in the
 file it lives in.
+
+## 2026-07-31 — The parent-sized dialogs are ours, and the obvious fix does not work
+
+A years-old annoyance of ulu's, parked in `STATUS.md` as "waiting on ulu": a
+confirmation dialog opening at exactly the size of its parent window. The
+recorded diagnosis was a previous distro's `[Windows] Placement=Maximizing`,
+together with the honest note that the setting was found **nowhere** — not in
+any captured file, not in Arch's defaults.
+
+It was found nowhere because it was never there. **phoinix does it.**
+
+Spotted by accident in the QEMU VM: Strawberry's sponsoring dialog was small
+while stage 4 was still failing, and window-sized once stage 4 had run. Then
+measured rather than eyeballed — the dialog opens at `0,0` in `900x700`, which
+is character-for-character that host's `STRAWBERRY_CONNECTOR` origin and
+`STRAWBERRY_SIZE`. Those are our numbers, not Qt's. ulu confirmed the same on
+the desktop: `Shift+Del` in Dolphin opens a dialog the size of Dolphin.
+
+Cause: stage 4's rules match on `wmclass` alone, and a KWin rule that names only
+an application matches every window of it, dialogs included. "Apply Initially,
+size 1295x839" is therefore also an instruction about the "are you sure?" box.
+
+**The obvious fix does not work, and that is the part worth recording.**
+`types=1` (NET::NormalMask) was added, committed, and reverted within the hour:
+NET window types are an X11 concept, and under Wayland an application's toplevel
+and its dialog share a single app id, so the rule matches both regardless. The
+dialog is pixel-identical without the key and with it.
+
+So the size/position rules and the unwanted behaviour are, as things stand, the
+same mechanism — the rules are why Konsole and Strawberry open on their intended
+monitors at all. Four options are written up in `STATUS.md`; none is ulu's yet.
+
+**Two process notes, both about not fooling yourself.**
+
+The first "proof" that `types=1` failed was worthless: the FIFO holding the VM's
+serial console open had been started with `sleep 600` instead of the usual long
+timeout, so it expired mid-experiment and every command after it went nowhere.
+QEMU kept running and the screen kept showing the old state, which looks exactly
+like a fix that did not take. Caught by noticing the console log had stopped
+growing, not by anything the experiment itself reported. **A silent control
+channel and a failed experiment are indistinguishable from the outside** — so
+the channel has to prove itself (a marker command with a timestamp) before its
+silence means anything.
+
+And the diagnosis was announced to ulu one step before it was earned: the rule
+was *plausible* from the screenshots and only *proved* later by the geometry
+matching to the character. It happened to be right. The fix, announced with the
+same confidence, was wrong. Report the measurement, not the hypothesis.

@@ -259,23 +259,33 @@ Still open:
   both marked PROVISIONAL. Also unresolved: the portrait monitor (DP-3) threw a
   real hotplug on the same evening, cause unknown — a hotplug on any output
   re-applies all four, so it is a second, independent source of flashes.
-- **WAITING ON ulu — dialog window size.** ulu remembers a behaviour from the
-  old system he does *not* want back: a sub-window ("are you sure?") opening at
-  exactly the size of its parent application. That is KWin's
-  `[Windows] Placement=Maximizing` ("Window placement: Maximized" in the GUI),
-  which opens every new window maximized, dialogs included.
-  **Investigated 2026-07-31: it is set nowhere** — not in the old system's
-  captured `kwinrc`, not in `~/.config/kwinrc`, not in `~/.config/kdedefaults/`,
-  not in `kwinrulesrc` (empty), and Arch ships no `/etc/xdg/kwinrc` at all.
-  Most likely it came from the previous distro's system-wide defaults, which is
-  why it never appeared in any file of his and never made it into a backup.
-  **Open: ulu confirms whether a dialog still opens parent-sized** (e.g.
-  `Shift+Del` in Dolphin, then cancel). If it opens small and centred the topic
-  is closed; if not, the diagnosis was wrong and it needs another look.
-  Either way there is a standing proposal: write `Placement=Centered`
-  explicitly, so no future distro default can reintroduce it — exactly the
-  class of problem this repo exists for. Raise this with ulu when he comes back
-  to it, or when he mentions it himself.
+- **Dialog window size: CAUSE FOUND, FIX STILL OPEN (2026-07-31).** ulu does not
+  want sub-windows ("are you sure?") opening at the size of their parent
+  application. The old diagnosis — a previous distro's
+  `[Windows] Placement=Maximizing` — was **wrong**, which is why it was found
+  set nowhere: **phoinix causes it itself.** Stage 4's KWin rules match only on
+  `wmclass`, so an "Apply Initially" size hits every window of that application,
+  dialogs included.
+  Evidence, in this order: in the QEMU VM Strawberry's dialog opened at exactly
+  `0,0` in `900x700` — character-for-character that host's
+  `STRAWBERRY_CONNECTOR` origin and `STRAWBERRY_SIZE`; and ulu confirmed on the
+  desktop that `Shift+Del` in Dolphin opens a dialog the size of the Dolphin
+  window.
+  **What does NOT work: `types=1` (NET::NormalMask).** Tried, tested, reverted
+  (commit `101a311`). NET window types are X11; on Wayland an application's
+  toplevel and its dialog share one app id, and the rule matches both. The
+  dialog is pixel-identical with and without the key.
+  So the size/position rules and the unwanted dialog behaviour are currently the
+  same mechanism. Options for ulu, none of them decided:
+  1. keep the rules, live with parent-sized dialogs;
+  2. drop the size rules and keep only positions (a dialog then still lands at
+     the monitor origin, but at its own size);
+  3. drop the window rules entirely;
+  4. keep looking for a matcher that separates them under Wayland — the KCM
+     offers a "Window types" field, so KWin may honour a different value or a
+     different key than the one tried.
+  Worth knowing before deciding: without the rules Konsole and Strawberry stop
+  opening on their intended monitors, which is why the rules exist.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 - ~~Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe`.~~ **Fixed
