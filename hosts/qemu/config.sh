@@ -63,3 +63,19 @@ PLACES_ORDER=(archroot archhome)
 # a soundbar this machine does not have. Restoring them here would test
 # nothing and would put a monitor layout for absent hardware into the VM.
 CAPTURED_CONFIGS=0
+
+# --- Test fixtures: desktop icons and the monitor-switch entry ---------------
+# This VM has no monitors and no ddcutil, and monitor-switch.sh would fail here
+# if anything ever ran it — nothing does. What these fixtures DO exercise is
+# everything around the script, which is the part that can actually break a
+# reinstall: stage 3 substituting @REPO_DIR@/@HOST@ into the .desktop template
+# and linking it onto the desktop, and stage 4 building the multi-icon
+# `positions` JSON and finding the right containment for it.
+#
+# Added 2026-07-31 because without them a QEMU run silently SKIPS both paths —
+# the config variables are empty by default, so the test would have passed
+# while proving nothing about the day's work. A fixture that makes a skipped
+# path run is worth more than one that makes an existing test greener.
+MONITOR_SWITCH=("FAKE-MODEL:6:8")
+MONITOR_SWITCH_REF="FAKE-MODEL"
+DESKTOP_ICONS=("phoinix-monitor-switch.desktop:1,1")
