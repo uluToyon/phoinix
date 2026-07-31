@@ -719,3 +719,72 @@ No daemon owns the file in Plasma 6 — `plasma-kglobalaccel.service` is inactiv
 and no `kglobalaccel` process exists; KWin handles global shortcuts itself.
 Irrelevant for stage 3, which runs before the first login, but it means a write
 during a live session can still be overwritten when the session ends.
+
+## 2026-07-31 — Applications, round 1: Dolphin (and where a setting can hide)
+
+Start of the application phase. Ground rules set first, because they differ
+from everything so far: from here on config files can contain credentials, so
+every file is read before it is imported, and the repo stays public. Dolphin
+was picked deliberately as a calibration case — no secrets, but all three
+parts: its own config, view properties, and the Plasma half.
+
+**Two process lessons, both learned the hard way in this round.**
+
+1. **KDE applications must be closed before diffing.** The first diff after
+   ulu's round showed only a KWin rule. `dolphinrc` was byte-identical, and the
+   reason was simply that Dolphin was still running — it writes its config on
+   exit. This now belongs to the routine for every application.
+2. **A file that grew is not automatically a change.** `user-places.xbel` had
+   gained seven `<separator>` blocks, which was dismissed here as KDE
+   bookkeeping. Wrong: those markers *are* the sidebar ordering ulu had
+   changed, each identifying its device by UDI and UUID. Nothing visible was
+   added, which is exactly what made it look like noise.
+
+**The setting that was nowhere.** "Show hidden files" survived restarts,
+according to ulu, but appeared in no file: not `dolphinrc` (checksum unchanged
+throughout), not in any `.directory` under `~` or `/mnt`, not in extended
+attributes on the visited folders, not in the cache. The only hit anywhere was
+`Show hidden files=false` in `kdeglobals` — which belongs to
+`[KFileDialog Settings]`, i.e. the open/save dialogs, not Dolphin's view.
+
+The web was a detour worth recording: one bug report describes a genuine
+regression at exactly this checkbox in Dolphin 24.12, another was closed as
+NOT A BUG, and the most promising lead — Dolphin having moved view properties
+from `.directory` files to extended attributes — was checked against the live
+system with `getfattr` and disproved. What settled it was the machine itself,
+not the internet: KDE ships the schema in
+`/usr/share/config.kcfg/dolphin_directoryviewpropertysettings.kcfg`, and it
+names both the key and, crucially, its group:
+
+```
+group [Settings]  →  HiddenFilesShown (Bool, default false)
+```
+
+`[Settings]`, not `[Dolphin]` where all the other view properties live — which
+is why searching for a value in the obvious group would have failed too. Same
+file confirms `GlobalViewProps` defaults to true, so the one shared view file
+is the right target:
+`~/.local/share/dolphin/view_properties/global/.directory`. Dolphin had created
+that directory and never written the file: the setting existed only inside the
+running process.
+
+**Proven, not assumed** — ulu's idea: after writing `true` and confirming the
+hidden files appeared, set it to `false`, restart Dolphin, hidden files gone,
+set it back. Without that counter-test we would only have known the files were
+visible, not that our file was the cause.
+
+Scripted in a new stage-3 section for application settings: the view property,
+`GlobalViewProps` written explicitly (the default is true today, but a default
+is not a decision), and the KWin window rule for Dolphin's size — "Apply
+Initially", so the window opens at 1295×839 and can still be resized. The rule
+id is a UUID we author and keep fixed, so re-runs update that rule instead of
+appending duplicates; `count`/`rules` in `[General]` have to grow when a second
+rule is added.
+
+Verified: all three files reproduce byte-identically from the script.
+
+Still open from this round: the sidebar ordering. It encodes device node names
+(`sda1`, `nvme0n1p1`) and filesystem UUIDs, two of which belong to root and
+home and are regenerated on every install. It needs runtime resolution from the
+disk labels rather than a captured file — same treatment as the panels and the
+pointer profile.

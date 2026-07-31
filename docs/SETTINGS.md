@@ -139,6 +139,27 @@ seek shortcuts — they do not collide with Strawberry.
 binaries and not readable from the system. Both were confirmed against the GUI
 selection, not guessed.
 
+### Application settings (stage 3)
+
+| Application | File | Key | Value | Origin |
+|---|---|---|---|---|
+| Dolphin | `~/.local/share/dolphin/view_properties/global/.directory` | `Settings/HiddenFilesShown` | `true` | dec |
+| Dolphin | `dolphinrc` | `General/GlobalViewProps` | `true` | dec |
+| Dolphin | `kwinrulesrc` | size / sizerule | `1295,839`, Apply Initially | dec |
+
+**"Show hidden files" is a view property, and it hides well.** Not in
+`dolphinrc`, not in `kdeglobals` — the `Show hidden files` key there belongs to
+`[KFileDialog Settings]`, the open/save dialogs. It lives in the shared view
+properties file above, in group **`[Settings]`**, not in `[Dolphin]` where the
+other view properties sit. Source of truth for that is KDE's own schema,
+`/usr/share/config.kcfg/dolphin_directoryviewpropertysettings.kcfg`. Dolphin
+creates the directory but may never write the file, in which case the setting
+lives only in the running process and does not survive a reinstall.
+
+The window rule id is a fixed UUID authored here, so re-runs update the rule
+instead of appending duplicates. `count` and `rules` in `[General]` list every
+rule and must grow when another one is added.
+
 ### Other stage-3 settings
 
 | Setting | Value | Origin |

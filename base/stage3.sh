@@ -183,7 +183,54 @@ kwriteconfig6 --file kglobalshortcutsrc --group services --group org.kde.spectac
 kwriteconfig6 --file kglobalshortcutsrc --group services --group org.kde.spectacle.desktop --key CurrentMonitorScreenShot    "none"
 kwriteconfig6 --file kglobalshortcutsrc --group services --group org.kde.spectacle.desktop --key OpenWithoutScreenshot       "none"
 
-# ------------------------------------------------- 7. shell aliases (idempotent)
+# ------------------------------------------------- 7. application settings
+# Per-application configuration that is plain KConfig and needs no running
+# session. Applications whose config is not KConfig, or that only write on
+# exit, are handled where they belong — see docs/SETTINGS.md.
+
+# --- Dolphin ---------------------------------------------------------------
+# Show hidden files. Finding where this lives took a while and is worth the
+# comment: it is NOT in dolphinrc and NOT in kdeglobals (the
+# `Show hidden files` there belongs to [KFileDialog Settings], i.e. the
+# open/save dialogs). It is a *view property*, and with GlobalViewProps the
+# view properties for every folder live in one file:
+#
+#   ~/.local/share/dolphin/view_properties/global/.directory
+#   [Settings]
+#   HiddenFilesShown=true
+#
+# Group [Settings], not [Dolphin] where the other view properties sit — taken
+# from KDE's own schema, /usr/share/config.kcfg/dolphin_directoryviewpropertysettings.kcfg.
+# Dolphin creates that directory but had never written the file, so the setting
+# existed only inside the running process. Proven by counter-test: set to
+# false, hidden files gone; back to true, hidden files there.
+install -d "$HOME/.local/share/dolphin/view_properties/global"
+kwriteconfig6 --file "$HOME/.local/share/dolphin/view_properties/global/.directory" \
+    --group Settings --key HiddenFilesShown true
+
+# One shared view configuration for all folders instead of per-folder files.
+# The schema says this already defaults to true — written anyway, because the
+# alternative scatters view settings across a tree of per-folder files that is
+# bound to absolute paths and cannot be carried to a fresh install.
+kwriteconfig6 --file dolphinrc --group General --key GlobalViewProps true
+
+# Dolphin window size, as a KWin rule (this is the Plasma half of configuring
+# an application). "Apply Initially": the window opens at this size and can be
+# resized afterwards without the rule fighting back.
+# The rule id is a UUID we author and keep FIXED — re-running stage 3 then
+# updates this rule instead of appending a duplicate. NOTE: `count` and `rules`
+# below list every rule; both have to grow when a second rule is added.
+DOLPHIN_RULE="29ab85f8-8f9d-4b32-8d51-59a70e84660d"
+kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key Description "Application settings for org.kde.dolphin"
+kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key wmclass "dolphin org.kde.dolphin"
+kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key wmclasscomplete true
+kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key wmclassmatch 1
+kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key size "1295,839"
+kwriteconfig6 --file kwinrulesrc --group "$DOLPHIN_RULE" --key sizerule 3
+kwriteconfig6 --file kwinrulesrc --group General --key count 1
+kwriteconfig6 --file kwinrulesrc --group General --key rules "$DOLPHIN_RULE"
+
+# ------------------------------------------------- 8. shell aliases (idempotent)
 if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
     cat >> "$HOME/.zshrc" << 'EOF'
 
@@ -193,7 +240,7 @@ alias yay='paru'
 EOF
 fi
 
-# ------------------------------------------------- 8. regional formats
+# ------------------------------------------------- 9. regional formats
 # English UI, German formats. Two files on purpose, with different jobs:
 #
 #   environment.d — the one that ACTS. systemd's user manager reads it and
@@ -230,12 +277,12 @@ LC_MEASUREMENT=$FORMAT_LOCALE
 useDetailed=true
 EOF
 
-# ------------------------------------------------- 9. defaults & services
+# ------------------------------------------------- 10. defaults & services
 xdg-mime default brave-browser.desktop application/pdf || true
 
 sudo systemctl enable bluetooth cups power-profiles-daemon
 
-# ------------------------------------------------- 10. arm stage 4 (post-login)
+# ------------------------------------------------- 11. arm stage 4 (post-login)
 # Plasma settings that can only be made while its shell runs — see stage4.sh.
 # Enabled by symlink instead of `systemctl --user enable`: stage 3 runs from a
 # TTY where a user bus is not guaranteed, and the symlink is what enable does.
