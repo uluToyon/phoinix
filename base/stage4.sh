@@ -596,18 +596,64 @@ qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null \
 if [[ -n "${PLAYLIST_FILE:-}" && -f "$PLAYLIST_FILE" ]]; then
     SB_DB="$HOME/.local/share/strawberry/strawberry/strawberry.db"
 
-    # Guard against a second import. Stage 4 is single-shot, but it gets re-run
+    # Names are compared with grep -Fx rather than an SQL WHERE clause, which
+    # keeps the playlist name out of the query string entirely. The row id it
+    # yields IS interpolated below — that one comes from the database and is a
+    # number.
+    sb_playlist_id() {
+        [[ -f "$SB_DB" ]] || return 0
+        sqlite3 "file:$SB_DB?mode=ro" "SELECT ROWID || '|' || name FROM playlists;" 2>/dev/null \
+            | awk -F'|' -v want="$PLAYLIST_NAME" '$2 == want { print $1; exit }'
+    }
+    sb_track_count() {
+        local id; id="$(sb_playlist_id)"
+        [[ -n "$id" ]] || { echo 0; return 0; }
+        sqlite3 "file:$SB_DB?mode=ro" \
+            "SELECT count(*) FROM playlist_items WHERE playlist = $id;" 2>/dev/null || echo 0
+    }
+
+    # Guard against a second import: stage 4 is single-shot, but it gets re-run
     # by hand during development, and `--create` would happily build a second
-    # playlist with the same name every time. Names are compared with grep -Fx
-    # rather than an SQL WHERE clause, which keeps the playlist name out of the
-    # query string entirely.
-    if [[ -f "$SB_DB" ]] && sqlite3 "file:$SB_DB?mode=ro" "SELECT name FROM playlists;" 2>/dev/null \
-         | grep -Fxq "$PLAYLIST_NAME"; then
-        echo "playlist: '$PLAYLIST_NAME' already exists — not importing again"
+    # playlist with the same name every time.
+    if [[ -n "$(sb_playlist_id)" ]]; then
+        echo "playlist: '$PLAYLIST_NAME' already exists ($(sb_track_count) tracks) — not importing again"
     else
-        strawberry --create "$PLAYLIST_NAME" "$PLAYLIST_FILE" >/dev/null 2>&1 \
-            && echo "playlist: imported $PLAYLIST_FILE as '$PLAYLIST_NAME'" \
-            || echo "WARNING: could not import $PLAYLIST_FILE"
+        # Strawberry MUST BE RUNNING for this. `--create` is an IPC message to a
+        # live instance; with none there it is silently dropped — and still
+        # exits 0. That is not theory: on the first real install this stage
+        # reported "imported … as 'Default'" at 22:44 and left a database with
+        # no such playlist, because Strawberry had never been started (LOG
+        # 2026-07-31). ulu found it, not the log.
+        if ! pgrep -x strawberry >/dev/null; then
+            # NOT a plain `strawberry &`. This stage is a Type=oneshot unit, so
+            # whatever is left in its cgroup is killed the moment ExecStart
+            # returns — the instance would die together with the stage, quite
+            # possibly before it had written anything. A transient scope is a
+            # unit of its own and outlives us. Strawberry autostarts anyway
+            # (stage 3), so this only pulls that start forward, and a second
+            # launch merely raises the first window.
+            systemd-run --user --scope --quiet strawberry >/dev/null 2>&1 &
+            for _ in $(seq 30); do pgrep -x strawberry >/dev/null && break; sleep 1; done
+        fi
+
+        strawberry --create "$PLAYLIST_NAME" "$PLAYLIST_FILE" >/dev/null 2>&1 || true
+
+        # VERIFY instead of trusting the exit code — the whole point of this
+        # rewrite. Strawberry writes the playlist asynchronously, so poll.
+        tracks=0
+        for _ in $(seq 20); do
+            tracks="$(sb_track_count)"
+            [[ "$tracks" =~ ^[0-9]+$ ]] || tracks=0
+            (( tracks > 0 )) && break
+            sleep 1
+        done
+
+        if (( tracks > 0 )); then
+            echo "playlist: imported $PLAYLIST_FILE as '$PLAYLIST_NAME' ($tracks tracks)"
+        else
+            echo "WARNING: '$PLAYLIST_NAME' is empty or absent after the import —"
+            echo "         start Strawberry by hand and re-run this stage."
+        fi
     fi
 elif [[ -n "${PLAYLIST_FILE:-}" ]]; then
     echo "playlist: $PLAYLIST_FILE not present — skipped"
