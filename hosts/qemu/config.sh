@@ -35,3 +35,10 @@ KERNEL_PARAMS="console=ttyS0,115200"
 # ESP stays at the shared 1G — the reason for that size (multiple kernels +
 # fallback initramfs) is exactly what a test should not quietly deviate from.
 ROOT_SIZE="60G"
+
+# --- Captured configs (stage 3) --------------------------------------------
+# The test VM has none, and that is a statement rather than an oversight: the
+# desktop's captured files are keyed to its four monitors' EDID hashes and to
+# a soundbar this machine does not have. Restoring them here would test
+# nothing and would put a monitor layout for absent hardware into the VM.
+CAPTURED_CONFIGS=0

@@ -68,3 +68,11 @@ PLAYLIST_NAME="Default"
 # own; phoinix only needs to point KeePassXC at it. The database itself is
 # never touched, copied or backed up by anything in this repo.
 KEEPASS_DB="/mnt/FilesMusic/KeePassXC/Passwords.kdbx"
+
+# --- Captured configs (stage 3) --------------------------------------------
+# This host has hosts/desktop/home/ in the repo: the monitor fix
+# (kwinoutputconfig.json), kwinrc, kdeglobals, the PipeWire clock drop-in and
+# the wireplumber state carrying the soundbar's attenuation. Declared rather
+# than detected — stage 3 hard-fails if this says 1 and the files are gone,
+# because a silent skip here means a black first login.
+CAPTURED_CONFIGS=1

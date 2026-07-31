@@ -84,23 +84,41 @@ fi
 # is readable from where it sits. Host-specific by nature: kwinoutputconfig
 # is keyed to these four monitors' EDID hashes.
 CFG="$REPO_DIR/hosts/$HOST/home"
-[[ -d "$CFG" ]] || { echo "ERROR: no captured configs at $CFG"; exit 1; }
 
-install -Dm644 "$CFG/.config/kwinoutputconfig.json" "$HOME/.config/kwinoutputconfig.json"
-install -Dm644 "$CFG/.config/kwinrc"                "$HOME/.config/kwinrc"
-install -Dm644 "$CFG/.config/kdeglobals"            "$HOME/.config/kdeglobals"
+# Whether a host HAS captured configs is DECLARED in hosts/<host>/config.sh —
+# never inferred from whether the directory happens to be there. Inferring it
+# would reopen the exact hole this hard error was written to close: a host
+# whose captured configs are missing installs to a clean finish and then goes
+# black at the first graphical login. An undeclared host is an error too, so
+# adding one is a decision rather than an omission.
+case "${CAPTURED_CONFIGS:-}" in
+1)
+    [[ -d "$CFG" ]] || { echo "ERROR: CAPTURED_CONFIGS=1 but nothing at $CFG"; exit 1; }
 
-# Only the drop-in, never a copy of pipewire.conf itself: a file in
-# ~/.config/pipewire/ shadows the packaged one completely, so a stale copy
-# silently freezes out every future update to it (found exactly that on the
-# live system — a verbatim 1.6.7 copy still shadowing 1.6.8).
-install -Dm644 "$CFG/.config/pipewire/pipewire.conf.d/10-clock.conf" \
-               "$HOME/.config/pipewire/pipewire.conf.d/10-clock.conf"
+    install -Dm644 "$CFG/.config/kwinoutputconfig.json" "$HOME/.config/kwinoutputconfig.json"
+    install -Dm644 "$CFG/.config/kwinrc"                "$HOME/.config/kwinrc"
+    install -Dm644 "$CFG/.config/kdeglobals"            "$HOME/.config/kdeglobals"
 
-# wireplumber state: the analog-surround-51 pin and the -26dB route fix.
-for f in default-profile default-routes default-nodes stream-properties; do
-    install -Dm644 "$CFG/.local/state/wireplumber/$f" "$HOME/.local/state/wireplumber/$f"
-done
+    # Only the drop-in, never a copy of pipewire.conf itself: a file in
+    # ~/.config/pipewire/ shadows the packaged one completely, so a stale copy
+    # silently freezes out every future update to it (found exactly that on the
+    # live system — a verbatim 1.6.7 copy still shadowing 1.6.8).
+    install -Dm644 "$CFG/.config/pipewire/pipewire.conf.d/10-clock.conf" \
+                   "$HOME/.config/pipewire/pipewire.conf.d/10-clock.conf"
+
+    # wireplumber state: the analog-surround-51 pin and the -26dB route fix.
+    for f in default-profile default-routes default-nodes stream-properties; do
+        install -Dm644 "$CFG/.local/state/wireplumber/$f" "$HOME/.local/state/wireplumber/$f"
+    done
+    ;;
+0)
+    echo ">> $HOST declares no captured configs — skipping monitor fix and audio state."
+    ;;
+*)
+    echo "ERROR: hosts/$HOST/config.sh must set CAPTURED_CONFIGS to 1 or 0"
+    exit 1
+    ;;
+esac
 
 # Distro-agnostic shell config (see DESIGN.md's dotfiles/ vs system/ split).
 # The phoinix alias block is deliberately NOT in this file — section 6 owns it,
