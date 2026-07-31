@@ -1,0 +1,48 @@
+# Template — stage 3 installs this with @REPO_DIR@ and @HOST@ substituted.
+# Copies XIVLauncher's settings, Dalamud's plugin profile and the installed
+# plugin binaries out to the games disk, ON SESSION EXIT.
+#
+# Why this exists, and it is not hypothetical: stage 3 RESTORES launcher.ini
+# from XLCORE_BACKUP_DIR on a fresh install. So a setting changed in the live
+# launcher is invisible to a reinstall until the backup has been re-run by
+# hand — and on 2026-07-31 exactly that nearly happened, with ulu's newly
+# enabled GameMode toggle about to be silently reverted to the backup's old
+# value. Anything under ~/.local/share/dev.goats.xivlauncher is only as durable
+# as the last backup run, and a step that has to be remembered will eventually
+# be forgotten.
+#
+# Why on session exit rather than on a timer: same reasoning as the playlist
+# export next to it. Plugin lists and launcher settings only matter at reinstall
+# time, so a periodic job would run all day to catch a change nobody reads in
+# between. Losing one session to a crash or a power cut is the accepted cost.
+#
+# No ordering against XIVLauncher: it is not a systemd unit, so there is nothing
+# to order against. In principle the launcher could be writing its ini while
+# this copies it; in practice ExecStop runs while the session is being torn
+# down. If it ever does catch a half-written file, re-running
+# scripts/xlcore-backup.sh by hand is the whole repair.
+#
+# If the games disk is not mounted, the script refuses and exits non-zero, so
+# the unit fails at stop and says so in the journal. That is deliberate: a
+# backup that silently did nothing is the failure this whole file exists to
+# prevent.
+#
+# The mechanics: a oneshot that does nothing on start and stays "active" via
+# RemainAfterExit, so systemd runs ExecStop when the session goes down.
+
+[Unit]
+Description=phoinix — back up XIVLauncher settings and plugins on session exit
+Documentation=file://@REPO_DIR@/scripts/xlcore-backup.sh
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=@REPO_DIR@/scripts/xlcore-backup.sh @HOST@
+# Two rsyncs over ~80 MB on an NVMe, incremental after the first run. Longer
+# than this means something is wrong and shutdown should not wait for it.
+TimeoutStopSec=60
+
+[Install]
+WantedBy=graphical-session.target

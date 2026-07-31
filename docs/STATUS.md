@@ -252,11 +252,15 @@ this topology — until proven, the cap stays.
   only path dependency is stage 4's KWin rule, which already matches both
   wmclass spellings). `packages/aur.txt` carries the switch and the caveat
   (the -bin package renames the desktop file). Rationale in `LOG.md`.
-- **gamemode for FFXIV.** Requested by ulu 2026-07-31. Not just a package-list
-  entry: `gamemode` (+ `lib32-gamemode`) must land in packages, and XIVLauncher
-  has to actually invoke it — where that hook lives (xlcore settings vs. a
-  wrapper) is part of the work. Decide and wire it together with ulu, then
-  capture like every other setting.
+- ~~**gamemode for FFXIV.**~~ **DONE 2026-07-31, later the same evening.** The
+  entry was half stale when it was written: `gamemode` and `lib32-gamemode`
+  were already installed and already in `packages/gaming.txt`. The missing
+  half — XIVLauncher actually invoking it — was not a wrapper question at all;
+  the launcher has its own toggle, and ulu flipped it (`GameModeEnabled=true`
+  in `launcher.ini`). Captured by re-running `scripts/xlcore-backup.sh desktop`,
+  which is what makes it survive a reinstall: stage 3 restores `launcher.ini`
+  from `XLCORE_BACKUP_DIR`, so an unrefreshed backup would have quietly put
+  the old `false` back.
 - fzf deep-dive: ulu didn't know he had it and wants a proper tour of what
   it can do (history search, file finding, previews, zi) once the system runs.
 - **`fixes/` — a curlable collection.** Parked by ulu on 2026-07-31 ("halte dir

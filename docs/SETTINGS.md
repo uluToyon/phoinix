@@ -228,6 +228,7 @@ rule and must grow when another one is added.
 | Services | `bluetooth`, `cups`, `power-profiles-daemon` | dec |
 | Stage-4 unit | rendered + symlinked into `plasma-workspace.target.wants` | dec |
 | Playlist export unit | rendered + symlinked into `graphical-session.target.wants`; exports on session exit | dec |
+| xlcore backup unit | same mechanism; backs up XIVLauncher settings + plugins on session exit | dec |
 | plasmashell drop-in | `After=` kwin, `TimeoutStopSec=10s` — 40s shutdown hang | dec |
 | Graphical login | enabled **last**, after everything above exists | dec |
 
@@ -617,6 +618,14 @@ is what proves ulu moved the icon rather than accepting a default placement.
 about 80 MB, kept next to the game on the games disk
 (`XLCORE_BACKUP_DIR = /mnt/Games/FFXIV/xlcore-backup`) and written by
 `scripts/xlcore-backup.sh`. Only the path is versioned.
+
+**The backup runs itself, since 2026-07-31.** `phoinix-xlcore-backup.service`
+is a user unit of the same shape as the playlist export — oneshot,
+`RemainAfterExit`, the real work in `ExecStop` — so it fires when the graphical
+session goes down. It exists because stage 3 *restores* `launcher.ini` from
+this directory, which makes an unrefreshed backup actively harmful rather than
+merely stale: a live change gets reverted by the next reinstall. That nearly
+took ulu's `GameModeEnabled=true` with it on the day the unit was written.
 
 | Carried | Why |
 |---|---|

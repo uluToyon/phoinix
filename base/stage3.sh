@@ -881,6 +881,16 @@ install -d "$USER_UNIT_DIR/graphical-session.target.wants"
 ln -sf ../phoinix-playlist-export.service \
     "$USER_UNIT_DIR/graphical-session.target.wants/phoinix-playlist-export.service"
 
+# Back up XIVLauncher's settings and plugins on session exit, same mechanism.
+# This one closes a loop stage 3 itself opens: it RESTORES launcher.ini from
+# XLCORE_BACKUP_DIR above, so without this unit a live change to the launcher
+# is reverted by the next reinstall (rationale in the unit file).
+sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
+    "$REPO_DIR/system/user/phoinix-xlcore-backup.service" \
+    > "$USER_UNIT_DIR/phoinix-xlcore-backup.service"
+ln -sf ../phoinix-xlcore-backup.service \
+    "$USER_UNIT_DIR/graphical-session.target.wants/phoinix-xlcore-backup.service"
+
 # Drop-in against the 40s shutdown hang (plasmashell outlives its compositor
 # and never processes SIGTERM) — rationale in the file itself.
 install -d "$USER_UNIT_DIR/plasma-plasmashell.service.d"
