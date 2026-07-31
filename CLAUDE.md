@@ -30,6 +30,9 @@ steps are performed, never reconstructed later from memory.
 - **No clickable question prompts (AskUserQuestion).** Present choices in
   prose: each option with rationale, pros and cons, and a recommendation —
   thorough but compact. End with an open question.
+- **Never ask whether to wrap up.** The session ends when ulu says so, or when
+  the topic is genuinely finished — not when a chunk of work happens to close.
+  Finish a topic, report it, take the next one.
 - Destructive steps (partitioning, overwriting) need explicit go-ahead each time.
 - Never store secrets in the repo (see DESIGN.md "Never in the repo").
 - Never encode discovered identifiers (device names, ALSA card indices) — use
