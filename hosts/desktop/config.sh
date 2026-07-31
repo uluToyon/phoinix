@@ -104,6 +104,26 @@ CAPTURED_CONFIGS=1
 # Only the PATH is versioned. Every .conf in here is imported.
 VPN_CONFIG_DIR="/mnt/FilesMusic/VPN"
 
+# --- GitHub credentials (stage 3) ------------------------------------------
+# Same principle as VPN_CONFIG_DIR above: the secret lives on a data disk this
+# repo never formats, and only the PATH is versioned. The file is git's own
+# `store` format, one line, mode 0600:
+#
+#   https://uluToyon:<personal-access-token>@github.com
+#
+# Stage 3 points a REPO-LOCAL credential.helper at it, so the token is offered
+# to this repository and nothing else — a global helper would hand it to every
+# clone on the machine.
+#
+# Why it exists at all: a rebuilt machine has no gh, no SSH key and no stored
+# credentials, so the very commits that record the reinstall cannot be pushed
+# (found 2026-08-01). A token is a secret and must never enter the repo, but
+# the path to it is not, and that is enough to make the step reproducible.
+#
+# The token is fine-grained, limited to uluToyon/phoinix, permission
+# "Contents: Read and write". It EXPIRES — see STATUS.md for the date.
+GIT_CREDENTIALS_FILE="/mnt/FilesMusic/phoinix/git-credentials"
+
 # --- qBittorrent paths (stage 3) -------------------------------------------
 # On a data disk, not in ~/Downloads: the system disk is what a reinstall
 # wipes, and half-finished torrents have no business living there. TempPath
