@@ -1955,3 +1955,44 @@ Separate finding, harmless until it is not: **`/dev/input/js0` is the ASRock LED
 controller.** The board's RGB controller is tagged as a joystick, so the pad is
 `js1`, and anything that grabs "the first joystick" gets the motherboard
 lighting instead.
+
+## 2026-07-31 — Applications, round 10: LibreOffice, one setting and a verified seeding trick
+
+ulu's own summary was "nicht viel eingestellt", and the file agreed: 116 lines
+of `registrymodifications.xcu`, almost all of it window and toolbar state.
+
+Exactly one decision survived the sifting: **the dark appearance**, and
+specifically chosen rather than left on "System" — `ApplicationAppearance=2`
+with `CurrentColorScheme=COLOR_SCHEME_LIBREOFFICE_DARK` corroborating it. Both
+are written, because either alone would be ambiguous. `UseOpenCL=false` is
+LibreOffice's own default and stays out; the `welcomedialog` entry only records
+which tab was last shown, so it is not the "never show again" flag it looks like.
+
+**The pristine-profile trick failed here, and its failure is instructive.** Run
+headless against an empty profile, LibreOffice writes 461 bytes and never draws
+a UI — so everything the GUI serialises on first paint shows up as "only in
+ulu's profile", defaults included. The same limitation Strawberry set. The
+decision had to be identified by reading the values, not by diffing.
+
+**But the seeding question got a real answer, unlike Steam's.** Both
+applications have the same timing problem: the config file does not exist until
+the program has run once, which is never true at stage 3 time on a fresh
+install. For Steam that made automation unverifiable and it stayed manual. Here
+it was testable in two minutes — a hand-written minimal `registrymodifications.xcu`
+placed before the first start is read and kept, with LibreOffice merging its own
+entries in around it (516 → 767 bytes, both values intact). So stage 3 seeds the
+profile, guarded on absence: an existing profile is ulu's and gets left alone,
+the same shape as the KeePassXC database preselection.
+
+Worth stating because it is a class of decision this repo keeps meeting: the
+difference between Steam and LibreOffice was not the risk appetite, it was
+whether the claim could be tested on the machine at hand.
+
+Two notes on secrecy, both fine: the file accumulates recently opened documents
+with full paths, so it is never captured whole — only the two items are
+authored. And its `UserData` node is empty, ulu having never filled in the
+user-details page, which is the outcome a public repo wants.
+
+And a process check of mine misfired again: `pgrep -f soffice` matched my own
+shell, exactly the trap recorded after the Discord round. `pgrep -x` on the real
+process names (`soffice.bin`, `oosplash`) is the check that means something.

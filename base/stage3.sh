@@ -334,6 +334,38 @@ fi
 # the config, and that database is state — absolute paths, rebuilt by a rescan.
 # Adding the collection folder stays a manual post-install step (STATUS.md).
 
+# --- LibreOffice -----------------------------------------------------------
+# One decision came out of the settings round: the dark appearance, chosen
+# explicitly rather than left on "System". Both keys are written because they
+# corroborate each other — ApplicationAppearance is the setting, CurrentColorScheme
+# is the document colour scheme that follows from it.
+#
+# LibreOffice keeps everything in a single registrymodifications.xcu, which
+# also accumulates recently opened documents with full paths — so the file is
+# never captured, only these two items are authored.
+#
+# SEEDED, not edited, and only when the file is absent. The profile does not
+# exist until LibreOffice has run once, i.e. never at stage 3 time on a fresh
+# install. Verified rather than assumed: a hand-written minimal file placed
+# before the first start is read and kept — LibreOffice merges its own entries
+# in around it (516 -> 767 bytes in the test, both values intact). The absence
+# guard matters as much as the seeding: an existing profile is ulu's, and
+# overwriting it would discard everything he has set since.
+LO_PROFILE="$HOME/.config/libreoffice/4/user/registrymodifications.xcu"
+if [[ ! -e "$LO_PROFILE" ]]; then
+    install -d "$(dirname "$LO_PROFILE")"
+    cat > "$LO_PROFILE" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<item oor:path="/org.openoffice.Office.Common/Appearance"><prop oor:name="ApplicationAppearance" oor:op="fuse"><value>2</value></prop></item>
+<item oor:path="/org.openoffice.Office.UI/ColorScheme"><prop oor:name="CurrentColorScheme" oor:op="fuse"><value>COLOR_SCHEME_LIBREOFFICE_DARK</value></prop></item>
+</oor:items>
+EOF
+    echo "libreoffice: profile seeded (dark appearance)"
+else
+    echo "libreoffice: profile exists — left alone"
+fi
+
 # ------------------------------------------------- 7b. ProtonVPN split tunnel
 # Stage 2 built the system side (group, nftables rule, resolved). This is the
 # user side: import the connections, teach them not to take over the machine,

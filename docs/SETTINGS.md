@@ -425,6 +425,28 @@ holds the `contentid` that Steam matches against, so the games survive a
 reinstall as long as the folder is re-added. That is what makes the manual step
 cheap rather than a re-download.
 
+## LibreOffice (stage 3)
+
+| Setting | Value | Origin |
+|---|---|---|
+| `Office.Common/Appearance` `ApplicationAppearance` | `2` = dark, chosen explicitly rather than "System" | dec |
+| `Office.UI/ColorScheme` `CurrentColorScheme` | `COLOR_SCHEME_LIBREOFFICE_DARK` — follows from it, written for corroboration | dec |
+
+**Seeded, never edited.** LibreOffice keeps everything in one
+`registrymodifications.xcu`, which does not exist until it has run once — i.e.
+never at stage 3 time on a fresh install. A hand-written minimal file placed
+beforehand is read and kept, with LibreOffice merging its own entries around it
+(verified: 516 → 767 bytes, both values intact). Stage 3 therefore writes the
+file **only when it is absent**; an existing profile is ulu's and is left alone.
+
+**Never captured whole.** That same file accumulates recently opened documents
+with full paths. It also holds a `UserData` node — empty here, since ulu never
+filled in the user-details page, which is the good outcome for a public repo.
+
+Everything else in his profile is window and toolbar state (`WindowState`,
+`DockPos`, `SplitWindow`, `Visible`), the registered dictionary languages, and
+`UseOpenCL=false`, which is LibreOffice's own default.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and
