@@ -349,6 +349,33 @@ instance name, so with `wmclasscomplete=true` the value is
 `\sorg.qbittorrent.qBittorrent`. Reproduced verbatim; without it the rule
 matches nothing.
 
+## Discord (stages 3 and 4)
+
+**Almost nothing here is scriptable, and that is the finding.** Everything ulu
+configures in Discord's UI — theme, notifications, audio devices, keybinds,
+privacy — lives server-side in his account and returns on login, like Brave's
+sync chain. Its `settings.json` holds window bounds, a background colour and
+Discord's own experiment flags: not one decision.
+
+| Setting | Value | Origin |
+|---|---|---|
+| Autostart | packaged `discord.desktop` copied into `~/.config/autostart/` | dec |
+| KWin rule (stage 4) | `DISCORD_CONNECTOR` + `DISCORD_OFFSET` + `DISCORD_SIZE` — lower half of the portrait monitor, beneath Konsole | dec |
+
+**The Arch package is a bootstrapper, not the application.** `/usr/bin/discord`
+is a ~40-line shell script; on first run it fetches the real client (554 MB)
+from `updates.discord.com` into `~/.config/discord/app-<version>/` and execs it
+from there. Two consequences worth knowing: `pacman -Syu` does **not** update
+the running client, and a fresh install re-downloads half a gigabyte at first
+launch.
+
+**`SKIP_HOST_UPDATE` is deliberately NOT set.** That workaround belongs to the
+era when the package shipped the app under a read-only system directory, where
+a self-update could not succeed and left the client hanging. Here the app lives
+in a directory it owns, so updating works — and pinning it would freeze the
+client until Discord's servers refuse it, producing the very failure the
+setting was meant to avoid.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and

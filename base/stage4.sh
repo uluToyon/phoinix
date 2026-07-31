@@ -372,6 +372,30 @@ else
         "size=$QBT_SIZE" "sizerule=3"
 fi
 
+# Discord: the lower half of the portrait monitor, directly beneath Konsole.
+# Offset again, for the same reason as qBittorrent — two windows sharing one
+# screen means one of them is not at the origin, and the absolute coordinate
+# would be a lie the moment the screens are rearranged.
+discord_geom="$(connector_geometry "${DISCORD_CONNECTOR:-}")"
+IFS=, read -r dcx dcy _ _ <<< "$discord_geom"
+IFS=, read -r dcdx dcdy <<< "${DISCORD_OFFSET:-0,0}"
+if [[ "$dcx" == "-1" ]]; then
+    echo "WARNING: ${DISCORD_CONNECTOR:-<none>} not connected — Discord rule without position"
+    rule_set "91ef720f-7168-401d-8652-1825045854e6" \
+        "Description=Application settings for discord" \
+        "wmclass=Discord discord" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "size=$DISCORD_SIZE" "sizerule=3"
+else
+    echo "window rules: Discord -> $DISCORD_CONNECTOR origin $dcx,$dcy + offset $dcdx,$dcdy"
+    rule_set "91ef720f-7168-401d-8652-1825045854e6" \
+        "Description=Application settings for discord" \
+        "wmclass=Discord discord" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "position=$((dcx + dcdx)),$((dcy + dcdy))" "positionrule=3" \
+        "size=$DISCORD_SIZE" "sizerule=3"
+fi
+
 # The order of this list is the order KWin applies the rules in, so it only
 # matters once two rules can match the SAME window. These match different
 # applications, hence any order is correct here.

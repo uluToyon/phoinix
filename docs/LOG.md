@@ -1815,3 +1815,52 @@ Stated plainly in the file itself, because an alias invites overconfidence: it
 covers the shell and nothing else — not `/usr/bin/qbittorrent`, not a .desktop
 file from elsewhere. The guarantee remains the nftables rule; this only removes
 a way to trip over it.
+
+## 2026-07-31 — Applications, round 7: Discord (and a package that is only a downloader)
+
+The shortest round so far, and the reason is structural: **Discord's settings
+are not on this machine.** Theme, notifications, audio devices, keybinds,
+privacy — all of it lives server-side in the account and comes back at login,
+the same class as Brave's sync chain. Its `settings.json` came out of ulu's
+round at 168 bytes' worth of substance: window bounds, a background colour and
+Discord's own `DESKTOP_TTI_*` experiment flags. Not one decision.
+
+So the round produced exactly two things, and both were once again *outside*
+the application: an autostart entry and a KWin rule. The rule puts Discord on
+the lower half of the portrait monitor, directly beneath Konsole — an offset
+from the connector origin, like qBittorrent on DP-2. Reproduced byte-identically
+from the script.
+
+The autostart entry KDE writes turned out to carry the same keys and values as
+the packaged `discord.desktop`, only alphabetically reordered, so stage 3
+installs the packaged file rather than a copy that could go stale.
+
+**The interesting find was in the packaging.** ulu asked whether
+`SKIP_HOST_UPDATE` in `settings.json` is still relevant — he did not want
+Discord checking for an update at startup and then failing to load its UI. The
+answer came from the machine rather than the wiki (which blocks automated
+fetches): `/usr/bin/discord` is a ~40-line shell script. On first run it calls
+`/usr/share/discord/updater_bootstrap`, which downloads the actual client from
+`updates.discord.com` into `~/.config/discord/app-<version>/` — 554 MB — and
+execs it from there. The package itself contains six files.
+
+That makes the setting not merely unnecessary but harmful. The workaround
+belongs to the era when the package shipped the application under a read-only
+system directory: Discord noticed a newer version, tried to update itself,
+could not write there, and hung — precisely ulu's symptom. In this model the
+application sits in a directory it owns and updates fine. Setting the flag
+would freeze the client at its installed version until Discord's servers refuse
+to talk to it, i.e. it would *cause* the failure it was meant to prevent.
+Recommended against, and recorded so the question does not get re-answered from
+folklore.
+
+Two consequences of the bootstrapper model belong in the manual steps:
+`pacman -Syu` does not update the running client, and a fresh phoinix install
+re-downloads half a gigabyte the first time Discord is started.
+
+**A process check of mine was wrong twice.** `pgrep -f '[Dd]iscord'` matched my
+own shell, whose command line contained the pattern — so it reported Discord
+still running after ulu had closed it, and I passed that on as a warning. The
+bracket trick only defeats self-matching for the *pattern's* own process, not
+for a shell that happens to carry the word for other reasons. `pgrep -x` on the
+exact process name is the check that means something.

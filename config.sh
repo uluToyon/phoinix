@@ -40,6 +40,9 @@ PLACES_ORDER=()           # Dolphin Places device order, by filesystem label
 QBT_CONNECTOR=""          # qBittorrent window rule; empty = no rule for it
 QBT_OFFSET="0,0"          # offset from that connector's origin
 QBT_SIZE=""
+DISCORD_CONNECTOR=""      # Discord window rule; empty = no rule for it
+DISCORD_OFFSET="0,0"
+DISCORD_SIZE=""
 VPN_CONFIG_DIR=""         # WireGuard .conf files; empty = this host has no VPN
 
 # --- ProtonVPN split tunnel (stages 2 and 3) -------------------------------

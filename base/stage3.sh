@@ -260,6 +260,19 @@ install -Dm644 /usr/share/applications/org.kde.konsole.desktop \
 install -Dm644 /usr/share/applications/org.strawberrymusicplayer.strawberry.desktop \
                "$HOME/.config/autostart/org.strawberrymusicplayer.strawberry.desktop"
 
+# --- Discord ---------------------------------------------------------------
+# Autostart, and that is the ONLY thing about Discord this repo can carry.
+# Everything ulu configures in its UI — theme, notifications, audio devices,
+# keybinds, privacy — lives server-side in his account and returns on login,
+# exactly like Brave's sync chain. Its settings.json holds window bounds, a
+# background colour and Discord's own experiment flags: not one decision.
+# The entry KDE writes when you tick the box carries the same keys and values
+# as the packaged file — only alphabetically reordered — so the packaged file
+# is what gets installed and cannot go stale. "Start minimized" would be a
+# flag appended to Exec here; ulu did not want it.
+install -Dm644 /usr/share/applications/discord.desktop \
+               "$HOME/.config/autostart/discord.desktop"
+
 # The stereo -> 5.1 upmix, and the reason Strawberry is in the package set at
 # all: it happens INSIDE the player and must never be done system-wide (ulu's
 # hard requirement, docs/LOG.md 2026-07-30). Strawberry's own default is

@@ -104,3 +104,10 @@ QBT_TEMP_PATH="/mnt/Downloads/Temp"
 QBT_CONNECTOR="DP-2"
 QBT_OFFSET="1920,0"    # half of DP-2's 3840 width
 QBT_SIZE="1920,1053"
+
+# --- Discord window (stage 4) ----------------------------------------------
+# Shares the portrait monitor with Konsole: Konsole takes the top half at the
+# origin, Discord the bottom. Hence an offset, like qBittorrent on DP-2.
+DISCORD_CONNECTOR="DP-3"
+DISCORD_OFFSET="0,1262"   # directly below Konsole, which is 1262 high
+DISCORD_SIZE="1440,1262"
