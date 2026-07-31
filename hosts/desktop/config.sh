@@ -76,3 +76,14 @@ KEEPASS_DB="/mnt/FilesMusic/KeePassXC/Passwords.kdbx"
 # than detected — stage 3 hard-fails if this says 1 and the files are gone,
 # because a silent skip here means a black first login.
 CAPTURED_CONFIGS=1
+
+# --- ProtonVPN split tunnel (stage 3) --------------------------------------
+# The WireGuard configs live WITH the data, on a disk phoinix never touches, so
+# they survive a reinstall by construction — the same anchor pattern as the
+# Strawberry playlist. They must never enter the repo: each file carries a
+# PrivateKey, and for Proton that key IS the credential (no user/password).
+# Two are present, CH and NL, both generated with "NAT-PMP (Port Forwarding)
+# = on" and "Moderate NAT = off" — Proton allows only one of those two at a
+# time, and port forwarding is the one qBittorrent needs.
+# Only the PATH is versioned. Every .conf in here is imported.
+VPN_CONFIG_DIR="/mnt/FilesMusic/VPN"

@@ -37,6 +37,27 @@ KERNEL_PARAMS=""          # extra kernel command line for the boot entry
 PANEL_TV_CONNECTOR=""     # second screen that mirrors the main panel
 PANEL_SIDE=()             # clock-only strips: "<connector>:<thickness>"
 PLACES_ORDER=()           # Dolphin Places device order, by filesystem label
+VPN_CONFIG_DIR=""         # WireGuard .conf files; empty = this host has no VPN
+
+# --- ProtonVPN split tunnel (stages 2 and 3) -------------------------------
+# Conventions rather than host facts, so they live here: every machine that
+# runs this setup uses the same names, and the names are AUTHORED — none of
+# them is read off a running system, which is what CLAUDE.md demands.
+#
+# The design in one paragraph: the tunnel deliberately does NOT become the
+# default route, so everything except qBittorrent keeps using the normal line.
+# qBittorrent is started with VPN_GROUP as its effective group, and an nftables
+# rule drops every packet from that group that would leave through anything but
+# VPN_INTERFACE. The guarantee is therefore the kernel's, not the
+# application's — qBittorrent's own "bind to interface" setting is set as well,
+# but only as the first of two lines, never as the promise.
+VPN_INTERFACE="proton0"   # authored name; both Proton connections share it, so
+                          # qBittorrent's binding survives switching countries
+VPN_GROUP="vpnonly"       # group whose traffic may only leave via VPN_INTERFACE
+VPN_GATEWAY="10.2.0.1"    # Proton's in-tunnel gateway: NAT-PMP peer and DNS
+QBT_WEBUI_PORT=8080       # localhost only, auth bypassed for localhost — this is
+                          # how the forwarded port reaches qBittorrent without a
+                          # credential existing anywhere
 
 # Set to 1 to keep an existing home partition (the "hop back" path):
 # partitioning is skipped entirely, only ESP and root are re-formatted.

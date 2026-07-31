@@ -321,6 +321,112 @@ fi
 # the config, and that database is state — absolute paths, rebuilt by a rescan.
 # Adding the collection folder stays a manual post-install step (STATUS.md).
 
+# ------------------------------------------------- 7b. ProtonVPN split tunnel
+# Stage 2 built the system side (group, nftables rule, resolved). This is the
+# user side: import the connections, teach them not to take over the machine,
+# and point qBittorrent through them.
+#
+# The whole design in one sentence: the tunnel is NOT the default route, so
+# nothing uses it by accident, and qBittorrent is forced into it by a kernel
+# rule rather than asked politely by a checkbox.
+if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
+    if [[ ! -d "$VPN_CONFIG_DIR" ]]; then
+        # Loud, not fatal. The disk holding the configs may simply not be
+        # mounted yet, and that must not abort an install — but it must also
+        # never pass unnoticed, or the machine comes up with qBittorrent
+        # blocked and no visible reason (the nftables rule fails CLOSED).
+        echo "WARNING: $VPN_CONFIG_DIR is not there — no VPN connection imported."
+        echo "         qBittorrent will be unable to reach the network until it is."
+    else
+        shopt -s nullglob
+        vpn_configs=("$VPN_CONFIG_DIR"/*.conf)
+        shopt -u nullglob
+        (( ${#vpn_configs[@]} )) || echo "WARNING: no *.conf in $VPN_CONFIG_DIR"
+
+        for cfg in "${vpn_configs[@]}"; do
+            # NetworkManager names the connection after the file. Importing the
+            # same file twice would create "protonvpnCH-CH-919 1", so a re-run
+            # deletes the old one first — stage 3 is re-runnable by design.
+            name="$(basename "$cfg" .conf)"
+            if nmcli -g NAME connection show | grep -Fxq "$name"; then
+                sudo nmcli connection delete "$name" >/dev/null
+            fi
+            sudo nmcli connection import type wireguard file "$cfg" >/dev/null
+
+            # BOTH connections get the SAME interface name. Only one can be up
+            # at a time, and this way qBittorrent's binding and the nftables
+            # rule stay valid whichever country is active — no per-server
+            # bookkeeping anywhere.
+            sudo nmcli connection modify "$name" \
+                connection.interface-name "$VPN_INTERFACE" \
+                connection.autoconnect no \
+                ipv4.never-default yes \
+                ipv6.never-default yes
+            echo "vpn: imported $name -> $VPN_INTERFACE"
+        done
+
+        # Exactly one connection autoconnects, otherwise both would race for
+        # the same interface name at boot. The first file alphabetically is an
+        # arbitrary but STABLE choice; switching country is one click in the
+        # applet and does not need the repo's permission.
+        if (( ${#vpn_configs[@]} )); then
+            first="$(basename "${vpn_configs[0]}" .conf)"
+            sudo nmcli connection modify "$first" connection.autoconnect yes
+            echo "vpn: $first autoconnects"
+        fi
+    fi
+
+    # --- qBittorrent -------------------------------------------------------
+    # Bind to the tunnel. This is the FIRST of two lines, not the guarantee:
+    # it makes qBittorrent behave correctly, while the nftables rule makes it
+    # unable to misbehave. Both keys, because qBittorrent has used both names
+    # across versions and writing only one leaves the setting half-applied.
+    qbt_set() { kwriteconfig6 --file qBittorrent/qBittorrent.conf --group BitTorrent --key "$1" "$2"; }
+    qbt_set "Session\\Interface"     "$VPN_INTERFACE"
+    qbt_set "Session\\InterfaceName" "$VPN_INTERFACE"
+
+    # WebUI on localhost with authentication bypassed there — the only way the
+    # port-forwarding service can hand over a port without a credential
+    # existing anywhere. Deliberate trade: any local process can drive
+    # qBittorrent. On a single-user desktop that is acceptable; storing a
+    # password in the repo would not be.
+    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
+        --key "WebUI\\Enabled" --type bool true
+    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
+        --key "WebUI\\Address" "127.0.0.1"
+    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
+        --key "WebUI\\Port" "$QBT_WEBUI_PORT"
+    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
+        --key "WebUI\\LocalHostAuth" --type bool false
+
+    # Launcher override: the packaged entry starts qBittorrent with ulu's
+    # normal groups, and the nftables rule would never match it. Copied from
+    # the packaged file and only the Exec line rewritten, so icon, categories
+    # and MIME associations stay whatever the package says.
+    pkg_desktop="/usr/share/applications/org.qbittorrent.qBittorrent.desktop"
+    if [[ -f "$pkg_desktop" ]]; then
+        install -d "$HOME/.local/share/applications"
+        sed -E "s|^Exec=.*|Exec=$REPO_DIR/scripts/qbittorrent-vpn.sh $HOST %U|" \
+            "$pkg_desktop" > "$HOME/.local/share/applications/org.qbittorrent.qBittorrent.desktop"
+        update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+        echo "vpn: qBittorrent launcher runs under group $VPN_GROUP"
+    else
+        echo "WARNING: $pkg_desktop missing — qBittorrent launcher NOT wrapped"
+    fi
+
+    # --- the port-forwarding service ---------------------------------------
+    # Same symlink-instead-of-enable reasoning as stage 4's unit: stage 3 runs
+    # from a TTY where a user bus is not guaranteed.
+    USER_UNIT_DIR="$HOME/.config/systemd/user"
+    install -d "$USER_UNIT_DIR/default.target.wants"
+    sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
+        "$REPO_DIR/system/user/phoinix-portforward.service" \
+        > "$USER_UNIT_DIR/phoinix-portforward.service"
+    ln -sf ../phoinix-portforward.service \
+        "$USER_UNIT_DIR/default.target.wants/phoinix-portforward.service"
+    echo "vpn: port-forwarding service armed"
+fi
+
 # ------------------------------------------------- 8. shell aliases (idempotent)
 if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
     cat >> "$HOME/.zshrc" << 'EOF'

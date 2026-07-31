@@ -9,8 +9,16 @@ noto-fonts-cjk        # CJK glyphs — without it Japanese track titles in Straw
                       # Consumer is Strawberry today, but it fixes CJK everywhere (browser, file names).
 # mpc-qt moved to aur.txt — not in official repos (learned during stage 3)
 keepassxc             # password vault ("denk"); database lives on FilesMusic and survives reinstalls
-networkmanager-openvpn # ProtonVPN via .ovpn files (on FilesMusic) in the plasma-nm applet; official
-                      # Proton app rejected (GTK). Later option: switch to WireGuard configs (built-in nm)
+# networkmanager-openvpn removed 2026-07-31 — ProtonVPN now runs on WireGuard,
+# which NetworkManager speaks natively. The plugin (and openvpn with it) bought
+# nothing except an import that could never be unattended: Proton's OpenVPN
+# profiles need a separate username and password, a WireGuard config carries its
+# own key. The official Proton app stays rejected (GTK).
+libnatpmp             # natpmpc — Proton hands out the forwarded port via NAT-PMP with a 60s lease,
+                      # so scripts/protonvpn-portforward.sh has to renew it continuously
+nftables              # the kernel-side guarantee that qBittorrent can only ever leave through the
+                      # tunnel. Explicit BECAUSE it was already installed as someone else's dependency
+                      # and therefore one `pacman -Rns` away from vanishing (same lesson as socat)
 cups                  # printing daemon; printer: Samsung SCX-4300 (USB), print only — no scan stack
 # splix moved to aur.txt — dropped from official repos (learned during stage 3)
 print-manager         # KDE printing UI (settings + job viewer)

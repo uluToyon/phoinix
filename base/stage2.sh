@@ -150,6 +150,33 @@ fi
 EOF
 chown "$USERNAME:$USERNAME" "/home/$USERNAME/.zprofile"
 
+# --------------------------------------------------- ProtonVPN split tunnel
+# Only for a host that declares a VPN. Everything here is system-level and
+# therefore stage 2's job; stage 3 imports the actual connections.
+if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
+    # The group is the handle the kernel rule matches on. A GROUP rather than a
+    # separate user: qBittorrent is a GUI application in ulu's session, and a
+    # second user would mean a second home, second permissions on the download
+    # directory, and Wayland socket gymnastics — all to express one bit.
+    getent group "$VPN_GROUP" >/dev/null || groupadd -r "$VPN_GROUP"
+    # ulu must be a MEMBER, or `sg` would ask for a group password at every
+    # launch. Membership grants nothing by itself — the group owns no files and
+    # has no sudo rights; it exists purely to be matched in the output chain.
+    gpasswd -a "$USERNAME" "$VPN_GROUP" >/dev/null
+
+    sed -e "s|@VPN_INTERFACE@|$VPN_INTERFACE|g" -e "s|@VPN_GROUP@|$VPN_GROUP|g" \
+        "$REPO_DIR/system/nftables.conf" > /etc/nftables.conf
+    chmod 644 /etc/nftables.conf
+    systemctl enable nftables.service
+
+    # DNS per link instead of one global resolv.conf — the rationale is in the
+    # file itself, and it is the reason this whole setup does not leak.
+    install -Dm644 "$REPO_DIR/system/NetworkManager/10-phoinix-dns.conf" \
+        /etc/NetworkManager/conf.d/10-phoinix-dns.conf
+    systemctl enable systemd-resolved.service
+    ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+fi
+
 # ----------------------------------------------------------------- services
 systemctl enable NetworkManager sshd
 
