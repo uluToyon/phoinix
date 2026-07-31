@@ -4,8 +4,19 @@ _Last updated: 2026-07-31 (session 5 — keychron, the superproject question, th
 
 ## Pick up here
 
-**`kdeconnect` is in `packages/kde.txt` but not installed on the desktop yet.**
-`sudo pacman -S --needed kdeconnect`, then pair the phone by hand.
+Three decisions are waiting, and nothing else is queued ahead of them:
+
+1. **The soundbar.** Back to exactly −26 dB, the value the old transcripts
+   document as tested glitch-free, or test upward deliberately to find where the
+   glitching actually starts. Waiting longest; unblocked since 2026-07-31.
+2. **chezmoi** — whether the two dotfiles get managed by it, and how.
+3. **`fixes/`** — the curlable collection, parked by ulu on 2026-07-31 and
+   described under "Later, with ulu".
+
+Deferred by ulu, not forgotten: **`kdeconnect` is in `packages/kde.txt` but not
+installed on this desktop** (`sudo pacman -S --needed kdeconnect`, then pair the
+phone by hand). It costs a fresh install nothing — the package list is what a
+reinstall reads, and that is already correct.
 
 ### Dropped on purpose, 2026-07-31 (ulu's call)
 
