@@ -34,7 +34,7 @@ trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null' EXIT
 read_list() { grep -hvE '^\s*(#|$)' "$@" | awk '{print $1}'; }
 
 # ------------------------------------------------- 1. official packages
-mapfile -t PKGS < <(read_list "$REPO_DIR"/packages/{kde,gaming,audio,cli,apps}.txt)
+mapfile -t PKGS < <(read_list "$REPO_DIR"/packages/{kde,gaming,audio,cli,apps,dev}.txt)
 sudo pacman -S --needed --noconfirm "${PKGS[@]}"
 
 # ------------------------------------------------- 2. paru bootstrap

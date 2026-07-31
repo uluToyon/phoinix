@@ -1,0 +1,15 @@
+# Tools for developing and testing phoinix ITSELF — not part of the desktop.
+#
+# Why these are installed by the installer they test: this repo is a living
+# script, changed every session, and DESIGN.md makes the QEMU loop its testing
+# method. The first real run of that loop found six defects, five of which
+# would have hit the next reinstall (docs/LOG.md 2026-07-31). A rebuilt machine
+# that cannot run that loop has lost the method, not just a package.
+qemu-base             # headless QEMU. Deliberately NOT qemu-desktop/qemu-full: the test
+                      # runs on a serial console, and those pull in a GTK UI (ulu's rule)
+edk2-ovmf             # real UEFI firmware. BIOS behaves differently enough to matter —
+                      # systemd-boot, the ESP and stale NVRAM entries are only testable here
+socat                 # talks to the QEMU monitor socket: screendump to SEE the greeter and
+                      # the panel, sendkey to type into them. Without it stage 4's RESULT is
+                      # unobservable on a serial line. Present today only as someone else's
+                      # dependency, i.e. one `pacman -Rns` away from disappearing
