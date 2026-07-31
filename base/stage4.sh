@@ -344,6 +344,34 @@ else
         "size=$STRAWBERRY_SIZE" "sizerule=3"
 fi
 
+# qBittorrent: shares DP-2 with Strawberry, which takes the left half — so
+# this one needs an OFFSET from the monitor's origin, not the origin itself.
+# The offset is what stays true when screens are rearranged; the absolute
+# coordinate ulu's GUI produced (1920,804) would not be.
+# The window class has a LEADING SPACE (`\s` in kwinrulesrc): qBittorrent
+# reports an empty instance name, so "instance class" collapses to
+# " org.qbittorrent.qBittorrent". Reproduced verbatim — with wmclasscomplete
+# the rule matches nothing without it.
+qbt_geom="$(connector_geometry "${QBT_CONNECTOR:-}")"
+IFS=, read -r qx qy _ _ <<< "$qbt_geom"
+IFS=, read -r qdx qdy <<< "${QBT_OFFSET:-0,0}"
+if [[ "$qx" == "-1" ]]; then
+    echo "WARNING: ${QBT_CONNECTOR:-<none>} not connected — qBittorrent rule without position"
+    rule_set "cec25307-a720-4a68-b92c-0e6c77592351" \
+        "Description=Application settings for org.qbittorrent.qBittorrent" \
+        "wmclass= org.qbittorrent.qBittorrent" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "size=$QBT_SIZE" "sizerule=3"
+else
+    echo "window rules: qBittorrent -> $QBT_CONNECTOR origin $qx,$qy + offset $qdx,$qdy"
+    rule_set "cec25307-a720-4a68-b92c-0e6c77592351" \
+        "Description=Application settings for org.qbittorrent.qBittorrent" \
+        "wmclass= org.qbittorrent.qBittorrent" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "position=$((qx + qdx)),$((qy + qdy))" "positionrule=3" \
+        "size=$QBT_SIZE" "sizerule=3"
+fi
+
 # The order of this list is the order KWin applies the rules in, so it only
 # matters once two rules can match the SAME window. These match different
 # applications, hence any order is correct here.

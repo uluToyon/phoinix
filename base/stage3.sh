@@ -416,27 +416,81 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
     fi
 
     # --- qBittorrent -------------------------------------------------------
-    # Bind to the tunnel. This is the FIRST of two lines, not the guarantee:
-    # it makes qBittorrent behave correctly, while the nftables rule makes it
-    # unable to misbehave. Both keys, because qBittorrent has used both names
-    # across versions and writing only one leaves the setting half-applied.
-    qbt_set() { kwriteconfig6 --file qBittorrent/qBittorrent.conf --group BitTorrent --key "$1" "$2"; }
-    qbt_set "Session\\Interface"     "$VPN_INTERFACE"
-    qbt_set "Session\\InterfaceName" "$VPN_INTERFACE"
+    # NOT kwriteconfig6. qBittorrent.conf is Qt's QSettings format, where the
+    # backslash in `Session\Interface` is a group separator written as ONE
+    # character. KConfig treats a backslash as an escape and doubles it on
+    # save — and because it rewrites the whole file, it doubled qBittorrent's
+    # OWN keys too. The result looked plausible and was inert: qBittorrent
+    # never saw a single setting we wrote, the WebUI was never enabled, and
+    # the interface was never bound. Discovered only when qBittorrent rewrote
+    # the file itself and every backslash came back single.
+    #
+    # So the writer below edits the file line by line and touches nothing
+    # else. That matters beyond the escaping: this file also holds @ByteArray
+    # blobs of window geometry, which any full-file rewriter would re-encode.
+    QBT_CONF="$HOME/.config/qBittorrent/qBittorrent.conf"
+    [[ -f "$QBT_CONF" ]] || install -Dm600 /dev/null "$QBT_CONF"
 
-    # WebUI on localhost with authentication bypassed there — the only way the
-    # port-forwarding service can hand over a port without a credential
-    # existing anywhere. Deliberate trade: any local process can drive
-    # qBittorrent. On a single-user desktop that is acceptable; storing a
-    # password in the repo would not be.
-    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
-        --key "WebUI\\Enabled" --type bool true
-    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
-        --key "WebUI\\Address" "127.0.0.1"
-    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
-        --key "WebUI\\Port" "$QBT_WEBUI_PORT"
-    kwriteconfig6 --file qBittorrent/qBittorrent.conf --group Preferences \
-        --key "WebUI\\LocalHostAuth" --type bool false
+    # A running qBittorrent holds its settings in memory and writes the whole
+    # file when it exits, so anything written underneath it is discarded
+    # without a word. On a fresh install it is not running; on a re-run it very
+    # well might be — and silently losing the edit is exactly the class of
+    # failure this repo keeps tripping over.
+    if pgrep -x qbittorrent >/dev/null; then
+        echo "WARNING: qBittorrent is running — it will overwrite these settings on exit."
+        echo "         Quit it (File > Exit, not just the window) and re-run stage 3."
+    fi
+
+    qbt_set() {   # $1 = section, $2 = key, $3 = value
+        local tmp; tmp="$(mktemp)"
+        QBT_SEC="$1" QBT_KEY="$2" QBT_VAL="$3" awk '
+            BEGIN { want = "[" ENVIRON["QBT_SEC"] "]"; key = ENVIRON["QBT_KEY"];
+                    val = ENVIRON["QBT_VAL"]; done = 0; incur = 0 }
+            /^\[/ {
+                if (incur && !done) { print key "=" val; done = 1 }
+                incur = ($0 == want)
+            }
+            incur && index($0, key "=") == 1 { if (!done) { print key "=" val; done = 1 } next }
+            { print }
+            END {
+                if (incur && !done) { print key "=" val; done = 1 }
+                if (!done) { print ""; print want; print key "=" val }
+            }
+        ' "$QBT_CONF" > "$tmp"
+        mv "$tmp" "$QBT_CONF"
+        chmod 600 "$QBT_CONF"
+    }
+
+    # Bind to the tunnel. The FIRST of two lines, never the guarantee: it makes
+    # qBittorrent behave correctly, while the nftables rule makes it unable to
+    # misbehave. Both key spellings, because qBittorrent has used both across
+    # versions and writing only one leaves the setting half-applied.
+    qbt_set BitTorrent 'Session\Interface'     "$VPN_INTERFACE"
+    qbt_set BitTorrent 'Session\InterfaceName' "$VPN_INTERFACE"
+
+    # Paths: ulu's, on a data disk. Default would be ~/Downloads, i.e. on the
+    # system disk that every reinstall wipes.
+    qbt_set BitTorrent 'Session\DefaultSavePath' "$QBT_SAVE_PATH"
+    qbt_set BitTorrent 'Session\TempPath'        "$QBT_TEMP_PATH"
+    qbt_set BitTorrent 'Session\TempPathEnabled' 'true'
+
+    # Two notifications off (both default to true), and the legal notice
+    # accepted — that last one is pure phoinix: it removes a dialog that would
+    # otherwise greet every fresh install before qBittorrent will start.
+    qbt_set GUI         'DownloadTrackerFavicon'    'false'
+    qbt_set Application 'GUI\Notifications\TorrentAdded' 'false'
+    qbt_set LegalNotice 'Accepted'                  'true'
+
+    # No WebUI, deliberately (ulu's call, 2026-07-31). It only ever existed to
+    # let a port-forwarding service hand qBittorrent a new port, since
+    # qBittorrent does not re-read its config while running. Both of the
+    # servers in use refuse NAT-PMP anyway, so the whole chain was dead weight
+    # — and dropping it removes a permanently running service and an
+    # unauthenticated API on localhost along with it. Note for a future
+    # revival: qBittorrent will not enable the WebUI at all until credentials
+    # exist ("WebUI: Credentials are not set"), even with LocalHostAuth off, so
+    # it would need a random password generated at install time whose PBKDF2
+    # hash is written here — never a password in the repo.
 
     # Launcher override: the packaged entry starts qBittorrent with ulu's
     # normal groups, and the nftables rule would never match it. Copied from
@@ -449,21 +503,25 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
             "$pkg_desktop" > "$HOME/.local/share/applications/org.qbittorrent.qBittorrent.desktop"
         update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
         echo "vpn: qBittorrent launcher runs under group $VPN_GROUP"
+
+        # Autostart, from OUR entry rather than the packaged one — this is the
+        # one place where the difference is load-bearing. KDE's autostart is a
+        # directory of .desktop files, so an entry copied from the package
+        # would start qBittorrent outside the group at every login, with the
+        # kernel rule matching nothing and the tunnel silently unused.
+        install -Dm644 "$HOME/.local/share/applications/org.qbittorrent.qBittorrent.desktop" \
+            "$HOME/.config/autostart/org.qbittorrent.qBittorrent.desktop"
+        echo "qbittorrent: autostart entry installed (wrapped)"
     else
         echo "WARNING: $pkg_desktop missing — qBittorrent launcher NOT wrapped"
     fi
 
-    # --- the port-forwarding service ---------------------------------------
-    # Same symlink-instead-of-enable reasoning as stage 4's unit: stage 3 runs
-    # from a TTY where a user bus is not guaranteed.
-    USER_UNIT_DIR="$HOME/.config/systemd/user"
-    install -d "$USER_UNIT_DIR/default.target.wants"
-    sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
-        "$REPO_DIR/system/user/phoinix-portforward.service" \
-        > "$USER_UNIT_DIR/phoinix-portforward.service"
-    ln -sf ../phoinix-portforward.service \
-        "$USER_UNIT_DIR/default.target.wants/phoinix-portforward.service"
-    echo "vpn: port-forwarding service armed"
+    # Clean up the port-forwarding service if an earlier run installed it.
+    # Removed 2026-07-31 — see the WebUI note above. A stage that drops a
+    # feature has to take its leftovers with it, or a re-run leaves a unit
+    # nobody maintains running on every login.
+    rm -f "$HOME/.config/systemd/user/phoinix-portforward.service" \
+          "$HOME/.config/systemd/user/default.target.wants/phoinix-portforward.service"
 fi
 
 # ------------------------------------------------- 8. shell aliases (idempotent)

@@ -43,10 +43,8 @@ re-run *here* — then the next login would start stage 3 once. `touch
 ---
 
 **Application phase.** Done: Dolphin, Konsole, Strawberry, KeePassXC,
-ProtonVPN. Not yet touched: **Brave, Discord, Steam, LibreOffice, DZGUI,
-XIVLauncher, mpc-qt/haruna, CUPS/printer**. qBittorrent is done only as far as
-the VPN needed (interface binding, WebUI, launcher) — its own settings round is
-still open.
+ProtonVPN, qBittorrent. Not yet touched: **Brave, Discord, Steam, LibreOffice,
+DZGUI, XIVLauncher, mpc-qt/haruna, CUPS/printer**.
 
 ### ProtonVPN — LIVE ON THE DESKTOP AND MEASURED
 
@@ -62,43 +60,27 @@ restrain a WireGuard connection, the drop rule strangled the tunnel's own
 encapsulation, and the filter sat in a hook that runs before the reroute. All
 three are written up in `LOG.md`; none was visible on paper.
 
-**Open: port forwarding.** `natpmpc` is refused by both servers (CH answers
-"the gateway does not support nat-pmp", NL times out). Both configs say
-`NAT-PMP (Port Forwarding) = on`, but that header records what was *requested*
-at generation time, not what the server can do — Proton grants it only on P2P
-servers, so CH#919 and NL#586 are probably not P2P. Next step is ulu's:
-regenerate two configs on servers carrying the double-arrow, drop them in
-`VPN_CONFIG_DIR`, re-run stage 3. Torrenting works without it; it costs peers.
+**Port forwarding: dropped, not pending** (ulu 2026-07-31). It required
+qBittorrent's WebUI as its only delivery channel and both servers refuse
+NAT-PMP anyway. Reviving it means: two configs from servers carrying the
+double-arrow (P2P), `libnatpmp` back in the package list, the renewal service
+back from git history, and a WebUI with an install-time random password —
+qBittorrent will not enable the WebUI without credentials even when localhost
+auth is off. Torrenting works without any of it; it costs peers.
 
-**Also open:** qBittorrent has only its VPN-relevant settings so far, and the
-QEMU host does not exercise this path at all (`VPN_CONFIG_DIR` is empty there),
-so the split tunnel is only ever tested by hand on the desktop.
+**Open:** the QEMU host does not exercise the split tunnel at all
+(`VPN_CONFIG_DIR` is empty there), so it is only ever tested by hand on the
+desktop. And the guarantee depends on qBittorrent being started through the
+wrapper — the panel launcher and the autostart entry both are, but typing
+`qbittorrent` in a terminal still starts it unprotected. A shell alias would
+close the common path; not decided.
 
-### Superseded — the pre-verification note
+### Still open, deliberately: the old AirVPN files
 
-Kept because it is the honest record: this section previously read "scripted
-and verified, NOT YET APPLIED", on the strength of a QEMU run that had no
-tunnel and therefore only ever proved the blocking half.
-
-Split tunnel over WireGuard: only qBittorrent uses the VPN, and qBittorrent can
-use nothing else. The guarantee is an nftables rule, not qBittorrent's own
-setting — see `SETTINGS.md` for the inventory and `LOG.md` for why.
-
-Proven in QEMU with the tunnel absent: a process in the `vpnonly` group reached
-neither a hostname nor a raw IP, loopback still worked, a process outside the
-group was unaffected, and the drop counter moved. The run also caught a bug that
-would have left qBittorrent unlaunchable on the desktop (Arch's
-`nftables.service` reports inactive while its rules are loaded).
-
-**Open on the live desktop:** stage 2's system half has never run here — no
-`vpnonly` group, no nftables ruleset, no `systemd-resolved`. Those need root and
-this session's sudo has no password, so they are ulu's to run. Until then the
-desktop has no VPN at all, exactly as before.
-
-**Also still open, deliberately:** the old `/mnt/FilesMusic/OpenVPNConfigs`
-folder holds four **AirVPN** `.ovpn` files (2022 and 2024) with inline private
-keys, plus a Windows installer. The repo used to describe them as ulu's
-ProtonVPN profiles, which they never were. Deleting them is ulu's call.
+`/mnt/FilesMusic/OpenVPNConfigs` holds four **AirVPN** `.ovpn` files (2022 and
+2024) with inline private keys, plus a Windows installer. The repo used to
+describe them as ulu's ProtonVPN profiles, which they never were. Deleting them
+is ulu's call.
 
 The method is settled — see "Working mode" below. In short: snapshot,
 ulu clicks, **close the application**, diff the whole config tree, decide per
@@ -138,7 +120,10 @@ that need a running shell go into `base/stage4.sh` (see DESIGN.md).
 
 **How a setting is recorded (decided 2026-07-31):** deliberate decisions are
 written key by key with `kwriteconfig6` in stage 3, each with its reason in a
-comment. Whole-file capture into `hosts/<host>/home/` is reserved for what
+comment. **Exception, learned on qBittorrent:** `kwriteconfig6` only suits
+KConfig files. On a Qt/QSettings file it escapes the backslash that acts as a
+group separator, rewrites the whole file, and produces settings the application
+never reads. Such files get a line-oriented writer instead (`qbt_set`). Whole-file capture into `hosts/<host>/home/` is reserved for what
 cannot sensibly be authored by hand — `kwinoutputconfig.json`, the wireplumber
 state, `p10k.zsh`. For a click-through round: snapshot `~/.config`, let ulu
 change things, then diff.

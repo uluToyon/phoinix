@@ -1709,3 +1709,83 @@ function.
 tunnel, so it only ever exercised the blocking half — which is precisely the
 half that was already right. A test that cannot fail in the interesting
 direction is not a test of that direction.
+
+## 2026-07-31 — Applications, round 6: qBittorrent (and a config writer that wrote nothing)
+
+**The finding that matters: `kwriteconfig6` must never touch qBittorrent.conf.**
+That file is Qt's QSettings format, where the backslash in `Session\Interface`
+is a group separator written as ONE character. KConfig treats a backslash as an
+escape and doubles it on save — and because it rewrites the whole file, it
+doubled qBittorrent's own keys too. The result looked entirely plausible in the
+file and was completely inert: qBittorrent read not one setting phoinix wrote.
+The WebUI was never enabled, and the interface was never bound — through the
+whole of the VPN work, the "first of two lines" was not there at all.
+
+It surfaced only because ulu opened qBittorrent for his settings round: the
+application rewrote the file in its own format, every backslash came back
+single, and our keys vanished entirely because they had never been read.
+
+Worth recording as a wrong turn too: a few hours earlier the doubled backslashes
+had been noticed and dismissed — "qBittorrent's own convention", on the evidence
+that `Session\\Port=48815` sat right next to them. That line had itself been
+through kwriteconfig6. The corroborating evidence was the damage.
+
+Replacement: a line-oriented writer that sets one key under one section and
+leaves every other byte alone. That property matters twice here — the escaping,
+and the `@ByteArray` blobs of window geometry that any full-file rewriter would
+re-encode.
+
+**Method, unchanged and still earning its keep.** Snapshot `~/.config`, let ulu
+click, close the application, diff the WHOLE tree. Two of his three settings
+were once again *outside* qBittorrent: an autostart entry and a KWin rule. And
+"close the application" needed saying twice — qBittorrent's `CloseToTray` means
+the window going away is not the process going away, and it writes its config on
+exit only.
+
+Three details from that diff:
+
+- **The autostart entry came out pre-wrapped.** KDE copied it from
+  `~/.local/share/applications/`, i.e. from phoinix's own launcher override, so
+  it starts qBittorrent inside the VPN group. Had it copied the packaged entry,
+  every login would have started an unprotected client.
+- **The window rule needed an OFFSET**, not just a connector. qBittorrent shares
+  DP-2 with Strawberry, which occupies the left half, so its position is "that
+  monitor's origin plus 1920". Stored as `QBT_CONNECTOR` + `QBT_OFFSET`; the
+  absolute `1920,804` the GUI produced would silently point elsewhere the day a
+  screen moves.
+- **The window class has a leading space.** qBittorrent reports an empty
+  instance name, so with `wmclasscomplete=true` KDE stored
+  `\sorg.qbittorrent.qBittorrent`. Reproduced verbatim — without it the rule
+  matches nothing.
+
+Verified as the round demands: the script's values against ulu's hand-made
+state. `kwinrulesrc` came back byte-identical, and re-running the qBittorrent
+block changed only the keys he had never set.
+
+**Then the whole port-forwarding chain was removed** (ulu: "mir ist die WebUI
+egal"). The WebUI existed for exactly one reason — qBittorrent does not re-read
+its config while running, so an API was the only way to hand it a new port — and
+Proton's port has a 60 second lease, which rules out doing it by hand. So the
+two stood or fell together. Both of ulu's servers refuse NAT-PMP anyway, and it
+had been my addition rather than his requirement. Out went the renewal service,
+its unit, `libnatpmp`, `QBT_WEBUI_PORT` and, once nothing referenced it,
+`VPN_GATEWAY`. Stage 3 now *removes* a previously installed unit, because a
+stage that drops a feature has to take its leftovers with it.
+
+Recorded for a possible revival: qBittorrent refuses to enable the WebUI until
+credentials exist ("WebUI: Credentials are not set") even with `LocalHostAuth`
+off, so it would need a random password generated at install time whose PBKDF2
+hash is written to the config — never a password in the repo. The generation was
+proven to work with `openssl kdf` before the feature was dropped.
+
+**And the VPN got its real confirmation on the way**, from qBittorrent's own log
+rather than from `curl`:
+
+```
+Successfully listening on IP. IP: "10.2.0.2". Port: "TCP/27562"
+Detected external IP. IP: <Proton's exit>
+```
+
+The application binds to the tunnel address and sees Proton as its external
+address — the first end-to-end proof with the program the whole construction
+exists for.

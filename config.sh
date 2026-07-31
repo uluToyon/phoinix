@@ -37,6 +37,9 @@ KERNEL_PARAMS=""          # extra kernel command line for the boot entry
 PANEL_TV_CONNECTOR=""     # second screen that mirrors the main panel
 PANEL_SIDE=()             # clock-only strips: "<connector>:<thickness>"
 PLACES_ORDER=()           # Dolphin Places device order, by filesystem label
+QBT_CONNECTOR=""          # qBittorrent window rule; empty = no rule for it
+QBT_OFFSET="0,0"          # offset from that connector's origin
+QBT_SIZE=""
 VPN_CONFIG_DIR=""         # WireGuard .conf files; empty = this host has no VPN
 
 # --- ProtonVPN split tunnel (stages 2 and 3) -------------------------------
@@ -54,7 +57,6 @@ VPN_CONFIG_DIR=""         # WireGuard .conf files; empty = this host has no VPN
 VPN_INTERFACE="proton0"   # authored name; both Proton connections share it, so
                           # qBittorrent's binding survives switching countries
 VPN_GROUP="vpnonly"       # group whose traffic may only leave via VPN_INTERFACE
-VPN_GATEWAY="10.2.0.1"    # Proton's in-tunnel gateway: NAT-PMP peer and DNS
 
 # Policy routing. Two marks and a table, because "bind the app to the
 # interface" turned out not to be enough on either side:
@@ -71,9 +73,6 @@ VPN_GATEWAY="10.2.0.1"    # Proton's in-tunnel gateway: NAT-PMP peer and DNS
 VPN_MARK_APP="0x51"       # = 81; deliberately the same number as the table
 VPN_MARK_WG="0x52"        # = 82; only WireGuard itself ever sets this
 VPN_ROUTE_TABLE=51
-QBT_WEBUI_PORT=8080       # localhost only, auth bypassed for localhost — this is
-                          # how the forwarded port reaches qBittorrent without a
-                          # credential existing anywhere
 
 # Set to 1 to keep an existing home partition (the "hop back" path):
 # partitioning is skipped entirely, only ESP and root are re-formatted.

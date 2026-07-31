@@ -14,8 +14,10 @@ keepassxc             # password vault ("denk"); database lives on FilesMusic an
 # nothing except an import that could never be unattended: Proton's OpenVPN
 # profiles need a separate username and password, a WireGuard config carries its
 # own key. The official Proton app stays rejected (GTK).
-libnatpmp             # natpmpc — Proton hands out the forwarded port via NAT-PMP with a 60s lease,
-                      # so scripts/protonvpn-portforward.sh has to renew it continuously
+# libnatpmp removed 2026-07-31 with the port-forwarding service (ulu's call).
+# Proton's port forwarding needs a P2P server, and both servers in use refuse
+# NAT-PMP; the renewal service was the only consumer. Reviving it means adding
+# this back — and enabling qBittorrent's WebUI, which is how the port gets in.
 nftables              # the kernel-side guarantee that qBittorrent can only ever leave through the
                       # tunnel. Explicit BECAUSE it was already installed as someone else's dependency
                       # and therefore one `pacman -Rns` away from vanishing (same lesson as socat)

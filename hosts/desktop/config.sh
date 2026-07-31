@@ -87,3 +87,20 @@ CAPTURED_CONFIGS=1
 # time, and port forwarding is the one qBittorrent needs.
 # Only the PATH is versioned. Every .conf in here is imported.
 VPN_CONFIG_DIR="/mnt/FilesMusic/VPN"
+
+# --- qBittorrent paths (stage 3) -------------------------------------------
+# On a data disk, not in ~/Downloads: the system disk is what a reinstall
+# wipes, and half-finished torrents have no business living there. TempPath
+# keeps incomplete files apart from finished ones, on the same disk so the
+# move at completion is a rename rather than a copy.
+QBT_SAVE_PATH="/mnt/Downloads/Torrents"
+QBT_TEMP_PATH="/mnt/Downloads/Temp"
+
+# --- qBittorrent window (stage 4) ------------------------------------------
+# Shares DP-2 with Strawberry: Strawberry takes the left half at the origin,
+# qBittorrent the right. Hence an OFFSET rather than a bare connector — the
+# offset survives a rearranged desktop, the absolute 1920,804 the GUI produced
+# would not.
+QBT_CONNECTOR="DP-2"
+QBT_OFFSET="1920,0"    # half of DP-2's 3840 width
+QBT_SIZE="1920,1053"

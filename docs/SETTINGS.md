@@ -306,9 +306,8 @@ application. Rationale in `LOG.md` 2026-07-31.
 | NM connections | one per `.conf`, `wireguard.ip4/ip6-auto-default-route` **off**, routes confined to table 51, rule `priority 100 fwmark 0x51 table 51`, only the first autoconnects | dec |
 | `VPN_MARK_APP` / `VPN_MARK_WG` / `VPN_ROUTE_TABLE` | `0x51` / `0x52` / `51` — the group's mark selects the tunnel table; WireGuard's own mark exempts its encapsulation from the drop | dec |
 | qBittorrent | `Session\Interface` + `Session\InterfaceName` = `proton0` | dec |
-| qBittorrent WebUI | `127.0.0.1:8080`, `LocalHostAuth=false` — how the forwarded port arrives without a credential existing anywhere | dec |
 | Launcher | `~/.local/share/applications/org.qbittorrent.qBittorrent.desktop`, copied from the packaged file with only `Exec` rewritten to `scripts/qbittorrent-vpn.sh` | dec |
-| Port forwarding | user unit `phoinix-portforward.service`, renews the NAT-PMP lease every 45 s (lease is 60 s) and pushes the port into qBittorrent | dec |
+| Port forwarding | **dropped 2026-07-31** (ulu's call). It needed qBittorrent's WebUI as its only delivery channel, and both servers in use refuse NAT-PMP anyway. Torrenting works without it; it costs peers | dec |
 
 **Two lines of defence, and only one of them is the guarantee.** The interface
 binding is qBittorrent promising something about itself; it does not survive a
@@ -319,6 +318,36 @@ all three. Both are set, but only the second is load-bearing.
 rejects the *whole* ruleset (it resolves group names at parse time), so
 `qbittorrent-vpn.sh` checks the group **and** the service state and refuses to
 launch. If the tunnel is down, qBittorrent simply has no route out.
+
+## qBittorrent (stages 3 and 4)
+
+Written with a **line-oriented INI writer, never `kwriteconfig6`**: this file is
+Qt's QSettings format, where the backslash in `Session\Interface` is a group
+separator written as one character. KConfig escapes it and rewrites the whole
+file, so it doubled every backslash — including qBittorrent's own keys — and
+qBittorrent then read none of them. The file also holds `@ByteArray` window
+geometry that a full-file rewriter would re-encode.
+
+| Setting | Value | Origin |
+|---|---|---|
+| `Session\Interface`, `Session\InterfaceName` | `proton0` — first of two lines, never the guarantee | dec |
+| `Session\DefaultSavePath` | `QBT_SAVE_PATH` = `/mnt/Downloads/Torrents` — a data disk, not the one a reinstall wipes | dec |
+| `Session\TempPath` + `TempPathEnabled` | `/mnt/Downloads/Temp`, `true` — same disk, so completion is a rename | dec |
+| `GUI/DownloadTrackerFavicon` | `false` (default true) | dec |
+| `Application/GUI\Notifications\TorrentAdded` | `false` (default true) | dec |
+| `LegalNotice/Accepted` | `true` — removes a dialog that greets every fresh install | dec |
+| Launcher + autostart | both point at `scripts/qbittorrent-vpn.sh`, never the packaged entry | dec |
+| KWin rule (stage 4) | `QBT_CONNECTOR` + `QBT_OFFSET` + `QBT_SIZE`, resolved at runtime | dec |
+
+**Deliberately not scripted:** `Session\Port` and `SSL\Port` (drawn fresh per
+install), the `FileLogger` block, `RSS\AutoDownloader` and `OptionsDialog`
+(defaults qBittorrent serialises once its dialog is opened — the same trap
+Strawberry set), and `General\Locale` (ulu confirmed he never touched it).
+
+**The window class carries a leading space.** qBittorrent reports an empty
+instance name, so with `wmclasscomplete=true` the value is
+`\sorg.qbittorrent.qBittorrent`. Reproduced verbatim; without it the rule
+matches nothing.
 
 ## Known gaps and open items
 
