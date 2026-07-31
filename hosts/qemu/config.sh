@@ -36,6 +36,27 @@ KERNEL_PARAMS="console=ttyS0,115200"
 # fallback initramfs) is exactly what a test should not quietly deviate from.
 ROOT_SIZE="60G"
 
+# --- Monitors, panels, window rules (stage 4) ------------------------------
+# The VM has exactly one output, `Virtual-1` (read from /sys/class/drm in the
+# running VM, not guessed). PANEL_TV_CONNECTOR and PANEL_SIDE are deliberately
+# left at their empty defaults from config.sh — this machine has no second or
+# third screen, which is the normal case for everything except the desktop.
+# Declaring a real panel here rather than skipping stage 4 is the point: it
+# exercises panels.js, the geometry lookup and the launcher writing for real.
+PANEL_MAIN_CONNECTOR="Virtual-1"
+PANEL_MAIN_HEIGHT=46
+
+KONSOLE_CONNECTOR="Virtual-1"
+KONSOLE_SIZE="800,600"
+STRAWBERRY_CONNECTOR="Virtual-1"
+STRAWBERRY_SIZE="900,700"
+DOLPHIN_SIZE="900,600"
+
+# Only the two partitions phoinix itself creates and labels. The desktop's data
+# disks do not exist here, and stage 4 skips a label it cannot resolve anyway —
+# but declaring only what exists keeps the test's expected output unambiguous.
+PLACES_ORDER=(archroot archhome)
+
 # --- Captured configs (stage 3) --------------------------------------------
 # The test VM has none, and that is a statement rather than an oversight: the
 # desktop's captured files are keyed to its four monitors' EDID hashes and to

@@ -24,6 +24,20 @@ LOCALES=("$LOCALE" "$FORMAT_LOCALE")
 ESP_SIZE="1G"      # 1 GB, not 512 MB — multiple kernels + fallback initramfs outgrow it
 ROOT_SIZE="200G"   # /home gets the rest of the disk
 
+# --- Optional per-host declarations ----------------------------------------
+# Defaulted here so a host may simply omit what it does not have. Sourced
+# BEFORE hosts/<host>/config.sh, so any host that HAS these overrides them.
+# Empty is a real answer, not an oversight: a machine with one screen has no
+# TV clone and no side strips, and a machine whose disks phoinix does not
+# manage has no Places ordering. Stage 4 treats an undeclared screen exactly
+# like an unplugged one, so absence needs no second code path.
+# These are defaults precisely BECAUSE `set -u` turns an omission into
+# "unbound variable" from the middle of a pipeline — true and unusable.
+KERNEL_PARAMS=""          # extra kernel command line for the boot entry
+PANEL_TV_CONNECTOR=""     # second screen that mirrors the main panel
+PANEL_SIDE=()             # clock-only strips: "<connector>:<thickness>"
+PLACES_ORDER=()           # Dolphin Places device order, by filesystem label
+
 # Set to 1 to keep an existing home partition (the "hop back" path):
 # partitioning is skipped entirely, only ESP and root are re-formatted.
 REUSE_HOME=0

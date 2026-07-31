@@ -26,6 +26,25 @@ source "$REPO_DIR/hosts/$HOST/config.sh"
 
 [[ $EUID -ne 0 ]] || { echo "ERROR: run stage 4 as your user, not root"; exit 1; }
 
+# What this host must declare. Checked here, by name, because `set -u` alone
+# reports "PANEL_MAIN_CONNECTOR: unbound variable" from somewhere in the middle
+# of a sed pipeline — true, useless, and 200 lines away from the file that
+# actually has to change. A second host is what exposed this: adding one used
+# to mean discovering the required set one crash at a time.
+# NOT in this list: the TV clone and the side strips. A machine with fewer
+# monitors declares fewer, and that is normal rather than incomplete — the
+# laptop this repo already plans for has exactly one screen.
+missing=()
+for v in PANEL_MAIN_CONNECTOR PANEL_MAIN_HEIGHT \
+         KONSOLE_CONNECTOR KONSOLE_SIZE STRAWBERRY_CONNECTOR STRAWBERRY_SIZE \
+         DOLPHIN_SIZE; do
+    [[ -n "${!v:-}" ]] || missing+=("$v")
+done
+if (( ${#missing[@]} )); then
+    echo "ERROR: hosts/$HOST/config.sh does not declare: ${missing[*]}"
+    exit 1
+fi
+
 exec > >(tee -a "$HOME/stage4.log") 2>&1
 echo "=== stage 4 start: $(date -Is) ==="
 
@@ -80,15 +99,24 @@ connector_geometry() {
         END { if (!found) print "-1,-1,-1,-1" }'   # not connected -> panels.js skips it
 }
 
+# An optional panel that this host does not declare gets the same
+# "not connected" geometry as one whose cable is out — panels.js already skips
+# that, so absence needs no second code path. Undeclared and unplugged are the
+# same thing from the panel's point of view.
+NO_SCREEN="-1,-1,-1,-1"
+opt_geom()       { [[ -n "${1:-}" ]] && connector_geometry "$1" || echo "$NO_SCREEN"; }
+side_geom()      { [[ -n "${1:-}" ]] && connector_geometry "${1%%:*}" || echo "$NO_SCREEN"; }
+side_thickness() { [[ -n "${1:-}" ]] && echo "${1##*:}" || echo "0"; }
+
 PANEL_JS="$(mktemp)"
 trap 'rm -f "$PANEL_JS"' EXIT
 
 sed -e "s|@MAIN_GEOM@|$(connector_geometry "$PANEL_MAIN_CONNECTOR")|" \
-    -e "s|@TV_GEOM@|$(connector_geometry "$PANEL_TV_CONNECTOR")|" \
-    -e "s|@SIDE1_GEOM@|$(connector_geometry "${PANEL_SIDE[0]%%:*}")|" \
-    -e "s|@SIDE1_THICKNESS@|${PANEL_SIDE[0]##*:}|" \
-    -e "s|@SIDE2_GEOM@|$(connector_geometry "${PANEL_SIDE[1]%%:*}")|" \
-    -e "s|@SIDE2_THICKNESS@|${PANEL_SIDE[1]##*:}|" \
+    -e "s|@TV_GEOM@|$(opt_geom "${PANEL_TV_CONNECTOR:-}")|" \
+    -e "s|@SIDE1_GEOM@|$(side_geom "${PANEL_SIDE[0]:-}")|" \
+    -e "s|@SIDE1_THICKNESS@|$(side_thickness "${PANEL_SIDE[0]:-}")|" \
+    -e "s|@SIDE2_GEOM@|$(side_geom "${PANEL_SIDE[1]:-}")|" \
+    -e "s|@SIDE2_THICKNESS@|$(side_thickness "${PANEL_SIDE[1]:-}")|" \
     -e "s|@MAIN_HEIGHT@|$PANEL_MAIN_HEIGHT|" \
     -e "s|@LAUNCHERS@|$PANEL_LAUNCHERS|" \
     "$REPO_DIR/plasma/panels.js" > "$PANEL_JS"
@@ -183,7 +211,12 @@ done
 # mean authoring KDE's bookmark ids as well.
 PLACES_FILE="$HOME/.local/share/user-places.xbel"
 
-if [[ ! -f "$PLACES_FILE" ]]; then
+if [[ ${#PLACES_ORDER[@]} -eq 0 ]]; then
+    # A host that declares no ordering keeps KDE's. Distinct from the guard
+    # further down, which catches a declared ordering that resolved to nothing
+    # — that one means disks are missing and must not rewrite the file.
+    echo "places: no PLACES_ORDER declared for $HOST — sidebar left untouched"
+elif [[ ! -f "$PLACES_FILE" ]]; then
     echo "WARNING: $PLACES_FILE does not exist yet — Places order not applied."
     echo "         Open Dolphin once, then re-run: $0 $HOST"
 else

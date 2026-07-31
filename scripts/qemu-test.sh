@@ -89,6 +89,12 @@ QEMU=(
     -drive "if=none,id=target,format=qcow2,file=$IMG"
     -device "virtio-blk-pci,drive=target,serial=$DISK_SERIAL"
     -netdev user,id=net0 -device virtio-net-pci,netdev=net0
+    # A monitor on its own socket, so the harness can look at the screen
+    # (`screendump x.png`) and type into it (`sendkey`) even with no window.
+    # Without this, stages 3 and 4 can be started but their RESULT — a login
+    # greeter, a panel — is unobservable, and an unobservable test proves
+    # nothing. Not multiplexed onto stdio: that is where the serial console is.
+    -monitor "unix:$WORK/monitor.sock,server,nowait"
 )
 
 # The installed run gets neither the ISO nor -kernel: the firmware has to find
