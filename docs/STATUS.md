@@ -275,17 +275,37 @@ Still open:
   (commit `101a311`). NET window types are X11; on Wayland an application's
   toplevel and its dialog share one app id, and the rule matches both. The
   dialog is pixel-identical with and without the key.
-  So the size/position rules and the unwanted dialog behaviour are currently the
-  same mechanism. Options for ulu, none of them decided:
-  1. keep the rules, live with parent-sized dialogs;
-  2. drop the size rules and keep only positions (a dialog then still lands at
-     the monitor origin, but at its own size);
-  3. drop the window rules entirely;
-  4. keep looking for a matcher that separates them under Wayland — the KCM
-     offers a "Window types" field, so KWin may honour a different value or a
-     different key than the one tried.
-  Worth knowing before deciding: without the rules Konsole and Strawberry stop
-  opening on their intended monitors, which is why the rules exist.
+  **DECIDED 2026-07-31 (ulu): keep the rules as they are, for now.** The
+  parent-sized dialogs are accepted; the monitor placement of Konsole and
+  Strawberry is worth more. Nothing in the repo changes. Do not re-open this
+  without being asked — but see the parked fix below, which ulu wants kept.
+
+- **PARKED, ready to pick up — the KWin-script fix for the dialogs (option 5).**
+  ulu's call: not now, but do not lose it. The investigation is finished, so
+  this can be built without redoing any of it.
+  **The finding it rests on:** KWin does not consider these dialogs dialogs.
+  Asked directly via its scripting API, Strawberry's sponsoring dialog reports
+  `dialog=false, normal=true, modal=false` — which is why `types=1` matched it
+  correctly and excluded nothing. The one field that separates the two windows
+  is **`transient`**: `false` for the main window, `true` for the dialog,
+  because the dialog has a parent. Title matching is the only other
+  discriminator and is language-dependent, so it is out.
+  **Why it needs a script:** `kwinrulesrc` has no `transient` matcher. KWin's
+  scripting API sees the field.
+  **The shape of it:** a small KWin script phoinix ships and installs to
+  `~/.local/share/kwin/scripts/`, enabled in `kwinrc`, hooked to `windowAdded`;
+  it checks `resourceClass` and `transient` and sets `frameGeometry` only on
+  non-transient windows. It would replace the three rules stage 4 writes, and
+  it is the only option that costs nothing: apps keep their monitors AND their
+  sizes, dialogs behave.
+  **The cost, so the decision stays honest:** real code instead of declarative
+  config (a script with `metadata.json`), resident and running on every window
+  that opens, and one more upstream API the repo depends on.
+  Reproducing the measurement takes two minutes in the VM — load a script that
+  prints `resourceClass|dialog|normal|modal|transient|caption` for
+  `workspace.windowList()` via
+  `qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript`, then read
+  `journalctl --user -b`.
 - EasySMX X20 pad (ACRUX dongle 1a34): verify Steam detects it — dropped
   steam-devices/game-devices-udev on evidence (XInput via kernel xpad).
 - ~~Cosmetic: stage 4 logs `sed: couldn't flush stdout: Broken pipe`.~~ **Fixed

@@ -1501,3 +1501,47 @@ And the diagnosis was announced to ulu one step before it was earned: the rule
 was *plausible* from the screenshots and only *proved* later by the geometry
 matching to the character. It happened to be right. The fix, announced with the
 same confidence, was wrong. Report the measurement, not the hypothesis.
+
+## 2026-07-31 — Asking KWin instead of guessing, and a fix parked on purpose
+
+The dialog question was settled by asking KWin directly rather than reasoning
+about it further. A short script through
+`org.kde.KWin /Scripting … loadScript`, printing every window's properties into
+the journal:
+
+```
+PHX|org.strawberrymusicplayer.strawberry|dialog=false|normal=true|modal=false|transient=false|caption=Strawberry Music Player
+PHX|org.strawberrymusicplayer.strawberry|dialog=false|normal=true|modal=false|transient=true |caption=Sponsoring Strawberry — …
+```
+
+**KWin does not consider that dialog a dialog.** `dialog=false`, `normal=true`,
+not even `modal`. So `types=1` was not mismatched — it matched correctly and had
+nothing to exclude, and window types are finished as an avenue for good. Which
+also retires the theory that Wayland "loses" the type: KWin simply classifies
+this window as normal, and it is the application that decides how its own
+sub-window is advertised.
+
+**The two windows differ in exactly one field: `transient`** — `false` for the
+main window, `true` for the dialog, which has a parent. That is the separating
+line, and the only other candidate (matching on the window title) is
+language-dependent and therefore not something to put in this repo.
+
+`kwinrulesrc` has no `transient` matcher, so this cannot be done with rules at
+all. KWin's scripting API does see it, and stage 4 already talks to Plasma's
+scripting interface — so the fix would be a small KWin script that phoinix
+installs, hooked to `windowAdded`, applying geometry only to non-transient
+windows. It would replace the three rules and is the only option that costs
+nothing: monitors AND sizes kept, dialogs normal.
+
+**ulu's decision: option 1 for now — keep the rules, accept the dialogs.** The
+monitor placement is worth more than the annoyance, and the script is real code,
+resident, on an API the repo would then depend on. The fix is written up in
+`STATUS.md` in enough detail to build without redoing any of the investigation,
+because ulu explicitly asked for it to be kept rather than dropped.
+
+Worth stating plainly, since this session produced a lot of the opposite: this
+is a bug we found, characterised to the exact field, and then deliberately did
+not fix. That is a legitimate outcome, and the reason it is safe is that the
+*reason* is on record — the failure mode `LOG.md` documented for the soundbar
+(a captured fix whose rationale was lost, then undone by the person it
+protected) applies just as much to a fix deliberately not made.
