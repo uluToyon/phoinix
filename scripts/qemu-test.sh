@@ -14,8 +14,11 @@
 # not guessed) with console=ttyS0 appended, because the boot menu cannot be
 # clicked when there is no screen.
 #
-#   --fresh   discard the disk image and start from nothing
-#   --gui     open a QEMU window instead (for driving it by hand)
+#   --fresh     discard the disk image and start from nothing
+#   --gui       open a QEMU window instead (for driving it by hand)
+#   --installed boot what was installed, not the ISO — this is how stages 3
+#               and 4 get tested at all. Without it QEMU's -kernel wins over
+#               the firmware and every reboot lands back on the ISO.
 #
 # Inside the VM, the thing under test is one line:
 #   curl -fsSL https://raw.githubusercontent.com/uluToyon/phoinix/main/scripts/bootstrap.sh | bash -s qemu
@@ -33,13 +36,16 @@ OVMF_VARS_SRC="/usr/share/edk2/x64/OVMF_VARS.4m.fd"
 
 FRESH=0
 GUI=0
+INSTALLED=0
 for arg in "$@"; do
     case "$arg" in
-        --fresh) FRESH=1 ;;
-        --gui)   GUI=1 ;;
-        *) echo "usage: qemu-test.sh [--fresh] [--gui]"; exit 1 ;;
+        --fresh)     FRESH=1 ;;
+        --gui)       GUI=1 ;;
+        --installed) INSTALLED=1 ;;
+        *) echo "usage: qemu-test.sh [--fresh] [--gui] [--installed]"; exit 1 ;;
     esac
 done
+[[ "$FRESH" == 1 && "$INSTALLED" == 1 ]] && { echo "ERROR: --fresh wipes what --installed would boot"; exit 1; }
 
 for f in "$ISO" "$OVMF_CODE" "$OVMF_VARS_SRC"; do
     [[ -r "$f" ]] || { echo "ERROR: missing $f"; exit 1; }
@@ -80,18 +86,27 @@ QEMU=(
     # serial IS the by-id name stage 1 refuses to run without.
     -drive "if=none,id=target,format=qcow2,file=$IMG"
     -device "virtio-blk-pci,drive=target,serial=$DISK_SERIAL"
-    -drive "if=none,id=iso,format=raw,readonly=on,file=$ISO"
-    -device virtio-blk-pci,drive=iso
     -netdev user,id=net0 -device virtio-net-pci,netdev=net0
-    -kernel "$BOOTDIR/vmlinuz-linux"
-    -initrd "$BOOTDIR/initramfs-linux.img"
 )
 
-if [[ "$GUI" == 1 ]]; then
-    QEMU+=(-append "$ISO_OPTIONS")
-else
-    QEMU+=(-append "$ISO_OPTIONS console=ttyS0,115200" -nographic)
+# The installed run gets neither the ISO nor -kernel: the firmware has to find
+# systemd-boot on the ESP by itself, which is the thing worth testing. Its
+# serial console comes from KERNEL_PARAMS in hosts/qemu/config.sh, i.e. from
+# the boot entry stage 2 wrote — not from anything this script appends.
+if [[ "$INSTALLED" != 1 ]]; then
+    QEMU+=(
+        -drive "if=none,id=iso,format=raw,readonly=on,file=$ISO"
+        -device virtio-blk-pci,drive=iso
+        -kernel "$BOOTDIR/vmlinuz-linux"
+        -initrd "$BOOTDIR/initramfs-linux.img"
+    )
+    if [[ "$GUI" == 1 ]]; then
+        QEMU+=(-append "$ISO_OPTIONS")
+    else
+        QEMU+=(-append "$ISO_OPTIONS console=ttyS0,115200")
+    fi
 fi
+[[ "$GUI" == 1 ]] || QEMU+=(-nographic)
 
 echo "phoinix qemu test"
 echo "  iso:   $ISO"

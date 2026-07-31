@@ -2,6 +2,19 @@
 # Target disk by stable ID — never /dev/nvme1n1, enumeration order drifts across boots.
 DISK="/dev/disk/by-id/nvme-Samsung_SSD_980_1TB_S649NX0T343303X"
 
+# --- Kernel parameters (stage 2, boot entry) -------------------------------
+# Two refresh-rate caps, same mechanism, two different reasons:
+#   DP-2 @144 — monitor-bug fix: the TCL 27" 4K must never init at native
+#     180Hz (DP bandwidth/DSC → black screen with all 4 displays).
+#     See docs/LOG.md 2026-07-30.
+#   DP-1 @144 — the ultrawide's link runs 4 lanes at HBR3 with no DSC and no
+#     FEC; at 170Hz it sits at ~82% utilisation, where a single bit error costs
+#     a retrain (= the sporadic black flash). See docs/LOG.md 2026-07-31.
+#     PROVISIONAL: a running experiment, not a settled decision.
+# These are caps for THIS machine's monitors — which is why they belong here
+# and not in stage 2, where every other host used to inherit them.
+KERNEL_PARAMS="video=DP-2:3840x2160@144 video=DP-1:3440x1440@144"
+
 # Data disks, mounted by filesystem label under /mnt/<label>.
 # These are NEVER formatted by any stage script — they only get fstab entries.
 DATA_LABELS=(Games Video Downloads FilesMusic)

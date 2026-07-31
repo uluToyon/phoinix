@@ -20,6 +20,12 @@ DATA_LABELS=()
 # Obvious in the VM's prompt that this is not the real machine.
 HOSTNAME="phoinix-test"
 
+# The installed system has no screen — everything after the reboot is only
+# observable on the serial line, so the boot entry has to say so. On the
+# desktop this variable carries that machine's monitor caps instead; the point
+# is that it is per-host at all, which stage 2 did not use to allow.
+KERNEL_PARAMS="console=ttyS0,115200"
+
 # The desktop gives root 200G of a 1TB disk. The test only has to reach a
 # booting system, so it runs on a small sparse image. ESP stays at the shared
 # 1G — the reason for that size (multiple kernels + fallback initramfs) is
