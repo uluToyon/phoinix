@@ -1996,3 +1996,56 @@ user-details page, which is the outcome a public repo wants.
 And a process check of mine misfired again: `pgrep -f soffice` matched my own
 shell, exactly the trap recorded after the Discord round. `pgrep -x` on the real
 process names (`soffice.bin`, `oosplash`) is the check that means something.
+
+## 2026-07-31 — Applications, round 11: mpc-qt, a crash loop and a seeding answer that reversed
+
+ulu tried haruna, dismissed it ("vergiss es"), and mpc-qt stays — which closes
+a TODO that had been sitting in `aur.txt` since the package rounds. haruna and
+mpvqt came back off the machine so it matches the documented package set again.
+
+Then mpc-qt would not start at all, and the diagnosis is worth keeping.
+
+**The crash.** SIGSEGV in `QScreen::availableGeometry()` straight out of `main`
+— a null screen dereference. The first hypothesis was the monitor layout: none
+of ulu's four screens covers the point (0,0), so a `screenAt(0,0)` would return
+nullptr. Plausible, and wrong. `QT_QPA_PLATFORM=xcb` ran fine while `wayland`
+crashed, which looked like a Wayland bug — also wrong. Moving `settings.json`
+away made it start under Wayland too, and that was the thread worth pulling.
+
+**The actual condition, reproduced deterministically: `settings.json` present
+and `geometry_v2.json` absent.** And it is self-perpetuating — the crashing run
+writes `settings.json` and never reaches the geometry file, so it recreates the
+state that kills it. Any interrupted first launch produces a player that never
+starts again, which is exactly how ulu experienced it. The cure is to delete
+`settings.json` once and let a clean run write all six profile files.
+
+Worth being explicit about the false starts: the layout theory and the Wayland
+theory were both consistent with the evidence available at the time, and both
+would have led somewhere useless. What settled it was removing one file.
+
+**The seeding question came back and answered the other way.** LibreOffice had
+just established that pre-writing a config before an application's first run
+works — verified. The same question here got the opposite answer, and it had to
+be tested rather than assumed: a two-key `settings.json` alone crashes, and so
+does one paired with an empty or stub `geometry_v2.json`. The crash wants a real
+geometry entry, which would mean writing this desk's window coordinates into the
+repo — barred anyway. So seeding mpc-qt would make it unstartable on every fresh
+install.
+
+Stage 3 therefore does two things instead: it **repairs** the broken state when
+it finds it, and it writes the two settings only into a profile that already
+exists, saying so plainly when there is none. The contrast is the lesson —
+same question, opposite answers, and only the measurement told them apart.
+
+**The settings themselves** are small: English audio, no subtitles
+(`playbackAudioTracks=eng,en`, `playbackSubtitleTracks=none,no`).
+`keys_v2.json`, 46 KB of key bindings, is untouched and stays out.
+
+**And the predicted recurrence arrived.** The VRR rule written for Brave now has
+its twin for mpc-qt — the second application whose only relevant property is
+that it plays video. That is the evidence the finding was never about the
+browser.
+
+One process note: `bash -n` validates shell syntax and nothing else. A stray
+backslash inside the `jq` filter passed it cleanly and would have failed at
+runtime; catching it needed feeding the expression to `jq` itself.

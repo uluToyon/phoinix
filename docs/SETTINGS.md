@@ -447,6 +447,32 @@ Everything else in his profile is window and toolbar state (`WindowState`,
 `DockPos`, `SplitWindow`, `Visible`), the registered dictionary languages, and
 `UseOpenCL=false`, which is LibreOffice's own default.
 
+## mpc-qt (stages 3 and 4)
+
+haruna was evaluated and rejected 2026-07-31; mpc-qt stays.
+
+| Setting | Value | Origin |
+|---|---|---|
+| `playbackAudioTracks` | `eng,en` — preferred audio language | dec |
+| `playbackSubtitleTracks` | `none,no` — no subtitles by default | dec |
+| KWin rule (stage 4) | `adaptivesync=false`, forced — the same VRR-and-video rule as Brave | dec |
+
+**Written into an existing profile, never seeded — the opposite of
+LibreOffice.** mpc-qt 26.07 segfaults in `QScreen::availableGeometry()` out of
+`main` whenever `settings.json` exists and `geometry_v2.json` does not, and the
+crashing run leaves exactly that state behind, so it never starts again. Tested
+three ways: a two-key `settings.json` alone crashes, and so does one paired with
+an empty or stub `geometry_v2.json`. Seeding would therefore make mpc-qt
+unstartable on every fresh install.
+
+Stage 3 instead **repairs** that state when it finds it (removes
+`settings.json`, so a clean run rewrites all six profile files) and writes the
+two keys only when a profile is already there. If there is none, it says so and
+asks for one launch plus a re-run.
+
+`keys_v2.json` (46 KB of key bindings) is deliberately not captured — ulu
+changed none of it.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and

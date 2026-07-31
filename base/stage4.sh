@@ -428,6 +428,16 @@ rule_set "e259a1ad-617f-4de3-b357-fbd289793312" \
     "wmclasscomplete=true" "wmclassmatch=1" \
     "adaptivesync=false" "adaptivesyncrule=2"
 
+# mpc-qt: the same rule, and its recurrence was predicted when Brave's was
+# written. Two applications that share nothing but playing video, both needing
+# VRR off — which is what moved the finding out of Brave and into the display.
+# If a third video player ever joins, it wants this line too.
+rule_set "87ef503c-e43d-41b8-b5c5-701cbe71f854" \
+    "Description=Application settings for io.github.mpc_qt.mpc-qt" \
+    "wmclass=mpc-qt io.github.mpc_qt.mpc-qt" \
+    "wmclasscomplete=true" "wmclassmatch=1" \
+    "adaptivesync=false" "adaptivesyncrule=2"
+
 # The order of this list is the order KWin applies the rules in, so it only
 # matters once two rules can match the SAME window. These match different
 # applications, hence any order is correct here.

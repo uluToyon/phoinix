@@ -366,6 +366,34 @@ else
     echo "libreoffice: profile exists — left alone"
 fi
 
+# --- mpc-qt ----------------------------------------------------------------
+# First, a repair. mpc-qt 26.07 segfaults in QScreen::availableGeometry() out
+# of main when settings.json exists and geometry_v2.json does not — and the
+# crashing run leaves exactly that state behind, so it never starts again. Any
+# interrupted first launch is enough to create it. Removing settings.json ends
+# the loop; a clean run then writes all six profile files.
+MPC_DIR="$HOME/.config/mpc-qt"
+if [[ -f "$MPC_DIR/settings.json" && ! -f "$MPC_DIR/geometry_v2.json" ]]; then
+    rm -f "$MPC_DIR/settings.json"
+    echo "mpc-qt: removed a half-written profile that would have segfaulted on start"
+fi
+
+# The settings themselves are written INTO an existing profile, never seeded.
+# Seeding was tested three ways and is unsafe: a two-key settings.json alone
+# crashes, and so does one paired with an empty geometry_v2.json — the crash
+# needs a real geometry entry, which would mean writing this desk's window
+# coordinates into the repo. The contrast with LibreOffice, where seeding was
+# verified to work, is worth keeping in mind: same question, opposite answer,
+# and only the measurement told them apart.
+if [[ -f "$MPC_DIR/settings.json" ]]; then
+    mpc_tmp="$(mktemp)"
+    jq '.playbackAudioTracks = "eng,en" | .playbackSubtitleTracks = "none,no"' \
+        "$MPC_DIR/settings.json" > "$mpc_tmp" && mv "$mpc_tmp" "$MPC_DIR/settings.json"
+    echo "mpc-qt: track preferences written (English audio, no subtitles)"
+else
+    echo "mpc-qt: no profile yet — start it once, then re-run stage 3."
+fi
+
 # ------------------------------------------------- 7b. ProtonVPN split tunnel
 # Stage 2 built the system side (group, nftables rule, resolved). This is the
 # user side: import the connections, teach them not to take over the machine,
