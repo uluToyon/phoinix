@@ -182,6 +182,7 @@ selection, not guessed.
 | Strawberry | `~/.config/autostart/…strawberry.desktop` | — | starts at login | dec |
 | Strawberry | `strawberry.conf` | `Backend/channels_enabled` | `true` | dec |
 | Strawberry | `strawberry.conf` | `Backend/channels` | `6` — stereo→5.1 **in the player only** | dec |
+| KeePassXC | `~/.config/autostart/…KeePassXC.desktop` | — | starts at login, **visible**, not minimised to tray | dec |
 | KeePassXC | `keepassxc.ini` | `Browser/Enabled` | `true` | dec |
 | KeePassXC | `keepassxc.ini` | `GUI/ApplicationTheme` | `dark` | dec |
 | KeePassXC | `keepassxc.ini` | `GUI/TrayIconAppearance` | `monochrome-light` | dec |
@@ -248,7 +249,9 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Window rule: Dolphin | size `1295,839`, Apply Initially | dec |
 | Window rule: Konsole | origin of `KONSOLE_CONNECTOR`, size `1440,1262` | dec |
 | Window rule: Strawberry | origin of `STRAWBERRY_CONNECTOR`, size `1920,2105` | dec |
-| Strawberry playlist | `PLAYLIST_FILE` imported as `PLAYLIST_NAME` | dec |
+| Window rule: KeePassXC | `KEEPASSXC_CONNECTOR` + `KEEPASSXC_OFFSET`, size `1920,1053` — below qBittorrent | dec |
+| Window rule: FFXIV | origin **and size** of `FFXIV_CONNECTOR`; matched on class **plus title** | dec |
+| Strawberry playlist | `PLAYLIST_FILE` imported as `PLAYLIST_NAME`, **Strawberry started first if needed**, result verified in the database | dec |
 | Final step | `systemctl --user restart plasma-plasmashell.service` | dec |
 
 **All window rules live in stage 4, none in stage 3.** `count` and `rules` in
@@ -260,6 +263,17 @@ elsewhere once a screen moves, so the repo stores a connector name and the
 origin is computed at runtime. Rule ids are fixed UUIDs authored here, so
 re-runs update rules instead of appending duplicates, and
 `org.kde.KWin.reconfigure()` makes them apply without waiting for a re-login.
+
+**FFXIV is the one rule that does not match on window class alone.** umu/Proton
+gives every non-Steam title it launches the same `WM_CLASS`,
+`steam_app_default` — no Steam AppID is set — so DZGUI's DayZ would satisfy a
+class-only rule just as well and get dragged onto the ultrawide. The rule
+therefore also matches the title `FINAL FANTASY XIV`, which is the only field
+that separates them. Its size is taken from the connector rather than a
+`*_SIZE` variable, because borderless means exactly one monitor's resolution.
+And it works at all only because XIVLauncher runs the game over XWayland
+(`WaylandEnabled=false`): a Wayland-native client cannot be positioned by
+anyone, itself included.
 
 **Places sidebar order comes from labels, never from the file.** KDE persists
 the order of device entries as `<separator>` markers in `user-places.xbel`,

@@ -260,6 +260,13 @@ install -Dm644 /usr/share/applications/org.kde.konsole.desktop \
 install -Dm644 /usr/share/applications/org.strawberrymusicplayer.strawberry.desktop \
                "$HOME/.config/autostart/org.strawberrymusicplayer.strawberry.desktop"
 
+# --- KeePassXC autostart ---------------------------------------------------
+# Same mechanism as Konsole and Strawberry, packaged file rather than the copy
+# KDE writes. Deliberately NOT minimised to the tray (ulu's call): he wants the
+# window visible at login, and stage 4 gives it the lower right quarter of DP-2.
+install -Dm644 /usr/share/applications/org.keepassxc.KeePassXC.desktop \
+               "$HOME/.config/autostart/org.keepassxc.KeePassXC.desktop"
+
 # --- Discord ---------------------------------------------------------------
 # Autostart, and that is the ONLY thing about Discord this repo can carry.
 # Everything ulu configures in its UI — theme, notifications, audio devices,

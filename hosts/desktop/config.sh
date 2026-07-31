@@ -23,12 +23,15 @@ DATA_LABELS=(Games Video Downloads FilesMusic)
 # Connector names, not Plasma screen numbers: Plasma numbers screens in
 # detection order, which is not stable across boots. Stage 4 resolves each
 # connector to its geometry at runtime and hands that to the panel script.
-PANEL_MAIN_CONNECTOR="DP-1"        # ultrawide 3440x1440 — full panel lives here
-PANEL_TV_CONNECTOR="HDMI-A-1"      # television — gets a clone of the main panel
+# Model names, not just sizes: TWO of these monitors are TCLs, so "the TCL" is
+# ambiguous and has already sent one setting to the wrong screen. DP-1 is the
+# TCL 34R83Q (34" ultrawide), DP-2 the TCL 27R83U (27" 4K).
+PANEL_MAIN_CONNECTOR="DP-1"        # TCL 34R83Q, ultrawide 3440x1440 — full panel lives here
+PANEL_TV_CONNECTOR="HDMI-A-1"      # Hisense television — gets a clone of the main panel
 PANEL_MAIN_HEIGHT=46
 
 # Clock-only strips on the remaining monitors: "<connector>:<thickness>".
-PANEL_SIDE=("DP-2:55" "DP-3:36")   # TCL 27" 4K, portrait 1440x2560
+PANEL_SIDE=("DP-2:55" "DP-3:36")   # TCL 27R83U 4K, Acer XZ322QU portrait 1440x2560
 
 # --- Dolphin Places sidebar (stage 4) --------------------------------------
 # Order of the DEVICE entries in the Places panel, by filesystem LABEL.
@@ -47,11 +50,24 @@ PLACES_ORDER=(archroot archhome Games FilesMusic Downloads Video)
 # the current monitor layout — write 7280,0 into the repo and it silently
 # points somewhere else the day a screen is rearranged. So a position is given
 # as a connector name and resolved to that monitor's origin at runtime.
-KONSOLE_CONNECTOR="DP-3"      # portrait monitor — Konsole opens at its origin
+KONSOLE_CONNECTOR="DP-3"      # Acer XZ322QU portrait — Konsole opens at its origin
 KONSOLE_SIZE="1440,1262"      # its full width, about half its height
-STRAWBERRY_CONNECTOR="DP-2"   # TCL 4K — Strawberry opens at its origin
+STRAWBERRY_CONNECTOR="DP-2"   # TCL 27R83U 4K — Strawberry opens at its origin
 STRAWBERRY_SIZE="1920,2105"   # its left half, nearly full height
 DOLPHIN_SIZE="1295,839"       # size only, no position
+
+# KeePassXC: the lower right quarter of DP-2, directly beneath qBittorrent —
+# same size, offset by exactly qBittorrent's height. Set by ulu in the GUI and
+# captured from there; the absolute position KDE wrote (1920,1857) is not what
+# is stored, because it silently contains DP-2's own origin.
+KEEPASSXC_CONNECTOR="DP-2"
+KEEPASSXC_OFFSET="1920,1053"   # right half, below qBittorrent's 1053
+KEEPASSXC_SIZE="1920,1053"
+
+# FFXIV plays borderless on the ultrawide. No *_SIZE here on purpose:
+# borderless means "exactly this monitor", so the size IS the connector's
+# resolution and stage 4 reads it from the same lookup as the position.
+FFXIV_CONNECTOR="DP-1"        # TCL 34R83Q ultrawide — borderless, fills it
 
 # --- Strawberry playlist (stage 4) -----------------------------------------
 # ulu's curated playlist lives WITH the music, on a data disk this repo never

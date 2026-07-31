@@ -396,6 +396,67 @@ else
         "size=$DISCORD_SIZE" "sizerule=3"
 fi
 
+# KeePassXC: the lower right quarter of DP-2, directly beneath qBittorrent.
+# Offset again, same reason as the two above — three windows share that screen.
+# The UUID is the one KDE generated when ulu created the rule in the GUI, kept
+# deliberately: reusing it means this stage UPDATES his rule instead of adding
+# a second one that says the same thing.
+#
+# Capturing it here is not optional bookkeeping. Stage 4 rewrites `count` and
+# `rules` in [General] from its own list, so a rule that exists only in the GUI
+# is dropped from the index the next time this stage runs — the rule group
+# would still sit in the file, orphaned and inert.
+keepassxc_geom="$(connector_geometry "${KEEPASSXC_CONNECTOR:-}")"
+IFS=, read -r kpx kpy _ _ <<< "$keepassxc_geom"
+IFS=, read -r kpdx kpdy <<< "${KEEPASSXC_OFFSET:-0,0}"
+if [[ "$kpx" == "-1" ]]; then
+    echo "WARNING: ${KEEPASSXC_CONNECTOR:-<none>} not connected — KeePassXC rule without position"
+    rule_set "6eebfca2-624b-4576-89c4-434a806b1df1" \
+        "Description=Application settings for KeePassXC" \
+        "wmclass=keepassxc KeePassXC" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "size=$KEEPASSXC_SIZE" "sizerule=3"
+else
+    echo "window rules: KeePassXC -> $KEEPASSXC_CONNECTOR origin $kpx,$kpy + offset $kpdx,$kpdy"
+    rule_set "6eebfca2-624b-4576-89c4-434a806b1df1" \
+        "Description=Application settings for KeePassXC" \
+        "wmclass=keepassxc KeePassXC" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "position=$((kpx + kpdx)),$((kpy + kpdy))" "positionrule=3" \
+        "size=$KEEPASSXC_SIZE" "sizerule=3"
+fi
+
+# FFXIV: borderless windowed, filling its configured monitor. Three things
+# about this rule are unlike every other one in this file.
+#
+# 1. The window class is not the game's. umu/Proton labels every non-Steam
+#    title it launches `steam_app_default` — no Steam AppID is set, so they all
+#    collapse onto one class, and DZGUI's DayZ would match it just as well.
+#    The class alone is therefore a trap, and this rule discriminates on the
+#    TITLE as well. That title is a string the game sets; if the rule ever
+#    stops matching after a patch, look there first.
+# 2. The size comes from the connector, not from a *_SIZE variable. Borderless
+#    means "exactly this monitor", so the monitor's own resolution IS the
+#    setting — hardcoding 3440x1440 would be a second place to forget.
+# 3. It only works because XIVLauncher runs the game over XWayland
+#    (`WaylandEnabled=false` in launcher.ini). A Wayland-native client cannot
+#    be positioned by anything, itself included; if that toggle ever flips
+#    back, this rule goes silent and the game lands wherever KWin likes.
+ffxiv_geom="$(connector_geometry "${FFXIV_CONNECTOR:-}")"
+IFS=, read -r fx fy fw fh <<< "$ffxiv_geom"
+if [[ "$fx" == "-1" ]]; then
+    echo "WARNING: ${FFXIV_CONNECTOR:-<none>} not connected — FFXIV rule skipped"
+else
+    echo "window rules: FFXIV -> $FFXIV_CONNECTOR ${fw}x${fh} at $fx,$fy"
+    rule_set "eb5ce25d-79dc-4d01-920b-a7018c35c755" \
+        "Description=Application settings for FINAL FANTASY XIV" \
+        "wmclass=steam_app_default steam_app_default" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "title=FINAL FANTASY XIV" "titlematch=1" \
+        "position=$fx,$fy" "positionrule=3" \
+        "size=$fw,$fh" "sizerule=3"
+fi
+
 # Brave: adaptive sync (VRR) forced OFF for its windows, and nothing else —
 # no size, no position, no monitor.
 #
