@@ -288,6 +288,17 @@ KWIN_RULES=()
 rule_set() {   # $1 = rule uuid, rest = key=value pairs
     local uuid="$1"; shift
     local kv
+    # types=1 (NET::NormalMask) FIRST, so a caller can still override it by
+    # passing its own types=. A rule that names only a wmclass matches every
+    # window of that application INCLUDING ITS DIALOGS, so "Apply Initially
+    # size 1295x839" made Dolphin's "are you sure?" open at the size of
+    # Dolphin. That is exactly the behaviour ulu described wanting rid of and
+    # that STATUS.md had blamed on a previous distro's Placement=Maximizing —
+    # wrongly: we were causing it ourselves. Found in the QEMU VM (a dialog
+    # that was small before stage 4 and window-sized after), then confirmed by
+    # ulu on the desktop. Set here rather than at each call site because
+    # forgetting it is the whole bug.
+    kwriteconfig6 --file kwinrulesrc --group "$uuid" --key types 1
     for kv in "$@"; do
         kwriteconfig6 --file kwinrulesrc --group "$uuid" --key "${kv%%=*}" "${kv#*=}"
     done
