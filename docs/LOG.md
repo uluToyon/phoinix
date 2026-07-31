@@ -882,3 +882,52 @@ safe in an assignment.
 Verified: rules reproduce byte-identically apart from the order of the id list
 in `[General]`, which is irrelevant while no two rules match the same window
 (commented in the script).
+
+## 2026-07-31 — Applications, round 3: Strawberry
+
+The first application where the secrets rule actually bit. `strawberry.conf`
+holds a 305-character OAuth `access_token` for a streaming service in plain
+text. ulu does not use the streaming side at all — Strawberry is his local
+collection player — so those sections are simply out of scope, and the file is
+never captured as a whole. Only individual keys are written. Worth stating
+plainly: had we captured this file the way `kwinrc` is captured, a live token
+would have been pushed to a public repo.
+
+**Telling a decision from a default, when the diff shows both.** Strawberry
+serialises entire sections of defaults the moment its settings dialog is
+opened — the diff after ulu's round showed seventeen new sections and roughly
+150 keys, almost none of them decisions. A raw diff is useless here.
+
+The technique that worked: run the application once against an empty
+`XDG_CONFIG_HOME`/`XDG_DATA_HOME`, let it write its own defaults, and compare.
+In the twelve sections both files had, exactly **one** value differed
+(`MainWindow maximized`, window state). Its limit is worth recording too: the
+pristine run never wrote `[Backend]`, `[Behaviour]` and the other fifteen
+sections, because those only appear once the dialog has been opened — so for
+those the comparison says nothing, and ulu had to name what he touched. He had
+changed exactly one thing.
+
+Scripted:
+
+- **The stereo → 5.1 upmix** (`[Backend] channels_enabled=true`, `channels=6`).
+  This is the requirement Strawberry is in the package set for: the upmix
+  happens inside the player and never system-wide. Strawberry's default is
+  `false`, so the two keys are the entire setting. `kwriteconfig6` writes into
+  the Qt config without reformatting it — verified byte-identical, permissions
+  stay 600.
+- **Autostart**, same mechanism as Konsole.
+- **A window rule**: `position=0,804` is exactly the origin of DP-2, so it is
+  stored as `STRAWBERRY_CONNECTOR="DP-2"` and resolved at runtime.
+
+**A blind spot of my own making.** The autostart entry did not show up in the
+sweep after ulu's round: the exclusion filter contained `strawberry` to hide
+the application's own files, and it swallowed
+`~/.config/autostart/org.strawberrymusicplayer.strawberry.desktop` along with
+them. Filter by path prefix, never by substring — a name-based filter will
+eventually hide the one file that mattered.
+
+**The collection is not scriptable, and it is empty.** Strawberry keeps
+collection directories in its database, not in the config, and that database is
+state: absolute paths, rebuilt by a rescan. It currently holds zero directories
+and zero songs, so the music folder still has to be added by hand. Recorded as
+a manual post-install step rather than pretended away.

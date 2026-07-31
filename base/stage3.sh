@@ -227,6 +227,31 @@ kwriteconfig6 --file dolphinrc --group General --key GlobalViewProps true
 install -Dm644 /usr/share/applications/org.kde.konsole.desktop \
                "$HOME/.config/autostart/org.kde.konsole.desktop"
 
+# --- Strawberry ------------------------------------------------------------
+# Also autostarted.
+install -Dm644 /usr/share/applications/org.strawberrymusicplayer.strawberry.desktop \
+               "$HOME/.config/autostart/org.strawberrymusicplayer.strawberry.desktop"
+
+# The stereo -> 5.1 upmix, and the reason Strawberry is in the package set at
+# all: it happens INSIDE the player and must never be done system-wide (ulu's
+# hard requirement, docs/LOG.md 2026-07-30). Strawberry's own default is
+# channels_enabled=false, so both keys together are the whole setting.
+# Written key by key rather than by capturing strawberry.conf, which also
+# happens to hold an OAuth access token for a streaming service — that file
+# has no business in a public repo, and this way it never gets near one.
+kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
+    --group Backend --key channels_enabled true
+kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
+    --group Backend --key channels 6
+# Strawberry keeps its config user-readable only; kwriteconfig6 creates a fresh
+# file with default permissions when none exists yet.
+chmod 600 "$HOME/.config/strawberry/strawberry.conf"
+
+# NOTE: the music collection itself is NOT scriptable here. Strawberry stores
+# collection directories in its database (~/.local/share/strawberry/), not in
+# the config, and that database is state — absolute paths, rebuilt by a rescan.
+# Adding the collection folder stays a manual post-install step (STATUS.md).
+
 # ------------------------------------------------- 8. shell aliases (idempotent)
 if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
     cat >> "$HOME/.zshrc" << 'EOF'

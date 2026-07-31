@@ -146,6 +146,14 @@ selection, not guessed.
 | Dolphin | `~/.local/share/dolphin/view_properties/global/.directory` | `Settings/HiddenFilesShown` | `true` | dec |
 | Dolphin | `dolphinrc` | `General/GlobalViewProps` | `true` | dec |
 | Konsole | `~/.config/autostart/org.kde.konsole.desktop` | — | starts at login | dec |
+| Strawberry | `~/.config/autostart/…strawberry.desktop` | — | starts at login | dec |
+| Strawberry | `strawberry.conf` | `Backend/channels_enabled` | `true` | dec |
+| Strawberry | `strawberry.conf` | `Backend/channels` | `6` — stereo→5.1 **in the player only** | dec |
+
+**`strawberry.conf` is never captured whole.** It holds a plain-text OAuth
+access token for a streaming service. Only individual keys are written, so the
+token never comes near the repo. The upmix is the reason Strawberry is in the
+package set at all: it must happen inside the player, never system-wide.
 
 **"Show hidden files" is a view property, and it hides well.** Not in
 `dolphinrc`, not in `kdeglobals` — the `Show hidden files` key there belongs to
@@ -189,6 +197,7 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Places sidebar order | `PLACES_ORDER` labels, resolved at runtime | dec |
 | Window rule: Dolphin | size `1295,839`, Apply Initially | dec |
 | Window rule: Konsole | origin of `KONSOLE_CONNECTOR`, size `1440,1262` | dec |
+| Window rule: Strawberry | origin of `STRAWBERRY_CONNECTOR`, size `1920,2105` | dec |
 | Final step | `systemctl --user restart plasma-plasmashell.service` | dec |
 
 **All window rules live in stage 4, none in stage 3.** `count` and `rules` in

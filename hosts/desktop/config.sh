@@ -36,4 +36,6 @@ PLACES_ORDER=(archroot archhome Games FilesMusic Downloads Video)
 # as a connector name and resolved to that monitor's origin at runtime.
 KONSOLE_CONNECTOR="DP-3"      # portrait monitor — Konsole opens at its origin
 KONSOLE_SIZE="1440,1262"      # its full width, about half its height
+STRAWBERRY_CONNECTOR="DP-2"   # TCL 4K — Strawberry opens at its origin
+STRAWBERRY_SIZE="1920,2105"   # its left half, nearly full height
 DOLPHIN_SIZE="1295,839"       # size only, no position

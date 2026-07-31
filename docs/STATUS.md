@@ -88,6 +88,10 @@ this topology — until proven, the cap stays.
 
 ## Post-install manual steps (not scriptable)
 
+- Strawberry: add the music folder to the collection by hand. The path lives in
+  Strawberry's database, not its config, and that database is state (absolute
+  paths, rebuilt by a rescan) — so it is deliberately not scripted. Currently
+  the collection is empty: zero directories, zero songs.
 - Brave: join the sync chain by hand (profile comes via Brave Sync).
 - pCloud: log in by hand (credentials in KeePassXC on FilesMusic).
 - ProtonVPN: import .ovpn profiles (FilesMusic/OpenVPNConfigs) into the

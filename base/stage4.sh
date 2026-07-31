@@ -291,6 +291,26 @@ else
         "size=$KONSOLE_SIZE" "sizerule=3"
 fi
 
+# Strawberry: opens at the origin of its configured monitor.
+strawberry_geom="$(connector_geometry "$STRAWBERRY_CONNECTOR")"
+IFS=, read -r sx sy _ _ <<< "$strawberry_geom"
+if [[ "$sx" == "-1" ]]; then
+    echo "WARNING: $STRAWBERRY_CONNECTOR not connected — Strawberry rule without position"
+    rule_set "75ed2684-49b4-4641-b015-894da96da0c8" \
+        "Description=Application settings for org.strawberrymusicplayer.strawberry" \
+        "wmclass=strawberry org.strawberrymusicplayer.strawberry" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "size=$STRAWBERRY_SIZE" "sizerule=3"
+else
+    echo "window rules: Strawberry -> $STRAWBERRY_CONNECTOR origin $sx,$sy"
+    rule_set "75ed2684-49b4-4641-b015-894da96da0c8" \
+        "Description=Application settings for org.strawberrymusicplayer.strawberry" \
+        "wmclass=strawberry org.strawberrymusicplayer.strawberry" \
+        "wmclasscomplete=true" "wmclassmatch=1" \
+        "position=$sx,$sy" "positionrule=3" \
+        "size=$STRAWBERRY_SIZE" "sizerule=3"
+fi
+
 # The order of this list is the order KWin applies the rules in, so it only
 # matters once two rules can match the SAME window. These match different
 # applications, hence any order is correct here.
