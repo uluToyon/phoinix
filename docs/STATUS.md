@@ -169,6 +169,10 @@ this topology — until proven, the cap stays.
   exit, so the file tracks the playlist by itself. Stage 4 imports it back on a
   fresh install. Accepted cost (ulu's call): a crash or power cut loses that
   session's additions.
+- **KDE Connect: pair the phone by hand.** The pairing exchanges keys between
+  the two devices and is confirmed on the phone, so it cannot be scripted from
+  here. Nothing else is needed — the package is in `packages/kde.txt` and our
+  nftables table has no input chain, so its ports are not blocked.
 - **Steam, in this order** (verified 2026-07-31): log in, then Settings →
   Storage → add drive → `/mnt/Games/SteamLibrary`. The 39 installed games
   reappear without re-downloading — the library carries its own identity in

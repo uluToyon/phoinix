@@ -31,3 +31,13 @@ spectacle             # screenshots/recording; the reliable path under Wayland
 gwenview              # image viewer; the "double-click a picture" default
 plasma-systemmonitor  # GUI task manager; only Qt-native option (GTK avoided per ulu)
 isoimagewriter        # ISO → USB stick; distro-hopper essential, Qt-native
+kcalc                 # calculator, Qt-native. Was ALREADY installed here explicitly and required by
+                      # nothing, yet stood in no package list — a reinstall would have lost it in
+                      # silence. Found 2026-07-31 while adding it on request.
+kdeconnect            # phone integration: notifications, clipboard, file transfer, remote input.
+                      # ulu asked for it as "kconnect"; no such package exists, the name is kdeconnect.
+                      # Nothing to open in nftables: our table has NO input chain at all (only the
+                      # output/postrouting pair for the VPN split), so its 1714-1764 range is
+                      # unfiltered — verified, not assumed.
+                      # Optional dep python-nautilus skipped on purpose: GTK, and ulu avoids it.
+                      # Pairing with the phone is manual — see STATUS post-install steps.
