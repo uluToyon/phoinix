@@ -525,13 +525,44 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
 fi
 
 # ------------------------------------------------- 8. shell aliases (idempotent)
-if ! grep -q "phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
-    cat >> "$HOME/.zshrc" << 'EOF'
+# Own file, sourced from .zshrc — NOT a block appended into it. The block was
+# guarded by `grep -q "phoinix aliases"`, so it was written once and never
+# again: adding an alias later reached fresh installs only, and every machine
+# that already had the block silently kept the old list. A file phoinix owns
+# outright is rewritten on every run, and .zshrc gains exactly one line, once.
+ALIAS_FILE="$HOME/.config/phoinix/aliases.zsh"
+install -d "$(dirname "$ALIAS_FILE")"
+cat > "$ALIAS_FILE" << EOF
+# Written by phoinix stage 3 — do not edit, it is overwritten on every run.
 
-# --- phoinix aliases (muscle memory maps to the decided tools) ---
+# Muscle memory maps to the decided tools.
 alias nano='micro'
 alias yay='paru'
+
+# qBittorrent must run inside the VPN group or the kernel rule matches nothing
+# and it talks to the internet directly. The panel launcher and the autostart
+# entry both go through the wrapper; this closes the remaining everyday path,
+# the one where it is simply typed. It does NOT cover \`/usr/bin/qbittorrent\`
+# or a .desktop file from somewhere else — an alias is a convenience, and the
+# guarantee still lives in nftables, not here.
+alias qbittorrent='$REPO_DIR/scripts/qbittorrent-vpn.sh $HOST'
 EOF
+
+# Retire the legacy inline block, so the two cannot disagree.
+if grep -q "^# --- phoinix aliases" "$HOME/.zshrc" 2>/dev/null; then
+    tmp="$(mktemp)"
+    awk '/^# --- phoinix aliases/ { skip = 1 }
+         skip && /^alias /        { next }
+         skip && /^# --- phoinix aliases/ { next }
+         skip && !/^alias / && !/^# --- phoinix aliases/ { skip = 0 }
+         { print }' "$HOME/.zshrc" > "$tmp"
+    mv "$tmp" "$HOME/.zshrc"
+    echo "aliases: retired the inline block in .zshrc"
+fi
+
+if ! grep -q 'phoinix/aliases.zsh' "$HOME/.zshrc" 2>/dev/null; then
+    printf '\n# phoinix aliases (the file is generated; see stage 3)\n[[ -f %s ]] && source %s\n' \
+        "$ALIAS_FILE" "$ALIAS_FILE" >> "$HOME/.zshrc"
 fi
 
 # ------------------------------------------------- 9. regional formats

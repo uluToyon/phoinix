@@ -1789,3 +1789,29 @@ Detected external IP. IP: <Proton's exit>
 The application binds to the tunnel address and sees Proton as its external
 address — the first end-to-end proof with the program the whole construction
 exists for.
+
+## 2026-07-31 — The alias that could not be added, and the file that fixes it
+
+Closing the last everyday path by which qBittorrent could start unprotected:
+the panel launcher and the autostart entry both go through the wrapper, but
+typing `qbittorrent` in a terminal did not. An alias handles that — and adding
+it exposed a defect in how aliases were managed at all.
+
+The block lived inline in `.zshrc`, appended behind
+`grep -q "phoinix aliases"`. That guard makes the append idempotent and, in the
+same stroke, makes the list **immutable**: the block is written once, so a new
+alias reaches fresh installs only and every machine that already has the block
+keeps the old list forever. Nothing announces this; stage 3 reports success and
+changes nothing.
+
+Aliases now live in `~/.config/phoinix/aliases.zsh`, a file phoinix owns
+outright and rewrites on every run, with a single sourcing line added to
+`.zshrc` once. Stage 3 also retires the legacy inline block, so the two cannot
+disagree. Verified on the live machine: exactly the three old lines replaced by
+the three new ones, the rest of `.zshrc` untouched, and `nano`→`micro` survived
+the migration.
+
+Stated plainly in the file itself, because an alias invites overconfidence: it
+covers the shell and nothing else — not `/usr/bin/qbittorrent`, not a .desktop
+file from elsewhere. The guarantee remains the nftables rule; this only removes
+a way to trip over it.

@@ -191,7 +191,7 @@ rule and must grow when another one is added.
 
 | Setting | Value | Origin |
 |---|---|---|
-| Shell aliases | `nano`→`micro`, `yay`→`paru` (appended, idempotent) | dec |
+| Shell aliases | own file `~/.config/phoinix/aliases.zsh`, sourced from `.zshrc`: `nano`→`micro`, `yay`→`paru`, `qbittorrent`→the VPN wrapper | dec |
 | `environment.d/10-phoinix-locale.conf` | `LANG` + nine `LC_*` on `de_DE.UTF-8` | dec |
 | `plasma-localerc` | the same, so the KCM shows the truth | dec |
 | Deliberately **not** set | `LC_MESSAGES` (would translate the UI), `LC_COLLATE` (would change shell globs and `sort`) | dec |
