@@ -111,3 +111,17 @@ QBT_SIZE="1920,1053"
 DISCORD_CONNECTOR="DP-3"
 DISCORD_OFFSET="0,1262"   # directly below Konsole, which is 1262 high
 DISCORD_SIZE="1440,1262"
+
+# --- Printer (stage 3) ------------------------------------------------------
+# Samsung SCX-4300, USB, print only — the device is a multifunction unit but no
+# scanning stack is installed (see packages/apps.txt).
+#
+# The DEVICE uri is deliberately NOT here: CUPS builds it as
+# usb://Samsung/SCX-4300%20Series?serial=<serial>&interface=1, i.e. it carries
+# the printer's serial number. Stage 3 resolves it at runtime with `lpinfo -v`,
+# the same way monitors, disks and mice are resolved. What IS stored is the
+# driver, which comes from the splix package and is identical on every machine.
+PRINTER_NAME="SCX-4300"
+PRINTER_MATCH="SCX-4300"                                  # what to look for in `lpinfo -v`
+PRINTER_DRIVER="drv:///splix-samsung.drv/scx4300.ppd"     # splix, "Samsung SCX-4300, 2.0.0"
+PRINTER_OPTIONS=("PageSize=A4" "printer-is-shared=false")  # Letter is the driver default; sharing is not wanted

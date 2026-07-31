@@ -597,6 +597,43 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
           "$HOME/.config/systemd/user/default.target.wants/phoinix-portforward.service"
 fi
 
+# ------------------------------------------------- 7c. printer
+# CUPS is enabled in section 10; this creates the queue.
+#
+# The device URI is resolved HERE, not stored: CUPS builds it from the
+# printer's serial number, which is a discovered identifier and has no place in
+# a public repo. The driver, by contrast, comes from the splix package and is
+# the same string on every machine, so that one is configuration.
+#
+# No sudo: CUPS accepts administration from the `wheel` group on Arch, which
+# ulu is in. Verified rather than assumed — `lpadmin` ran unprivileged.
+if [[ -n "${PRINTER_NAME:-}" ]]; then
+    if lpstat -p "$PRINTER_NAME" &>/dev/null; then
+        echo "printer: $PRINTER_NAME already exists"
+    else
+        printer_uri="$(lpinfo -v 2>/dev/null | awk -v m="$PRINTER_MATCH" '$0 ~ m && /usb:/ {print $2; exit}')"
+        if [[ -z "$printer_uri" ]]; then
+            # Loud, not fatal: a printer that is switched off or unplugged must
+            # not abort an install, but it must not pass unnoticed either.
+            echo "WARNING: no USB device matching '$PRINTER_MATCH' — printer not created."
+            echo "         Switch it on and re-run stage 3."
+        else
+            lpadmin -p "$PRINTER_NAME" -v "$printer_uri" -m "$PRINTER_DRIVER" -E
+            echo "printer: $PRINTER_NAME created"
+        fi
+    fi
+
+    # Options and default destination are applied every run: they are the
+    # decisions, and re-applying them is how a hand-change gets corrected.
+    if lpstat -p "$PRINTER_NAME" &>/dev/null; then
+        for opt in "${PRINTER_OPTIONS[@]}"; do
+            lpadmin -p "$PRINTER_NAME" -o "$opt"
+        done
+        lpadmin -d "$PRINTER_NAME"
+        echo "printer: options set (${PRINTER_OPTIONS[*]}), default destination"
+    fi
+fi
+
 # ------------------------------------------------- 8. shell aliases (idempotent)
 # Own file, sourced from .zshrc — NOT a block appended into it. The block was
 # guarded by `grep -q "phoinix aliases"`, so it was written once and never

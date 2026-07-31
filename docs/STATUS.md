@@ -44,7 +44,7 @@ re-run *here* — then the next login would start stage 3 once. `touch
 
 **Application phase.** Done: Dolphin, Konsole, Strawberry, KeePassXC,
 ProtonVPN, qBittorrent. Not yet touched: **Brave, Discord, Steam, LibreOffice,
-DZGUI, XIVLauncher, CUPS/printer**.
+DZGUI, XIVLauncher**.
 
 ### ProtonVPN — LIVE ON THE DESKTOP AND MEASURED
 
@@ -215,6 +215,8 @@ this topology — until proven, the cap stays.
 - **mpc-qt: start it once before stage 3 can write its settings.** Seeding the
   profile is unsafe (it segfaults on a settings file without a geometry file —
   see `SETTINGS.md`), so stage 3 skips with a message and needs a re-run.
+- **Printer: switch it on before stage 3**, or the queue is skipped with a
+  warning — the device URI can only be resolved from a device that answers.
 - Brave: join the sync chain by hand (profile comes via Brave Sync).
 - pCloud: log in by hand (credentials in KeePassXC on FilesMusic).
 - ~~ProtonVPN: import .ovpn profiles by hand.~~ **Obsolete 2026-07-31** — replaced by the

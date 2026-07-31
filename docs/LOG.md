@@ -2049,3 +2049,41 @@ browser.
 One process note: `bash -n` validates shell syntax and nothing else. A stray
 backslash inside the `jq` filter passed it cleanly and would have failed at
 runtime; catching it needed feeding the expression to `jq` itself.
+
+## 2026-07-31 — Applications, round 12: the printer, and a dependency with an expiry date
+
+Samsung SCX-4300 over USB, print only. Set up, scripted and verified end to end
+— queue created, test page printed, paper confirmed by ulu. That last step is
+not ceremony: splix is a third-party driver for an eighteen-year-old device, and
+CUPS reporting a clean filter chain only means the data left the system.
+
+**The split between what is stored and what is resolved wrote itself.** CUPS
+builds the device URI as
+`usb://Samsung/SCX-4300%20Series?serial=<serial>&interface=1` — it carries the
+printer's serial number, which is both a discovered identifier and a hardware
+ID, so it stays out of a public repo. The driver string
+(`drv:///splix-samsung.drv/scx4300.ppd`) comes from the splix package and is the
+same on every machine, so that one is configuration. Stage 3 resolves the device
+with `lpinfo -v` at runtime, exactly as it already does for monitors, disks and
+pointers.
+
+Three defaults were wrong for this desk and are now written explicitly:
+`PageSize` (the driver ships **Letter**), `printer-is-shared` (CUPS shares a new
+queue on the network by default, which a single-user desktop has no use for),
+and the default destination, which was unset.
+
+**No root required**, which was worth checking rather than assuming: CUPS accepts
+administration from the `wheel` group on Arch, so `lpadmin` runs unprivileged
+like the rest of stage 3.
+
+**And a warning worth more than the setup.** `lpadmin` says on every call:
+*"Printer drivers are deprecated and will stop working in a future version of
+CUPS."* CUPS 3 removes PPD-based drivers — which is precisely what splix is —
+and a 2007 multifunction device does not speak IPP Everywhere. So this queue has
+a known expiry date tied to an Arch package update, and the fallback will be a
+local IPP-Everywhere adapter or a print server in front of it.
+
+That is recorded next to the setting rather than buried here, because of the
+failure mode it prevents: without it, the repo would say "printer configured,
+verified" and the day it stops working would look like a regression in phoinix
+rather than an upstream removal that was visible all along.

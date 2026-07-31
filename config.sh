@@ -43,6 +43,10 @@ QBT_SIZE=""
 DISCORD_CONNECTOR=""      # Discord window rule; empty = no rule for it
 DISCORD_OFFSET="0,0"
 DISCORD_SIZE=""
+PRINTER_NAME=""            # queue name; empty = this host has no printer
+PRINTER_MATCH=""
+PRINTER_DRIVER=""
+PRINTER_OPTIONS=()
 VPN_CONFIG_DIR=""         # WireGuard .conf files; empty = this host has no VPN
 
 # --- ProtonVPN split tunnel (stages 2 and 3) -------------------------------

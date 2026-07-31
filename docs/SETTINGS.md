@@ -473,6 +473,36 @@ asks for one launch plus a re-run.
 `keys_v2.json` (46 KB of key bindings) is deliberately not captured — ulu
 changed none of it.
 
+## Printer (stage 3)
+
+Samsung SCX-4300 over USB, print only. Verified end to end on 2026-07-31: queue
+created, test page printed, paper confirmed by ulu.
+
+| Setting | Value | Origin |
+|---|---|---|
+| `PRINTER_NAME` | `SCX-4300` | dec |
+| `PRINTER_DRIVER` | `drv:///splix-samsung.drv/scx4300.ppd` — splix, "Samsung SCX-4300, 2.0.0" | dec |
+| `PRINTER_MATCH` | `SCX-4300` — what stage 3 looks for in `lpinfo -v` | dec |
+| `PRINTER_OPTIONS` | `PageSize=A4` (the driver defaults to Letter), `printer-is-shared=false` | dec |
+| Default destination | this printer, being the only one | dec |
+
+**The device URI is resolved at runtime, never stored.** CUPS builds it as
+`usb://Samsung/SCX-4300%20Series?serial=<serial>&interface=1` — it carries the
+printer's serial number, which is a discovered identifier and hardware ID both.
+Stage 3 finds it with `lpinfo -v`, the same pattern as monitors, disks and mice.
+The driver string, by contrast, comes from the splix package and is identical
+everywhere, so that one is configuration.
+
+**No root needed.** CUPS accepts administration from the `wheel` group on Arch;
+`lpadmin` ran unprivileged. Verified, not assumed.
+
+**Known expiry date.** `lpadmin` warns: *"Printer drivers are deprecated and
+will stop working in a future version of CUPS."* CUPS 3 drops PPD-based drivers,
+which is exactly what splix is, and this 2007 device does not speak IPP
+Everywhere. When Arch moves to CUPS 3 this queue stops working, and the fallback
+is a local IPP-Everywhere adapter or a print server in front. Recorded so the
+failure is not a mystery when it arrives.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and
