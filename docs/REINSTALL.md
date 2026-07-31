@@ -105,7 +105,9 @@ At the console, log in as `ulutoyon`. **That login starts stage 3 by itself**:
 `~/.zprofile` fires it on the first login shell, and there is nothing to type.
 
 Stage 3 is the long one — packages, then `paru` built from source, then the AUR
-tree. It ends with a 10-second countdown and reboots into KDE.
+tree. It does NOT reboot by itself: it ends by telling you to reboot (or start
+the login manager unit directly). Type `reboot` — the full boot path into the
+greeter is worth testing anyway. Confirmed on the first real run 2026-07-31.
 
 **Opening a diagnostic SSH session while it runs is safe.** The hook takes a
 `flock`, and an ssh login arriving mid-run says so instead of starting a second
