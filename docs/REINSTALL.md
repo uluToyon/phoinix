@@ -105,9 +105,12 @@ At the console, log in as `ulutoyon`. **That login starts stage 3 by itself**:
 `~/.zprofile` fires it on the first login shell, and there is nothing to type.
 
 Stage 3 is the long one — packages, then `paru` built from source, then the AUR
-tree. It does NOT reboot by itself: it ends by telling you to reboot (or start
-the login manager unit directly). Type `reboot` — the full boot path into the
-greeter is worth testing anyway. Confirmed on the first real run 2026-07-31.
+tree. Who reboots depends on how it ran: started by the login hook (the normal
+path), the HOOK ends with a 10-second countdown and `sudo systemctl reboot` —
+the script itself never reboots, so a by-hand run (`base/stage3.sh desktop`)
+ends with a message telling you to. If the console shows the "stage 3 done"
+line but no countdown, stage 3 did NOT finish — check `~/stage3.log` against
+the script's tail before believing it.
 
 **Opening a diagnostic SSH session while it runs is safe.** The hook takes a
 `flock`, and an ssh login arriving mid-run says so instead of starting a second

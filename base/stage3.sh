@@ -742,10 +742,18 @@ fi
 # No sudo: CUPS accepts administration from the `wheel` group on Arch, which
 # ulu is in. Verified rather than assumed — `lpadmin` ran unprivileged.
 if [[ -n "${PRINTER_NAME:-}" ]]; then
+    # Section 10 only ENABLES cups — on a fresh install nothing has started it
+    # yet, and lpinfo against a dead scheduler exits non-zero. Under pipefail
+    # that killed the whole stage, silently, because lpinfo's stderr is
+    # discarded. Found on the first real run 2026-07-31; never seen before
+    # because the old system had CUPS running and QEMU declares no printer.
+    systemctl is-active --quiet cups.service || sudo systemctl start cups.service
     if lpstat -p "$PRINTER_NAME" &>/dev/null; then
         echo "printer: $PRINTER_NAME already exists"
     else
-        printer_uri="$(lpinfo -v 2>/dev/null | awk -v m="$PRINTER_MATCH" '$0 ~ m && /usb:/ {print $2; exit}')"
+        # `|| true`: this block promises "loud, not fatal" — a failing probe
+        # must land in the warning below, not abort the install.
+        printer_uri="$(lpinfo -v 2>/dev/null | awk -v m="$PRINTER_MATCH" '$0 ~ m && /usb:/ {print $2; exit}' || true)"
         if [[ -z "$printer_uri" ]]; then
             # Loud, not fatal: a printer that is switched off or unplugged must
             # not abort an install, but it must not pass unnoticed either.
