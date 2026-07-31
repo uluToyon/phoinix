@@ -2530,3 +2530,42 @@ STATUS rather than buried here: stage 4's multi-icon `positions` JSON has never
 been written by the script, only computed and compared against his running
 Plasma. It is the single piece of today with no proof behind it, and it is the
 first place to look if desktop icons come back in the wrong cells.
+
+## 2026-07-31 — The soundbar is back at −26 dB
+
+ulu: "soundbar zurück." Of the two options recorded in STATUS he took the first
+— restore the value the recovered transcripts document as tested, rather than
+probe upward to find where the glitching starts.
+
+Measured before touching anything: the live sink read −23.23 dB on all six
+channels, and the live wireplumber state matched the repo copy byte for byte on
+`default-routes`, `default-nodes` and `default-profile`. So there was no
+uncaptured drift to destroy, and the 2.77 dB gap was exactly as documented.
+
+**`pactl set-sink-volume SINK -26dB` does not do what it looks like.** The
+leading minus is read as a RELATIVE decrement: −23.23 − 26 = **−49.23 dB**, which
+is where the soundbar briefly went. `--` does not rescue it either — unlike
+`kwriteconfig6` earlier today, pactl answers "Invalid volume specification". The
+absolute route is the raw PulseAudio value, because PA's scale is CUBIC while
+`channelVolumes` is linear amplitude:
+
+    raw = 65536 × (10^(dB/20))^(1/3) = 65536 × 0.050119^(1/3) = 24163
+
+That produced −26.00 dB on all six channels, and wireplumber then persisted
+`channelVolumes: [0.050120, …]` on its own — **exactly** the figure the old
+transcripts carry, not a rounding neighbour of it. That exactness is the useful
+part: it says the transcripts' number and this machine's number are the same
+quantity, so the restored state really is the tested state.
+
+Captured into `hosts/desktop/home/.local/state/wireplumber/default-routes`.
+Checked that nothing else rode along: of the five devices with a stored volume
+in that file, only the Teufel entry differs from the committed version. The key
+ORDER inside the JSON object also shuffled — wireplumber writes its keys in no
+fixed order, which is worth knowing before anyone reads a whole-file diff of
+this thing as meaningful.
+
+What this does NOT establish: that the glitching is gone. −26 dB is the level
+that was tested glitch-free years ago, and restoring it removes the most likely
+explanation for ulu's lingering doubt — but confirming it needs hours in FFXIV
+or DayZ, and only he can report that. If it still glitches at −26 dB, the level
+was never the cause and the hunt reopens elsewhere.

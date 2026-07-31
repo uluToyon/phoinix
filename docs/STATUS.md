@@ -6,12 +6,18 @@ _Last updated: 2026-07-31 (session 5 — keychron, the superproject question, th
 
 Three decisions are waiting, and nothing else is queued ahead of them:
 
-1. **The soundbar.** Back to exactly −26 dB, the value the old transcripts
-   document as tested glitch-free, or test upward deliberately to find where the
-   glitching actually starts. Waiting longest; unblocked since 2026-07-31.
-2. **chezmoi** — whether the two dotfiles get managed by it, and how.
-3. **`fixes/`** — the curlable collection, parked by ulu on 2026-07-31 and
+1. **chezmoi** — whether the two dotfiles get managed by it, and how.
+2. **`fixes/`** — the curlable collection, parked by ulu on 2026-07-31 and
    described under "Later, with ulu".
+
+**The soundbar is set back and captured (2026-07-31).** ulu chose the first
+option: exactly −26 dB, not a hunt for where the glitching starts. Live sink and
+the repo copy of `default-routes` both carry `channelVolumes 0.050120`, which is
+the value the recovered transcripts document as tested glitch-free — an exact
+match, not an approximation. **What is not settled is whether the glitching is
+gone**; that needs hours of FFXIV or DayZ, and only ulu can report it. If it
+still glitches at −26 dB, the level was never the cause and the investigation
+reopens somewhere else entirely.
 
 Deferred by ulu, not forgotten: **`kdeconnect` is in `packages/kde.txt` but not
 installed on this desktop** (`sudo pacman -S --needed kdeconnect`, then pair the
@@ -303,19 +309,19 @@ Verified on the desktop (session 2):
 
 Still open:
 
-- **Soundbar: the captured value is NOT the verified one.** The old transcripts
-  (recovered 2026-07-31, see `LOG.md`) document the tested fix as
-  `channelVolumes 0.050120` = **−26.00 dB**, glitch-free across 30+ minutes of
-  FFXIV. Repo and live system carry `0.068923` = **−23.23 dB**, i.e. 2.77 dB
-  louder. The level crept up between the investigation and the backup.
-  **This is the likeliest explanation for ulu's doubt that the glitching is
-  gone.** Decide: set it back to exactly −26 dB (`pactl set-sink-volume
-  <teufel> -26dB`, then re-capture), or test upward deliberately to find where
-  the glitches actually start. Full rationale and the operating rules are in
-  `DESIGN.md`.
-  **Blocked for now:** both reference titles (FFXIV, DayZ) are not installed
-  yet, so neither option can be judged. Revisit once gaming is set up — ulu's
-  call, deliberately deferred.
+- ~~**Soundbar: the captured value is NOT the verified one.**~~ **RESOLVED
+  2026-07-31.** The gap was real: the transcripts document the tested fix as
+  `channelVolumes 0.050120` = −26.00 dB, while repo and live system had crept to
+  `0.068923` = −23.23 dB, 2.77 dB louder. ulu chose to set it back rather than
+  probe upward. Done and captured — the live file now reads 0.050120 exactly,
+  and the repo copy matches it byte for byte.
+  Two things worth keeping from the doing: `pactl set-sink-volume SINK -26dB`
+  reads the leading minus as a RELATIVE decrement and landed on −49.23 dB, and
+  `--` does not rescue it (pactl rejects it as an invalid specification). The
+  absolute route is the raw PA value, `65536 × linear^(1/3)` = 24163, because
+  PulseAudio's scale is cubic while `channelVolumes` is linear amplitude.
+  **Still unknown: whether the glitching is actually gone.** That needs hours in
+  FFXIV or DayZ and only ulu can judge it.
 - ~~ulu's real name and work e-mail are on GitHub.~~ **RESOLVED 2026-07-31,
   history rewritten and the repository recreated.** Details in `LOG.md`.
   Standing consequence: **there is no global git identity on this machine**,

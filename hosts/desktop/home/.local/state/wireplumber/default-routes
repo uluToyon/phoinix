@@ -1,5 +1,5 @@
 [default-routes]
-alsa_card.usb-NXP_SEMICONDUCTORS_Teufel_CONCEPT_12-00:output:analog-output={"mute":false, "latencyOffsetNsec":0, "channelMap":["FL", "FR", "RL", "RR", "FC", "LFE"], "channelVolumes":[0.068923, 0.068923, 0.068923, 0.068923, 0.068923, 0.068923]}
+alsa_card.usb-NXP_SEMICONDUCTORS_Teufel_CONCEPT_12-00:output:analog-output={"latencyOffsetNsec":0, "channelMap":["FL", "FR", "RL", "RR", "FC", "LFE"], "mute":false, "channelVolumes":[0.050120, 0.050120, 0.050120, 0.050120, 0.050120, 0.050120]}
 alsa_card.usb-NXP_SEMICONDUCTORS_Teufel_CONCEPT_12-00:profile:output:analog-surround-51=["analog-output"]
 alsa_card.pci-0000_0b_00.1:output:hdmi-output-0={"channelMap":["FL", "FR"], "iec958Codecs":["PCM"], "mute":false, "channelVolumes":[0.091123, 0.091123], "latencyOffsetNsec":0}
 alsa_card.pci-0000_0b_00.1:profile:output:hdmi-stereo=["hdmi-output-0"]
