@@ -597,6 +597,41 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
           "$HOME/.config/systemd/user/default.target.wants/phoinix-portforward.service"
 fi
 
+# --- XIVLauncher / Dalamud --------------------------------------------------
+# Restored from the games disk (scripts/xlcore-backup.sh writes it). Roughly
+# 80 MB: launcher settings, the Dalamud plugin profile with its third-party
+# repos, per-plugin settings, and the plugin binaries. The other 2.6 GB of
+# ~/.xlcore — Proton prefix, Dalamud, runtime, assets, Browsingway's embedded
+# browser — re-downloads itself and is deliberately not carried.
+#
+# Per-file and per-tree, never wholesale: anything already present belongs to a
+# launcher that has run since, and overwriting it would discard exactly what
+# the backup exists to protect. On a fresh install nothing is present and the
+# whole set lands.
+if [[ -n "${XLCORE_BACKUP_DIR:-}" ]]; then
+    XL="$HOME/.xlcore"
+    if [[ ! -d "$XLCORE_BACKUP_DIR" ]]; then
+        echo "WARNING: $XLCORE_BACKUP_DIR missing — XIVLauncher starts unconfigured."
+        echo "         Not fatal: it will simply ask for the account again."
+    else
+        install -d "$XL"
+        for f in launcher.ini launcherUI.ini dalamudConfig.json dalamudUI.ini; do
+            [[ -f "$XLCORE_BACKUP_DIR/$f" && ! -e "$XL/$f" ]] && \
+                install -m644 "$XLCORE_BACKUP_DIR/$f" "$XL/$f"
+        done
+        # The credential keeps its restrictive mode across the copy.
+        [[ -f "$XLCORE_BACKUP_DIR/accounts.json" && ! -e "$XL/accounts.json" ]] && \
+            install -m600 "$XLCORE_BACKUP_DIR/accounts.json" "$XL/accounts.json"
+
+        for d in pluginConfigs installedPlugins; do
+            if [[ -d "$XLCORE_BACKUP_DIR/$d" && ! -d "$XL/$d" ]]; then
+                cp -a "$XLCORE_BACKUP_DIR/$d" "$XL/$d"
+            fi
+        done
+        echo "xlcore: restored from $XLCORE_BACKUP_DIR (existing files left alone)"
+    fi
+fi
+
 # --- XIVLauncher desktop link ----------------------------------------------
 # A SYMLINK, not a copy — that is what KDE creates when an entry is dragged
 # from the menu onto the desktop, and it means the launcher's own .desktop

@@ -577,6 +577,44 @@ Two things only a real run showed: `kwriteconfig6` reads `-1` as an option, so
 `sortMode` needs a `--` separator; and the presence of `changedPositions` at all
 is what proves ulu moved the icon rather than accepting a default placement.
 
+## XIVLauncher / Dalamud (stage 3)
+
+`~/.xlcore` is ~2.7 GB and almost all of it rebuilds itself. What does not is
+about 80 MB, kept next to the game on the games disk
+(`XLCORE_BACKUP_DIR = /mnt/Games/FFXIV/xlcore-backup`) and written by
+`scripts/xlcore-backup.sh`. Only the path is versioned.
+
+| Carried | Why |
+|---|---|
+| `launcher.ini` | launcher settings: Proton/DXVK/Dalamud, paths, `CurrentAccountId` |
+| `accounts.json` | **credential** — account name and last OTP; 0600, never the repo |
+| `dalamudConfig.json` | the plugin **profile** (10 plugins with enabled state) and the **third-party repo list** |
+| `dalamudUI.ini` | Dalamud window layout |
+| `pluginConfigs/` | per-plugin settings, **minus** `Browsingway/` |
+| `installedPlugins/` | the plugin binaries, ~79 MB |
+
+| Not carried | Size | Why |
+|---|---|---|
+| `protonprefix` | 954 MB | rebuilt on demand |
+| `pluginConfigs/Browsingway/` | 623 MB | `dependencies` + `cef-cache`; its settings are the 2.8 KB `Browsingway.json` beside it |
+| `dalamud`, `runtime`, `dalamudAssets` | 680 MB | downloaded by Dalamud itself |
+| `ffxivConfig` | — | **already lives on the games disk**; `GameConfigPath` points there, so it survives by construction |
+
+**The binaries are carried deliberately.** `dalamudConfig.json` alone would be
+enough *if* Dalamud reinstalls from the profile and the three third-party repos
+are still online years from now — the first was never verified and the second is
+outside anyone's control. 79 MB on a disk this repo never formats is the cheaper
+insurance. Shrinking to 284 KB later is easy; the reverse is not.
+
+**The backup deletes as well as adds** (`rsync --delete`), so a plugin removed
+in Dalamud disappears from the backup too. Without that it would only ever grow
+and would reinstate things deliberately got rid of.
+
+**Restore is per file and per tree, never wholesale**: anything already in
+`~/.xlcore` belongs to a launcher that has run since. Whether a *seeded*
+`~/.xlcore` lets XIVLauncher start fully configured is **not yet verified** —
+the restore is written to be correct either way.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and

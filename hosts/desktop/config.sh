@@ -154,3 +154,14 @@ STEAM_SHORTCUTS_FILE="/mnt/Games/phoinix/shortcuts.vdf"
 # resolved from PANEL_MAIN_CONNECTOR at runtime rather than written here.
 XIVLAUNCHER_DESKTOP="/usr/share/applications/XIVLauncher-RB.desktop"
 DESKTOP_ICON_CELL="1,1"    # column,row in the Folder View grid
+
+# --- XIVLauncher / Dalamud (stage 3) ----------------------------------------
+# Next to the game on the games disk, where it belongs thematically and where
+# it survives by construction. Holds ~80 MB: launcher settings, the Dalamud
+# plugin profile with its third-party repo list, per-plugin settings, and the
+# plugin binaries. Everything else in ~/.xlcore (2.6 GB of Proton prefix,
+# Dalamud, runtime, assets, Browsingway's browser) re-downloads itself.
+#
+# accounts.json in there is a credential (account name, last OTP) and is kept
+# at 0600. Only the PATH is versioned — never the contents.
+XLCORE_BACKUP_DIR="/mnt/Games/FFXIV/xlcore-backup"
