@@ -144,7 +144,15 @@ as everything else in this procedure: at the machine.
 
 All four are written with `tee`, so they exist even when a stage dies. **This is
 what the laptop's SSH session is for**: `ssh ulutoyon@<address> 'cat ~/stage3.log'`
-hands one over without touching the run. For stages 1 and 2 the same works as
+hands one over without touching the run.
+
+**Read with `cat`, do not hold with `tail -f` — at least not under `/mnt`.** A
+`tail -F` on `/mnt/var/log/stage2.log` keeps a file open on the target
+filesystem, and bootstrap's `umount -R /mnt` then fails "target is busy": read
+access alone stopped an otherwise perfect run on 2026-07-31. bootstrap now
+retries and names the holder, but the rule stands — a watcher must never hold
+an open handle below `/mnt`. `~/stage3.log` and `~/stage4.log` live on the
+booted system, where no unmount follows; tailing those is fine. For stages 1 and 2 the same works as
 `root@<address>` against the ISO, provided `passwd` was set in step 2.
 
 ## If something goes wrong

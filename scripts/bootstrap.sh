@@ -75,7 +75,21 @@ echo
 arch-chroot /mnt /root/phoinix/base/stage2.sh "$HOST" < "$TTY_IN"
 
 # ----------------------------------------------------------------- reboot
-umount -R /mnt
+# A single open file under /mnt makes `umount -R` fail "target is busy" and
+# stopped a whole run here — the holder was a diagnostic SSH session running
+# tail -F on stage2.log, i.e. purely read access. Retry briefly (a closing
+# session releases it), then NAME the holders instead of dying cryptically.
+for i in 1 2 3 4 5; do
+    umount -R /mnt 2>/dev/null && break
+    [[ $i -lt 5 ]] && sleep 2
+done
+if mountpoint -q /mnt; then
+    echo "ERROR: /mnt is still busy after 5 tries. Holding it open:"
+    fuser -vm /mnt || true
+    echo "Close whatever that is (an SSH session reading a log qualifies),"
+    echo "then finish by hand:  umount -R /mnt && reboot"
+    exit 1
+fi
 
 echo
 echo "Stages 1 and 2 are done. Rebooting into the new system."
