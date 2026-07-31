@@ -1,8 +1,12 @@
 # Reinstall — running phoinix on the real desktop
 
 The procedure for actually doing it, written 2026-07-31 for the first supervised
-run. ulu drives it from the laptop over SSH; the desktop is the machine being
-rebuilt.
+run.
+
+**ulu types everything at the desktop itself.** The laptop is connected over SSH
+for ONE purpose: looking at logs when something goes wrong. It never drives the
+install. That split is deliberate — a dropped SSH connection must never be able
+to interrupt a stage mid-run.
 
 Read `STATUS.md` first for what is currently unproven. Nothing here repeats it.
 
@@ -45,6 +49,10 @@ cp -a ~/.claude /mnt/Downloads/rescue/claude
   proved their worth once: the soundbar's `−26 dB` and its reason were recovered
   out of older transcripts after the knowledge had been lost.
 
+Done for the 2026-07-31 run: both sit in `/mnt/Downloads/rescue/` (`ssh/` with
+the private key still at 0600, `claude/` with 46 MB including that day's seven
+transcripts). The 2026-07-30 backup is still beside it, untouched.
+
 Everything else in the home directory is either rebuilt or restored: Steam
 re-attaches its library from `/mnt/Games`, XIVLauncher restores from the 80 MB
 backup, Brave comes back through Brave Sync, and Discord, unity3d, baloo, NuGet,
@@ -60,27 +68,23 @@ the local disk does not exist as far as the installer is concerned.
 Boot the Arch ISO on the desktop. It lands at `root@archiso ~ #` with no
 password set.
 
-## 2. Make SSH reachable
+## 2. Open the diagnostic channel (optional, before starting)
 
-The ISO runs `sshd` already, but **root has no password, and sshd refuses an
-empty one** — so SSH is closed until this is typed on the desktop's own
-keyboard:
+Only needed if you want the laptop able to look at stage 1 and 2 logs while they
+run. The ISO runs `sshd` already, but **root has no password and sshd refuses an
+empty one**, so at the desktop keyboard:
 
 ```
 passwd
 ip -brief addr
 ```
 
-The first sets a throwaway root password for this session; the second gives the
-address to connect to. Then, from the laptop:
+The first sets a throwaway root password for this boot, the second gives the
+address. From the laptop then `ssh root@<address>` — to READ, not to drive.
 
-```
-ssh root@<address>
-```
+## 3. Run the one command — at the desktop
 
-## 3. Run the one command
-
-In that SSH session:
+Typed at the machine itself, not over SSH:
 
 ```
 curl -fsSL https://raw.githubusercontent.com/uluToyon/phoinix/main/scripts/bootstrap.sh | bash -s desktop
@@ -91,33 +95,38 @@ What it does, and where it stops for you:
 - **Stage 1** sorts the mirrorlist, then partitions and formats the target. It
   gives a **10-second countdown** first — `Ctrl-C` there is the last exit.
   `PHOINIX_YES=1` in the environment skips the countdown; do not use it here.
-- **Stage 2** runs in the chroot and **asks for `ulutoyon`'s password**. This is
-  the one thing that cannot be automated away and the one thing you must be at
-  the keyboard — or the SSH session — for.
+- **Stage 2** runs in the chroot and **asks for `ulutoyon`'s password**. The one
+  input that cannot be automated away.
 - Then it reboots into the installed system.
 
-## 4. Stage 3, over SSH
+## 4. Stage 3 — log in at the desktop
 
-After the reboot the machine has `sshd` enabled and `hosts/desktop/authorized_keys`
-in place, so from the laptop:
+At the console, log in as `ulutoyon`. **That login starts stage 3 by itself**:
+`~/.zprofile` fires it on the first login shell, and there is nothing to type.
 
-```
-ssh ulutoyon@<address>
-```
-
-**That login starts stage 3 by itself.** `~/.zprofile` fires it on the first
-login shell, and an SSH session is a login shell — there is nothing to type. It
-is guarded by `flock`, so a second session joining midway does not start a
-second run.
-
-Stage 3 is the long one: packages, then `paru` built from source, then the AUR
+Stage 3 is the long one — packages, then `paru` built from source, then the AUR
 tree. It ends with a 10-second countdown and reboots into KDE.
+
+**Opening a diagnostic SSH session while it runs is safe.** The hook takes a
+`flock`, and an ssh login arriving mid-run says so instead of starting a second
+one:
+
+```
+>> Stage 3 is already running in another session — not starting a second.
+>> Watch it with: tail -f ~/stage3.log
+```
+
+That distinction was added on 2026-07-31, when this handoff was corrected to the
+manual workflow. Before it, `flock -n` returned non-zero for BOTH "someone else
+holds the lock" and "stage 3 failed", so a diagnostic login during a perfectly
+healthy run printed `>> Stage 3 failed`. `flock -n -E 99` separates them: 99 is
+a lock conflict, anything else is a real failure.
 
 ## 5. Stage 4, at the machine
 
 Stage 4 needs a running Plasma session — it is a systemd user unit wanted by
-`plasma-workspace.target`, so it fires when you log in graphically **on the
-desktop itself**. It cannot be driven over SSH.
+`plasma-workspace.target`, so it fires when you log in graphically. Same place
+as everything else in this procedure: at the machine.
 
 ## Logs
 
@@ -128,8 +137,10 @@ desktop itself**. It cannot be driven over SSH.
 | 3 | `~/stage3.log` |
 | 4 | `~/stage4.log` |
 
-All four are written with `tee`, so they exist even when a stage dies. From the
-laptop, `ssh ulutoyon@<address> 'cat ~/stage3.log'` is enough to hand one over.
+All four are written with `tee`, so they exist even when a stage dies. **This is
+what the laptop's SSH session is for**: `ssh ulutoyon@<address> 'cat ~/stage3.log'`
+hands one over without touching the run. For stages 1 and 2 the same works as
+`root@<address>` against the ISO, provided `passwd` was set in step 2.
 
 ## If something goes wrong
 

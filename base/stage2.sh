@@ -141,8 +141,19 @@ cat > "/home/$USERNAME/.zprofile" << EOF
 if [[ ! -e "\$HOME/.local/state/phoinix/stage3.done" ]]; then
     mkdir -p "\$HOME/.local/state/phoinix"
     # flock, in case a second login (or an ssh session) arrives mid-run.
-    if flock -n "\$HOME/.local/state/phoinix/stage3.lock" \\
-             "$USER_REPO/base/stage3.sh" "$HOST"; then
+    # -E 99 separates the two ways this can fail: 99 means ANOTHER session
+    # holds the lock and stage 3 was never started here, anything else means
+    # stage 3 ran and failed. Without it a diagnostic ssh login opened while
+    # the console run is working would print "Stage 3 failed" at a perfectly
+    # healthy install — which is exactly the supervision setup ulu uses.
+    flock -n -E 99 "\$HOME/.local/state/phoinix/stage3.lock" \\
+          "$USER_REPO/base/stage3.sh" "$HOST"
+    rc=\$?
+    if [[ \$rc -eq 99 ]]; then
+        echo
+        echo ">> Stage 3 is already running in another session — not starting a second."
+        echo ">> Watch it with: tail -f ~/stage3.log"
+    elif [[ \$rc -eq 0 ]]; then
         echo
         echo "Stage 3 done. Rebooting into KDE — stage 4 runs at that login."
         for i in 10 9 8 7 6 5 4 3 2 1; do

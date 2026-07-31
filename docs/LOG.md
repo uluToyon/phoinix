@@ -2618,3 +2618,57 @@ of a moment. The live value was captured. Nine files in sync afterwards, exit 0.
 One bug of my own, caught by reading the output instead of trusting it: the
 summary line printed "0 drifted" while listing a drifted file, because it
 counted the wrong variable. A checker that miscounts is worse than no checker.
+
+## 2026-07-31 — The reinstall handoff, and a bug ulu's correction exposed
+
+ulu is about to run the installer on the real desktop. First he described the
+plan as driving it over SSH from the laptop, then corrected it: "wir werden die
+installation NICHT per ssh machen. ich werde alles händisch am desktop
+eintippen. der laptop wird nur per ssh verbunden um fehler zu diagnostizieren."
+
+That correction found a real defect. The `.zprofile` hook stage 2 writes ran
+
+    if flock -n "$HOME/.local/state/phoinix/stage3.lock" stage3.sh "$HOST"; then
+
+and `flock -n` returns non-zero for **two different things**: the lock is held by
+someone else, or the command ran and failed. The `else` branch said
+">> Stage 3 failed. Log: ~/stage3.log". So the exact setup ulu just described —
+stage 3 running from the console login, a diagnostic ssh session opened
+alongside it — would greet him with "Stage 3 failed" at a completely healthy
+install. He would then be debugging the message rather than the install.
+
+Fixed with `flock -n -E 99`, which sets the exit code used for a lock conflict.
+Verified rather than assumed, and the first attempt at verifying was wrong:
+`flock -n -E 99 "$T" command true` makes flock try to execute a program called
+`command`, so all three cases returned 69 ("failed to execute"). With real
+binaries the three are cleanly separable:
+
+    lock held by another    -> 99
+    lock free, command fails -> 1
+    lock free, command ok    -> 0
+
+The generated `.zprofile` was then syntax-checked with **zsh**, not bash — it is
+read by ulu's login shell, and `bash -n` would have been the wrong instrument.
+
+`docs/REINSTALL.md` is the handoff itself. The part worth keeping regardless of
+this particular run is section 0: stage 1 partitions the disk holding `/home`,
+and two things there are covered by nothing else. `~/.ssh/id_ed25519` is not in
+the repo and must never be. `~/.claude` holds the session transcripts, whose
+existing backup predated the last two sessions — and this repo has already had
+to mine those transcripts once, to recover why the soundbar runs at −26 dB.
+Both were copied to `/mnt/Downloads/rescue/` before the reboot.
+
+Also recorded there, because both would otherwise be discovered at the worst
+moment: archiso's root has no password and sshd refuses an empty one, so the
+diagnostic channel does not exist until `passwd` is typed at the machine; and a
+login as ulutoyon after stage 2 starts stage 3 on its own, console or ssh alike,
+because `.zprofile` fires on any login shell.
+
+Pre-flight checks before the run, all passing: target `nvme1n1` is a different
+device from all four data disks, `check-drift.sh` reports 10 in sync, and every
+restore source (xlcore backup, Steam shortcuts, DZGUI secrets, both WireGuard
+configs, the playlist, the KeePass database) exists and is current. The repo's
+`authorized_keys` differs from the live one only in the comment field — the
+sanitised `ulu@laptop` against what ssh-keygen wrote — while the key material
+hashes identically, so ssh access survives the reinstall. That check is now part
+of `check-drift.sh`, which had been blind to the file.
