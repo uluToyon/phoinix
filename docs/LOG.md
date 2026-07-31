@@ -2697,3 +2697,103 @@ Checked before switching, not after:
 One thing this buys beyond speed: the AUR provider prompt for mpc-qt (three
 providers, stage 3 waits on a keypress) disappears — the list now names the
 exact package.
+
+## 2026-07-31 — Run 1 dies at resolv.conf: the line that can never work in a chroot
+
+The first supervised run stopped right after the password prompt. Stage 2's
+`ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf` cannot succeed
+under arch-chroot: the chroot bind-mounts the ISO's /run wholesale AND its
+resolv.conf over the target's, so ln sees source and destination as one file
+and refuses — and a mountpoint cannot be unlinked anyway. `set -e` ended the
+stage there; everything after (services, bootctl, loader entries) was missing,
+which would have meant a system that boots into nothing.
+
+Two fixes were tried ON the machine before committing one. Reaching the real
+file through a second bind mount of `/` fails: the resolv.conf child mount
+comes along (mount propagation) and ln hits EBUSY all the same — and the
+aborted attempt left a stray mount that had to be cleaned by hand. The simple
+route works: `umount /etc/resolv.conf` first, then link. arch-chroot's
+teardown tolerates the missing mount (prints "not mounted", exits 0 —
+verified), and nothing after that point in stage 2 needs the network.
+
+Why QEMU's PASS never caught it: the line sits in the VPN block, and only the
+desktop declares a VPN. The E2E test exercised a path the real host never
+takes.
+
+## 2026-07-31 — Run 2 dies silently in the printer block: enable is not start
+
+Stage 3 stopped after the Steam line with no error at all — the log just
+ends. The printer section probes `lpinfo -v` before section 10 has enabled
+cups, and enable would not have helped: it is not start. Against a dead CUPS
+scheduler lpinfo exits non-zero; `pipefail` turns the probe pipeline into a
+fatal assignment, `set -e` ends the stage, and `2>/dev/null` swallows the
+only evidence. The old system never hit it (CUPS was already running when
+stage 3 ran there) and QEMU declares no printer.
+
+The block promised "loud, not fatal" and did the opposite. Fixed twice over:
+cups.service is started if inactive before the probe, and the probe carries
+`|| true` so a failing lpinfo lands in the existing warning path.
+
+Found because ulu asked whether the reboot needed to be manual — checking
+the answer exposed that the marker was missing and the log too short. A
+lock oddity from the same investigation, worth keeping: the .NET build
+daemons (MSBuild nodeReuse, VBCSCompiler) inherit stage 3's flock fd and
+outlive it by ~15 minutes, so a relogin inside that window reports "already
+running" against a stage that is long dead. pkill's -f pattern matching its
+own SSH command line is the second trap in that cleanup.
+
+## 2026-07-31 — Run 3 stops at the very last step: a reading tail holds /mnt
+
+Stages 1 and 2 perfect, and then `umount -R /mnt` fails "target is busy". The
+holder was the LAPTOP's diagnostic watcher: a `tail -F` on
+`/mnt/var/log/stage2.log`. Read access, one open file descriptor — enough.
+The supervision channel broke the run it was supervising, which is exactly
+what REINSTALL.md's "the laptop never drives" rule was written to prevent; it
+just never occurred to anyone that watching counts as driving.
+
+`umount -R` works depth-first, so the children (boot, home, the four data
+disks) were already unmounted; only /mnt itself was held. Verified before
+recovering: loader entries present on the ESP, resolv.conf symlink correct —
+stage 2 was complete, the run lacked literally only umount + reboot.
+
+Consequences: bootstrap retries the umount and, if still busy, prints
+`fuser -vm /mnt` and the two-command recovery instead of a bare error.
+REINSTALL.md now says: under /mnt, `cat`, never `tail -f` — the logs on the
+booted system (~/stage3.log, ~/stage4.log) are safe to tail because no
+unmount follows them.
+
+## 2026-07-31 — The identity leak, laptop edition
+
+The resolv.conf fix was committed on the laptop and went to GitHub with the
+real name. Repo-local user.name/user.email were set correctly and were
+OVERRIDDEN: the laptop's shell profile exports GIT_AUTHOR_NAME,
+GIT_AUTHOR_EMAIL, GIT_COMMITTER_NAME, GIT_COMMITTER_EMAIL — and environment
+beats every config level. This is a THIRD leak path next to the two the rule
+already knew (global config, hand-typed identity). Small mercy: the exported
+email carries a typo (missing @), so the real datum leaked was the name.
+
+Amended and force-pushed within ~2 minutes; the pushed history is clean
+(verified across all of origin/main). Residue: GitHub keeps orphaned commits
+reachable by hash for a while and recorded the push event. Last time the
+answer was re-creating the repository; whether ~2 minutes of a name (no
+valid email) warrants that again is ulu's call, still open. Also open: a
+durable guard on the laptop — until then, every laptop commit sets the four
+variables inline, which is exactly the kind of by-hand discipline that
+failed the last two times.
+
+## 2026-07-31 — Stage 4's icon positioning cannot work on a virgin install
+
+The one piece STATUS flagged as never script-verified failed its first real
+test, and the diagnosis is structural, not a typo: stage 4 finds the Folder
+View containment by `lastResolution`, and Plasma writes that key only once
+icons have been arranged by hand. On a fresh install there is nothing to
+find — verified live: four folder containments, zero lastResolution keys.
+The old system had the key because ulu had arranged icons there years ago.
+Re-running the installer can never fix this; the matcher has to change
+(`lastScreen` + activity is the candidate — stage 4 already resolves
+connector→screen for the panels).
+
+Everything else in stage 4's log succeeded: launchers, the 7 TV widgets,
+both side strips, Kickoff favourites, window rules, playlist import. ulu's
+"sieht schlecht aus" is not yet mapped to specifics — that question is asked
+and unanswered, and the next session starts there.

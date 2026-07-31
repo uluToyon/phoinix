@@ -1,13 +1,50 @@
 # STATUS
 
-_Last updated: 2026-07-31 (session 5 — keychron, the superproject question, the monitor switch)_
+_Last updated: 2026-07-31 late (session 6 — the first real run: three stoppers fixed, stage 4's icon bug caught)_
 
 ## Pick up here
 
-One decision is left, and nothing is queued ahead of it:
+**The next session runs on the desktop, in `~/phoinix` on the new install.
+`git pull` first** — the installer cloned the repo before this handoff was
+committed.
 
-**`fixes/`** — the curlable collection, parked by ulu on 2026-07-31 and
-described under "Later, with ulu".
+**The installer has rebuilt the desktop for real.** Run 3 went ISO → KDE
+without a single stop: stages 1–3 clean, each earlier stopper fixed the run
+before (LOG 2026-07-31: resolv.conf under arch-chroot, the CUPS probe,
+the umount holder). Stage 4 finished and did the big work (launchers, 7 TV
+widgets, both side panels, Kickoff favourites, window rules, playlist), but
+left two warnings:
+
+1. **Desktop icons were NOT positioned — cause found, fix NOT built yet.**
+   Stage 4 finds the Folder View containment via `lastResolution`, but Plasma
+   writes that key only after icons have been arranged by hand at least once.
+   On a virgin install it does not exist — verified on the live system: four
+   folder containments, zero `lastResolution` keys. **Another full reinstall
+   hits the same wall by construction.** Fix direction: match the containment
+   by `lastScreen` (+ activity) instead; stage 4 already maps connectors to
+   screen numbers for the panels.
+2. **Places order skipped** — `user-places.xbel` exists only after Dolphin
+   has run once. Open Dolphin, delete stage 4's marker, re-run. Known, benign.
+
+**OPEN QUESTION to ulu, asked and not yet answered:** he reported stage 4
+"sieht schlecht aus" — whether that means only the unpositioned icons or more
+than the log admits is unknown. Ask before fixing.
+
+**The post-install manual list has not been started** — see "Post-install
+manual steps" below (Steam first: login → library → delete steam.desktop →
+stage-3 re-run; mpc-qt once + re-run; Strawberry folder; Brave sync;
+KDE Connect; pCloud login; printer test page).
+
+**Identity leak on the laptop, contained, follow-ups open** (LOG
+2026-07-31): the laptop's shell profile exports `GIT_AUTHOR_NAME` etc. with
+the real name, which OVERRIDES the repo-local identity. One commit was public
+with it for ~2 minutes before amend + force-push. Open: whether GitHub's
+retention of the orphaned commit warrants the same response as last time
+(repo re-created), and a durable guard for laptop commits — until then every
+commit from the laptop needs the env override by hand.
+
+Also still queued: **`fixes/`** — the curlable collection, parked by ulu on
+2026-07-31 and described under "Later, with ulu".
 
 **chezmoi is decided: rejected (2026-07-31).** Its one remaining rationale was
 templating across machines, and ulu settled that — the laptop will never run
