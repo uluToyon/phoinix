@@ -89,10 +89,15 @@ for entry in "${MONITOR_SWITCH[@]}"; do
     else
         value="${rest%%:*}"
     fi
-    if ddcutil --model "$model" setvcp 60 "$value" >/dev/null 2>&1; then
+    # stderr is CAPTURED, not discarded. An earlier version had
+    # `>/dev/null 2>&1` here, and on the one day something looked wrong that
+    # line was the reason there was nothing to look at. ddcutil verifies by
+    # default (`--verify` is its default, `--noverify` turns it off), so a
+    # non-zero exit here means the value genuinely did not stick.
+    if err="$(ddcutil --model "$model" setvcp 60 "$value" 2>&1)"; then
         echo "  $model -> $value"
     else
-        echo "  WARNING: $model did not accept $value — not connected?"
+        echo "  WARNING: $model did not accept $value: ${err:-no output from ddcutil}"
         failed=$((failed + 1))
     fi
 done

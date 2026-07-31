@@ -2448,3 +2448,45 @@ became `DESKTOP_ICONS=("<basename>.desktop:col,row" …)`. Two findings there:
 - The icon cell was going to be my invention (1,2) until his running config was
   read: he had put it at 4,3. Captured reality beats an authored guess, so 4,3
   it is.
+
+## 2026-07-31 — Correction: the monitor switch worked on the first run
+
+The entry above ends with the toggle verified only through a shimmed `ddcutil`.
+It was then run for real, and I reported it as having done nothing: the Acer
+still answered 0x0f, every connector was still `connected`, every display still
+answered over DDC. On that basis I called it "wirkungslos verpufft" and started
+taking it apart.
+
+Wrong. ulu: "alle 3 monitore hatten sauber umgeschaltet." All three switched,
+he saw it happen, and he had already sent them back from the laptop before I
+took my reading. I measured a state he had since changed and reported the
+difference as a defect.
+
+**Third time today.** The soundbar was measured with the dongle switched off,
+the Keychron ACL was read before `udevadm trigger` had processed its queue, and
+this was read after ulu had undone it. Same shape every time: a measurement
+whose CONDITION was not established, reported as a finding. The rule that comes
+out of it is not "measure again" but: before reporting that something did not
+work, state what the condition was at the moment of measuring — and if a human
+is operating the same hardware, the condition includes what they just did.
+
+The damage was self-inflicted and small: the exploratory `setvcp` calls left the
+Acer sitting on HDMI-1 until ulu put it back. Nothing else was touched.
+
+Two things changed as a result:
+
+- `scripts/monitor-switch.sh` no longer writes `setvcp … >/dev/null 2>&1`.
+  stderr is captured and printed when the call fails. That redirect is what had
+  made the run silent in the first place, and it is the same mistake as the
+  `getfacl … 2>/dev/null | grep` in the Keychron handover a few hours earlier.
+  Worth knowing while reading that code: ddcutil VERIFIES by default (`--verify`
+  is the default, `--noverify` disables it), so a non-zero exit really does mean
+  the value did not stick.
+- `SwitchToLaptop.sh` is gone, from the desktop and from the data disk. Its
+  three values live on in `MONITOR_SWITCH` in the host config, which is now the
+  only place they exist.
+
+Left alone deliberately: Plasma's `positions` still names `desktop:/SwitchToLaptop.sh`
+for this resolution. Rewriting it means stopping and starting plasmashell in the
+middle of ulu's session, and stage 4 writes the whole list correctly on the next
+run anyway.
