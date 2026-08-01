@@ -189,6 +189,8 @@ selection, not guessed.
 | Strawberry | `~/.config/autostart/…strawberry.desktop` | — | starts at login | dec |
 | Strawberry | `strawberry.conf` | `Backend/channels_enabled` | `true` | dec |
 | Strawberry | `strawberry.conf` | `Backend/channels` | `6` — stereo→5.1 **in the player only** | dec |
+| Strawberry | `strawberry.conf` | `PlaylistSequence/shuffle_mode`, `repeat_mode` | `1` (shuffle all), `3` (repeat playlist) | dec |
+| Strawberry | `strawberry.conf` | `MainWindow/do_not_show_sponsor_message` | `true` — otherwise shown on **every** start | dec |
 | KeePassXC | `~/.config/autostart/…KeePassXC.desktop` | — | starts at login, **visible**, not minimised to tray | dec |
 | KeePassXC | `keepassxc.ini` | `Browser/Enabled` | `true` | dec |
 | KeePassXC | `keepassxc.ini` | `GUI/ApplicationTheme` | `dark` | dec |
@@ -205,6 +207,15 @@ keys only; `[KeeShare]` is never touched.
 path lives in `~/.cache`, so a fresh install has nothing to preselect whatever
 the settings say. Stage 3 writes it only when `LastDatabases` is absent, so a
 database opened later survives a re-run.
+
+**`strawberry.conf` is written with `qs_set`, never `kwriteconfig6`.** It is a
+QSettings file like qBittorrent's, and it carries both classes of value that
+KConfig destroys: `@ByteArray` window geometry and nineteen equalizer presets
+keyed `presets\N\name`. One `kwriteconfig6` call on the live system produced 38
+lines of doubled-backslash junk beside the originals and re-encoded the
+geometry blob (2026-08-01). A fresh install hides this — there is no file yet
+to corrupt — so it only ever surfaces on a re-run, which the Steam step makes a
+routine part of the workflow.
 
 **`strawberry.conf` is never captured whole.** It holds a plain-text OAuth
 access token for a streaming service. Only individual keys are written, so the
@@ -395,12 +406,17 @@ launch. If the tunnel is down, qBittorrent simply has no route out.
 
 ## qBittorrent (stages 3 and 4)
 
-Written with a **line-oriented INI writer, never `kwriteconfig6`**: this file is
-Qt's QSettings format, where the backslash in `Session\Interface` is a group
-separator written as one character. KConfig escapes it and rewrites the whole
-file, so it doubled every backslash — including qBittorrent's own keys — and
-qBittorrent then read none of them. The file also holds `@ByteArray` window
-geometry that a full-file rewriter would re-encode.
+Written with **`qs_set`, the shared line-oriented INI writer, never
+`kwriteconfig6`**: this file is Qt's QSettings format, where the backslash in
+`Session\Interface` is a group separator written as one character. KConfig
+escapes it and rewrites the whole file, so it doubled every backslash —
+including qBittorrent's own keys — and qBittorrent then read none of them. The
+file also holds `@ByteArray` window geometry that a full-file rewriter would
+re-encode.
+
+`qs_set` sits at the top of `stage3.sh` rather than inside this section,
+because the same mistake was made a second time on `strawberry.conf` while the
+fix was local to qBittorrent (2026-08-01). Any QSettings file goes through it.
 
 | Setting | Value | Origin |
 |---|---|---|

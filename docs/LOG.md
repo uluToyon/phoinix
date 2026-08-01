@@ -3145,3 +3145,63 @@ MPRIS was considered as the readiness signal and **rejected by measurement**:
 `org.mpris.MediaPlayer2.strawberry` appears 0.1 s after launch — it is a real
 name (gone while Strawberry is stopped), but it would report "ready" long
 before anything else is, i.e. it would look like a fix and change nothing.
+
+## 2026-08-01 — The sponsoring dialog, and the writer that was still wrong
+
+ulu asked whether Strawberry's sponsoring message can be switched off for good.
+It can, and finding the setting turned up a much bigger problem on the way.
+
+**The setting.** The key name is in the binary — `do_not_show_sponsor_message`
+— but not its group, because Strawberry only writes the value once the
+checkbox in the dialog is ticked, so a pristine run does not reveal it (the
+technique that worked for round 3 came up empty here). Determined by
+experiment against a throwaway config instead: set the key in four candidate
+groups at once, dialog gone; then one group at a time. Only **`[MainWindow]`**
+suppresses it; `[General]`, `[Settings]` and `[Sponsor]` leave it standing. The
+counter-test is the point — without it we would have shipped three keys that do
+nothing and never noticed.
+
+Also worth recording: it is not a *first start* dialog. Strawberry shows it on
+EVERY start until the box is ticked.
+
+**The problem, found while verifying.** Writing that key with `kwriteconfig6`
+on the live `strawberry.conf` corrupted the file:
+
+```
+before:  geometry=@ByteArray(\x1\xd9\0\x3)     presets\1\name=Classical
+after:   geometry=@ByteArray(xxd9\\d9\\0\\x3)  presets\\1\\name=Classical
+```
+
+38 lines of doubled-backslash junk beside the originals, and the geometry blob
+re-encoded into nonsense. This is the qBittorrent lesson from 2026-07-31,
+verbatim, on a file we had explicitly cleared: round 3 verified `kwriteconfig6`
+as byte-identical on `strawberry.conf` — and that verification was sound, it
+was just done on a file that did not yet contain a single backslash key or
+`@ByteArray` value. **A fresh install cannot show this bug.** Only a re-run
+can, and the Steam step in STATUS.md makes a re-run routine.
+
+**Why the fix is not local this time.** `qbt_set` was defined inside the
+qBittorrent block, so the knowledge was inside it too, and the same mistake was
+made again three weeks later. It is now `qs_set` at the top of `stage3.sh`,
+taking the file as its first argument; `qbt_set` is a one-line wrapper so the
+fifteen qBittorrent call sites stay readable, and Strawberry's five keys go
+through the same writer. One implementation, one place to fix.
+
+`qs_set` also ends with `cat "$tmp" > "$file"` rather than `mv`, which keeps
+the destination's inode, mode and owner — a config that is user-readable only
+stays that way without a chmod after every call.
+
+Verified in three steps: the writer against a fixture holding both value
+classes (only the intended line changes), then against the live file (only the
+restored `[PlaylistSequence]` appears in the diff, permissions unchanged), then
+across a full Strawberry start/quit cycle — 0 doubled-backslash lines, 38
+presets intact, all five keys present, sponsoring dialog gone.
+
+**One loose end, deliberately not written up as solved.** `[PlaylistSequence]`
+— ulu's shuffle and repeat modes — had disappeared from the live config
+somewhere between 12:31 and the cleanup. The corrupting write sits inside that
+window, and a clean file survives a start/quit cycle intact, so the chain
+"corrupt file → Strawberry drops what it cannot parse → rewrites without it" is
+consistent with everything observed. It is not proven, several Strawberry
+restarts sit in the same window, and it is recorded as unattributed rather than
+guessed at. The values are back.

@@ -239,10 +239,15 @@ that need a running shell go into `base/stage4.sh` (see DESIGN.md).
 
 **How a setting is recorded (decided 2026-07-31):** deliberate decisions are
 written key by key with `kwriteconfig6` in stage 3, each with its reason in a
-comment. **Exception, learned on qBittorrent:** `kwriteconfig6` only suits
-KConfig files. On a Qt/QSettings file it escapes the backslash that acts as a
-group separator, rewrites the whole file, and produces settings the application
-never reads. Such files get a line-oriented writer instead (`qbt_set`). Whole-file capture into `hosts/<host>/home/` is reserved for what
+comment. **Exception, learned on qBittorrent and then AGAIN on Strawberry:**
+`kwriteconfig6` only suits KConfig files. On a Qt/QSettings file it escapes the
+backslash that acts as a group separator, rewrites the whole file, and produces
+settings the application never reads — plus it re-encodes every `@ByteArray`
+value into garbage. Such files go through **`qs_set`**, the shared
+line-oriented writer at the top of `stage3.sh` (2026-08-01; it used to be
+`qbt_set`, local to the qBittorrent block, which is exactly why the mistake got
+made a second time). **A fresh install cannot expose this bug** — there is no
+file yet to corrupt — so it only ever appears on a re-run. Whole-file capture into `hosts/<host>/home/` is reserved for what
 cannot sensibly be authored by hand — `kwinoutputconfig.json`, the wireplumber
 state, `p10k.zsh`. For a click-through round: snapshot `~/.config`, let ulu
 change things, then diff.

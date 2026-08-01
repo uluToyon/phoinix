@@ -33,6 +33,51 @@ trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null' EXIT
 
 read_list() { grep -hvE '^\s*(#|$)' "$@" | awk '{print $1}'; }
 
+# Writer for Qt/QSettings .conf files — NEVER use kwriteconfig6 on one.
+#
+# kwriteconfig6 suits KConfig files only. On a QSettings file it parses the
+# whole thing as KConfig and writes it back, which does three things at once:
+# it reorders the groups, it re-escapes every `@ByteArray(…)`/`@Variant(…)`
+# value into garbage, and it doubles the backslash that QSettings uses as a
+# group separator — turning `presets\1\name` into `presets\\1\\name`, a key
+# the application never reads again.
+#
+# Learned first on qBittorrent (LOG 2026-07-31) and then AGAIN on Strawberry
+# (LOG 2026-08-01), where it destroyed 19 equalizer presets and the saved
+# window geometry in one call. The Strawberry case is the reason this lives
+# here instead of inside one application's block: the same mistake was made
+# twice because the fix was local to the first one.
+#
+# Fresh installs hide it — a file that does not exist yet has nothing to
+# corrupt — so the damage only ever shows on a RE-RUN, which is a documented
+# part of the workflow (the Steam step in STATUS.md).
+#
+# Line-oriented on purpose: it touches exactly the one line it owns and leaves
+# every byte it does not understand alone.
+qs_set() {   # $1 = file, $2 = section, $3 = key, $4 = value
+    local file="$1" tmp
+    [[ -f "$file" ]] || install -Dm600 /dev/null "$file"
+    tmp="$(mktemp)"
+    QS_SEC="$2" QS_KEY="$3" QS_VAL="$4" awk '
+        BEGIN { want = "[" ENVIRON["QS_SEC"] "]"; key = ENVIRON["QS_KEY"];
+                val = ENVIRON["QS_VAL"]; done = 0; incur = 0 }
+        /^\[/ {
+            if (incur && !done) { print key "=" val; done = 1 }
+            incur = ($0 == want)
+        }
+        incur && index($0, key "=") == 1 { if (!done) { print key "=" val; done = 1 } next }
+        { print }
+        END {
+            if (incur && !done) { print key "=" val; done = 1 }
+            if (!done) { print ""; print want; print key "=" val }
+        }
+    ' "$file" > "$tmp"
+    # `cat >` rather than `mv`: it keeps the destination's inode, mode and
+    # owner, so a config that is user-readable only stays that way.
+    cat "$tmp" > "$file"
+    rm -f "$tmp"
+}
+
 # ------------------------------------------------- 0. commit identity
 # Early, before anything can fail: this is the one setting whose absence is a
 # privacy incident rather than an inconvenience.
@@ -350,30 +395,53 @@ install -Dm644 /usr/share/applications/org.keepassxc.KeePassXC.desktop \
 install -Dm644 /usr/share/applications/discord.desktop \
                "$HOME/.config/autostart/discord.desktop"
 
+# strawberry.conf is a QSettings file, so qs_set — NOT kwriteconfig6. It holds
+# @ByteArray window geometry and nineteen equalizer presets keyed
+# `presets\N\name`, and kwriteconfig6 destroys both in a single call: measured
+# 2026-08-01 on the live system, where it left 38 lines of doubled-backslash
+# junk the application never reads again (LOG 2026-08-01).
+#
+# Whole-file capture is out for a second, independent reason: this file also
+# holds a plain-text OAuth access token for a streaming service, which has no
+# business in a public repo. Individual keys keep it away from one.
+SB_CONF="$HOME/.config/strawberry/strawberry.conf"
+
+# A running Strawberry writes the whole file on exit, so anything written
+# underneath it is discarded without a word — the same trap qBittorrent taught
+# us. On a fresh install it is not running; on a re-run it very well may be.
+if pgrep -x strawberry >/dev/null; then
+    echo "WARNING: Strawberry is running — it will overwrite these settings on exit."
+    echo "         Quit it and re-run stage 3."
+fi
+
 # The stereo -> 5.1 upmix, and the reason Strawberry is in the package set at
 # all: it happens INSIDE the player and must never be done system-wide (ulu's
 # hard requirement, docs/LOG.md 2026-07-30). Strawberry's own default is
 # channels_enabled=false, so both keys together are the whole setting.
-# Written key by key rather than by capturing strawberry.conf, which also
-# happens to hold an OAuth access token for a streaming service — that file
-# has no business in a public repo, and this way it never gets near one.
-kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
-    --group Backend --key channels_enabled true
-kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
-    --group Backend --key channels 6
+qs_set "$SB_CONF" Backend channels_enabled true
+qs_set "$SB_CONF" Backend channels 6
 
 # Playback mode: shuffle everything, repeat the whole playlist. Both are enums
 # compiled into Strawberry; the values are confirmed against what ulu selected
 # in the GUI, not guessed — shuffle_mode 1 = "Shuffle all",
-# repeat_mode 3 = "Repeat playlist". Unlike the rest of strawberry.conf this
-# section is written immediately rather than on exit.
-kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
-    --group PlaylistSequence --key shuffle_mode 1
-kwriteconfig6 --file "$HOME/.config/strawberry/strawberry.conf" \
-    --group PlaylistSequence --key repeat_mode 3
-# Strawberry keeps its config user-readable only; kwriteconfig6 creates a fresh
-# file with default permissions when none exists yet.
-chmod 600 "$HOME/.config/strawberry/strawberry.conf"
+# repeat_mode 3 = "Repeat playlist".
+qs_set "$SB_CONF" PlaylistSequence shuffle_mode 1
+qs_set "$SB_CONF" PlaylistSequence repeat_mode 3
+
+# The sponsoring message, off before it is ever seen. Strawberry shows it on
+# EVERY start until the checkbox in it is ticked, so on a fresh install it
+# greets the first login and keeps coming back. The key name is in the binary
+# (`do_not_show_sponsor_message`) but its group is not — the value is only
+# written once the box is ticked, so a pristine run does not reveal it. Found
+# by experiment against a throwaway config, with a counter-test: only
+# [MainWindow] suppresses the dialog; [General], [Settings] and [Sponsor] leave
+# it standing (LOG 2026-08-01).
+qs_set "$SB_CONF" MainWindow do_not_show_sponsor_message true
+
+# Strawberry keeps its config user-readable only. qs_set preserves the mode of
+# an existing file and creates a missing one as 600, so this only matters for
+# a file some earlier run left more permissive.
+chmod 600 "$SB_CONF"
 
 # --- KeePassXC -------------------------------------------------------------
 # NEVER capture keepassxc.ini as a whole: KeePassXC generates a KeeShare RSA
@@ -566,20 +634,19 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
     fi
 
     # --- qBittorrent -------------------------------------------------------
-    # NOT kwriteconfig6. qBittorrent.conf is Qt's QSettings format, where the
-    # backslash in `Session\Interface` is a group separator written as ONE
-    # character. KConfig treats a backslash as an escape and doubles it on
-    # save — and because it rewrites the whole file, it doubled qBittorrent's
-    # OWN keys too. The result looked plausible and was inert: qBittorrent
-    # never saw a single setting we wrote, the WebUI was never enabled, and
-    # the interface was never bound. Discovered only when qBittorrent rewrote
-    # the file itself and every backslash came back single.
+    # NOT kwriteconfig6, hence qs_set (defined at the top of this script).
+    # qBittorrent.conf is Qt's QSettings format, where the backslash in
+    # `Session\Interface` is a group separator written as ONE character.
+    # KConfig treats a backslash as an escape and doubles it on save — and
+    # because it rewrites the whole file, it doubled qBittorrent's OWN keys
+    # too. The result looked plausible and was inert: qBittorrent never saw a
+    # single setting we wrote, the WebUI was never enabled, and the interface
+    # was never bound. Discovered only when qBittorrent rewrote the file itself
+    # and every backslash came back single.
     #
-    # So the writer below edits the file line by line and touches nothing
-    # else. That matters beyond the escaping: this file also holds @ByteArray
-    # blobs of window geometry, which any full-file rewriter would re-encode.
+    # This file also holds @ByteArray blobs of window geometry, which any
+    # full-file rewriter would re-encode.
     QBT_CONF="$HOME/.config/qBittorrent/qBittorrent.conf"
-    [[ -f "$QBT_CONF" ]] || install -Dm600 /dev/null "$QBT_CONF"
 
     # A running qBittorrent holds its settings in memory and writes the whole
     # file when it exits, so anything written underneath it is discarded
@@ -591,25 +658,9 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
         echo "         Quit it (File > Exit, not just the window) and re-run stage 3."
     fi
 
-    qbt_set() {   # $1 = section, $2 = key, $3 = value
-        local tmp; tmp="$(mktemp)"
-        QBT_SEC="$1" QBT_KEY="$2" QBT_VAL="$3" awk '
-            BEGIN { want = "[" ENVIRON["QBT_SEC"] "]"; key = ENVIRON["QBT_KEY"];
-                    val = ENVIRON["QBT_VAL"]; done = 0; incur = 0 }
-            /^\[/ {
-                if (incur && !done) { print key "=" val; done = 1 }
-                incur = ($0 == want)
-            }
-            incur && index($0, key "=") == 1 { if (!done) { print key "=" val; done = 1 } next }
-            { print }
-            END {
-                if (incur && !done) { print key "=" val; done = 1 }
-                if (!done) { print ""; print want; print key "=" val }
-            }
-        ' "$QBT_CONF" > "$tmp"
-        mv "$tmp" "$QBT_CONF"
-        chmod 600 "$QBT_CONF"
-    }
+    # A thin wrapper, so the call sites below stay readable and the writer
+    # itself has exactly one definition in this script.
+    qbt_set() { qs_set "$QBT_CONF" "$1" "$2" "$3"; }
 
     # Bind to the tunnel. The FIRST of two lines, never the guarantee: it makes
     # qBittorrent behave correctly, while the nftables rule makes it unable to
