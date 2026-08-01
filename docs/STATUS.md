@@ -339,9 +339,17 @@ this topology — until proven, the cap stays.
 
 ## Post-install manual steps (not scriptable)
 
-- Strawberry: add the music folder to the collection by hand. The path lives in
-  Strawberry's database, not its config, and that database is state (absolute
-  paths, rebuilt by a rescan) — so it is deliberately not scripted.
+- **Strawberry: add the music folder to the collection by hand** —
+  Settings → Collection → Add → `/mnt/FilesMusic/Musik`. **An empty collection
+  looks exactly like a working one**, which is how it was missed on 2026-08-01:
+  the imported playlist plays fine without any collection at all, because
+  playlist entries carry their own paths. Check the Collection view, not the
+  playlist. Verify from the database if in doubt:
+  `sqlite3 ~/.local/share/strawberry/strawberry/strawberry.db "SELECT count(*) FROM songs;"`
+  Deliberately not scripted, **re-decided 2026-08-01 with the scripted version
+  fully designed** (one row in `directories`, `schema_version` guard, rescan
+  verified like the playlist import): ulu chose to keep it manual rather than
+  have phoinix write into a database another application owns. See `LOG.md`.
   (Done on this machine 2026-07-31: `/mnt/FilesMusic/Musik`, 55 559 tracks.)
 - ~~Strawberry: re-save the playlist after adding tracks.~~ **Automated
   2026-07-31.** `scripts/strawberry-playlist-export.sh` rewrites

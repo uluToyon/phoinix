@@ -3205,3 +3205,33 @@ window, and a clean file survives a start/quit cycle intact, so the chain
 consistent with everything observed. It is not proven, several Strawberry
 restarts sit in the same window, and it is recorded as unattributed rather than
 guessed at. The values are back.
+
+## 2026-08-01 — The collection stays manual, decided again on better grounds
+
+The second half of ulu's report: no library. Confirmed by measurement rather
+than by looking at the window — `directories: 0, songs: 0, subdirectories: 0`,
+`[Collection]` in `strawberry.conf` holding grouping options and no path, and
+no scan in progress. What ulu was seeing is the **playlist**, whose 160 entries
+carry their own file paths and play perfectly well without a collection. That
+is the trap this step sets: an empty collection looks like a working one.
+
+**No interface exists.** Checked before discussing anything: Strawberry's D-Bus
+surface is MPRIS only (playback, playlists, tracklist), and its CLI has no
+option for the collection or a rescan. The only scriptable route is a row in
+`directories(path TEXT, subdirs INTEGER)` inside `strawberry.db`.
+
+**The old rationale was partly wrong, and that is why this was reopened.** It
+read: the path lives in the database, and the database is state rebuilt by a
+rescan. The first half is true; the second conflates two things. The *scan
+result* is state — 55 559 song rows, nothing that belongs in a repo. The
+*directory row* is not state, it is one decision written as one row, and the
+scan result is precisely what we would want rebuilt.
+
+**ulu's call: it stays manual.** So the trade was put honestly and he took the
+other side of it — writing into a database another application owns is a class
+this repo has avoided, and one directory added by hand every few years is a
+smaller price than the first script in phoinix that edits foreign state, even
+with a `schema_version` guard (23 today) to turn an upstream change into a
+message instead of corruption. Recorded so the reasoning survives, not just the
+outcome: the scripted version was designed, costed, and declined — do not
+rebuild it without being asked.
