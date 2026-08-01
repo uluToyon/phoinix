@@ -325,6 +325,15 @@ else
 fi
 
 # Strawberry: opens at the origin of its configured monitor.
+#
+# The two maximize keys are not decoration — without them the size rule is
+# silently defeated on a FRESH install (measured 2026-08-01, first start after
+# the scripted reinstall): Strawberry comes up maximized when it has no saved
+# geometry, so "Apply Initially" sets 1920x2105 at map time and the maximized
+# state then covers the whole monitor. It does not heal itself either — on exit
+# Strawberry saves `maximized`, so every later start reproduces it until the
+# window is resized by hand. "Apply Initially" here too: the window merely
+# STARTS unmaximized, and the maximize button keeps working.
 strawberry_geom="$(connector_geometry "$STRAWBERRY_CONNECTOR")"
 IFS=, read -r sx sy _ _ <<< "$strawberry_geom"
 if [[ "$sx" == "-1" ]]; then
@@ -333,7 +342,9 @@ if [[ "$sx" == "-1" ]]; then
         "Description=Application settings for org.strawberrymusicplayer.strawberry" \
         "wmclass=strawberry org.strawberrymusicplayer.strawberry" \
         "wmclasscomplete=true" "wmclassmatch=1" \
-        "size=$STRAWBERRY_SIZE" "sizerule=3"
+        "size=$STRAWBERRY_SIZE" "sizerule=3" \
+        "maximizehoriz=false" "maximizehorizrule=3" \
+        "maximizevert=false" "maximizevertrule=3"
 else
     echo "window rules: Strawberry -> $STRAWBERRY_CONNECTOR origin $sx,$sy"
     rule_set "75ed2684-49b4-4641-b015-894da96da0c8" \
@@ -341,7 +352,9 @@ else
         "wmclass=strawberry org.strawberrymusicplayer.strawberry" \
         "wmclasscomplete=true" "wmclassmatch=1" \
         "position=$sx,$sy" "positionrule=3" \
-        "size=$STRAWBERRY_SIZE" "sizerule=3"
+        "size=$STRAWBERRY_SIZE" "sizerule=3" \
+        "maximizehoriz=false" "maximizehorizrule=3" \
+        "maximizevert=false" "maximizevertrule=3"
 fi
 
 # qBittorrent: shares DP-2 with Strawberry, which takes the left half — so

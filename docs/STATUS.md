@@ -52,10 +52,18 @@ That is exactly what tomorrow's run measures.
    2026-08-01). If the keypad is dead at the login screen, check that
    `/var/lib/plasmalogin/.config/kcminputrc` exists and belongs to
    `plasmalogin`.
-9. **Watch Strawberry's first start** — see the parked KWin-script item under
-   "Still open". This is the one chance to see the dialog case live: ulu saw
-   the main window at full monitor width while the "first start" message took
-   the rule's 1920. Decide the parked fix with that on screen.
+9. ~~**Watch Strawberry's first start.**~~ **DONE 2026-08-01, and the cause was
+   one step deeper than the parked diagnosis.** The main window was not
+   oversized, it was **maximized** — 3840x2105 is exactly DP-2's maximize area
+   — because Strawberry starts maximized without a saved geometry. The rule
+   fired correctly on both windows; the maximizing simply came after it. Fixed
+   declaratively (ulu's call): `maximizehoriz`/`maximizevert=false`, Apply
+   Initially, in stage 4's Strawberry rule. Verified against a saved
+   `maximized=true`, i.e. the harder case. **The parked KWin script was NOT
+   built** and is now more expensive than it looked, because it would have had
+   to demaximize as well. The dialog case reproduced exactly as session 7
+   described it (`transient=true` is still the only discriminator) and stays
+   parked. See `LOG.md` 2026-08-01.
 
 ### After the run — manual steps, unchanged
 

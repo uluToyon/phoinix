@@ -256,7 +256,7 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Places sidebar order | `PLACES_ORDER` labels, resolved at runtime | dec |
 | Window rule: Dolphin | size `1295,839`, Apply Initially | dec |
 | Window rule: Konsole | origin of `KONSOLE_CONNECTOR`, size `1440,1262` | dec |
-| Window rule: Strawberry | origin of `STRAWBERRY_CONNECTOR`, size `1920,2105` | dec |
+| Window rule: Strawberry | origin of `STRAWBERRY_CONNECTOR`, size `1920,2105`, **starts unmaximized** | dec |
 | Window rule: KeePassXC | `KEEPASSXC_CONNECTOR` + `KEEPASSXC_OFFSET`, size `1920,1053` — below qBittorrent | dec |
 | Window rule: FFXIV | origin **and size** of `FFXIV_CONNECTOR`; matched on class **plus title** | dec |
 | Strawberry playlist | `PLAYLIST_FILE` imported as `PLAYLIST_NAME`, **Strawberry started first if needed**, result verified in the database | dec |
@@ -271,6 +271,17 @@ elsewhere once a screen moves, so the repo stores a connector name and the
 origin is computed at runtime. Rule ids are fixed UUIDs authored here, so
 re-runs update rules instead of appending duplicates, and
 `org.kde.KWin.reconfigure()` makes them apply without waiting for a re-login.
+
+**Strawberry's rule carries two maximize keys, and a size rule alone is not
+enough without them.** Measured on the first start after the scripted reinstall
+(2026-08-01): Strawberry comes up **maximized** when it has no saved geometry,
+so the "Apply Initially" size lands at map time and the maximized state then
+covers the whole monitor — 3840x2105, the exact maximize area of DP-2. It does
+not heal itself: on exit Strawberry writes `maximized=true` into
+`strawberry.conf`, so every later start repeats it until the window is resized
+by hand. `maximizehoriz`/`maximizevert=false`, also Apply Initially, fix the
+start state while leaving the maximize button working. Verified in the harder
+case — the rule wins even against a saved `maximized=true`.
 
 **FFXIV is the one rule that does not match on window class alone.** umu/Proton
 gives every non-Steam title it launches the same `WM_CLASS`,

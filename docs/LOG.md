@@ -3034,3 +3034,52 @@ ownership on a machine where an earlier run already made it root's.
 Not verified live, deliberately: proving it would mean restarting the greeter,
 i.e. logging out, and the fresh install ulu is about to run is the better test.
 It is on the verification list in `STATUS.md`.
+
+## 2026-08-01 — Session 9: the reinstall ran, and Strawberry's size finally has a cause
+
+First session on the machine the scripts rebuilt from scratch. ulu's opening
+report — "Strawberry's size is definitely wrong" — landed on the one item
+STATUS had reserved for exactly this moment: the parked KWin-script fix, to be
+decided with the case on screen rather than from memory. Measured before he
+touched a single window, which is why it is worth anything.
+
+**What the measurement showed, and it corrects the parked diagnosis:**
+
+```
+main window:      0,804  3840x2105   transient=false
+"Sponsoring…":    0,804  1920x2105   transient=true
+```
+
+The dialog carries the rule character-for-character. The main window is not
+"too wide" — it is **maximized**: 3840x2105 is exactly DP-2's maximize area
+(3840x2160 minus the 55 px panel). Not a coincidental number.
+
+So the mirror-image symptom recorded in session 7 was read one step short. The
+rule fires on both windows; the main window then maximizes itself over it,
+because Strawberry starts maximized when it has no saved geometry — and
+`strawberry.conf` confirmed the precondition: neither `geometry` nor
+`maximized` existed on the fresh install.
+
+**And it does not heal itself**, which is the part that changes the decision.
+The session-7 note ("corrects itself once Strawberry has saved its own
+geometry") is only true if the window is resized by hand first. Left alone,
+Strawberry saves `maximized=true` on exit and every later start reproduces it.
+A one-time cosmetic flaw would not have been worth code; a permanent one is.
+
+**ulu's call: the declarative fix, not the parked script.**
+`maximizehoriz=false` / `maximizevert=false`, both Apply Initially, added to
+the existing Strawberry rule in stage 4. Two keys instead of a resident KWin
+script with its own `metadata.json`, and it addresses the cause that was
+actually measured. The script would additionally have had to demaximize, so
+this session made it *more* expensive rather than less.
+
+Verified in the harder case on purpose: Strawberry was quit first, so it wrote
+`maximized=true` into its config, and only then restarted. It came up at
+`0,804 1920x2105`. The rule beats a saved maximized state, so the fresh-install
+case is covered a fortiori.
+
+**Unchanged and still parked: the dialog.** "Sponsoring Strawberry" still opens
+at 1920 wide, and KWin still does not consider it a dialog
+(`dialog=false, normal=true, transient=true`) — the `transient` finding from
+session 7 reproduces exactly on the new system. ulu's 2026-07-31 decision to
+accept parent-sized dialogs stands; nothing here reopens it.
