@@ -127,7 +127,7 @@ Packages, `paru` (built from source), DZGUI, then:
 | `.config/kwinrc` | see table below | old |
 | `.config/kdeglobals` | see table below | old |
 | `.config/pipewire/pipewire.conf.d/10-clock.conf` | graph pinned to 48 kHz | old |
-| `.local/state/wireplumber/*` | 5.1 profile pin, the −26 dB route fix | old |
+| `.local/state/wireplumber/*` | 5.1 profile pin, the −26 dB route volume. **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
 | `.zshrc`, `.p10k.zsh` | zinit bootstrap, 9 plugins, tuned prompt | old |
 
 The greeter gets its own copy of `kwinoutputconfig.json` — without it the first
@@ -387,7 +387,8 @@ application. Rationale in `LOG.md` 2026-07-31.
 | `VPN_CONFIG_DIR` | `$PHOINIX_DATA/vpn` — WireGuard configs, **never in the repo** (each carries a PrivateKey, which for Proton *is* the credential) | dec |
 | `VPN_INTERFACE` | `proton0` — authored, not discovered. Both connections share it, so qBittorrent's binding survives switching country | dec |
 | `VPN_GROUP` | `vpnonly` | dec |
-| `VPN_GATEWAY` | `10.2.0.1` — Proton's in-tunnel gateway: NAT-PMP peer and DNS | dec |
+| `VPN_GATEWAY` | `10.2.0.1` — Proton's in-tunnel gateway. NAT-PMP peer; **no longer the resolver** (see the DNS section below) | dec |
+| Tunnel DNS | **removed 2026-08-01**: `ipv4.dns`, `ipv6.dns` and both `dns-search` cleared on every imported profile. The import used to turn Proton's `DNS =` line into a `~` search domain, i.e. resolved's DNS default route, so the whole desktop resolved through the tunnel and CDNs placed ulu in Switzerland. `LOG.md` 2026-08-01 | dec |
 | NM connections | one per `.conf`, `wireguard.ip4/ip6-auto-default-route` **off**, routes confined to table 51, rule `priority 100 fwmark 0x51 table 51`, only the first autoconnects | dec |
 | `VPN_MARK_APP` / `VPN_MARK_WG` / `VPN_ROUTE_TABLE` | `0x51` / `0x52` / `51` — the group's mark selects the tunnel table; WireGuard's own mark exempts its encapsulation from the drop | dec |
 | qBittorrent | `Session\Interface` + `Session\InterfaceName` = `proton0` | dec |
@@ -403,6 +404,36 @@ all three. Both are set, but only the second is load-bearing.
 rejects the *whole* ruleset (it resolves group names at parse time), so
 `qbittorrent-vpn.sh` checks the group **and** the service state and refuses to
 launch. If the tunnel is down, qBittorrent simply has no route out.
+
+## DNS (stages 2 and 3)
+
+The other half of the split tunnel. The tunnel carries qBittorrent's packets
+but not its lookups, so whatever resolves also sees every tracker name — from
+the home address, in the clear, unless it is encrypted. Full reasoning and the
+measurement that forced this in `LOG.md` 2026-08-01.
+
+| Setting | Value | Origin |
+|---|---|---|
+| Backend | `systemd-resolved`, NM handed over via `/etc/NetworkManager/conf.d/10-phoinix-dns.conf` | dec |
+| `DNS_SERVERS_V4/V6` | Quad9 `9.9.9.9`, `149.112.112.112`, `2620:fe::fe`, `2620:fe::9` | dec |
+| `DNS_TLS_NAME` | `dns.quad9.net` — the certificate name, i.e. what makes "encrypted" mean "encrypted to the intended server". Empty switches the whole section off | dec |
+| DoT mode | `connection.dns-over-tls 2` = strict. Opportunistic would fall back to port 53 silently, which is the leak this exists to close | dec |
+| Wired link | `ipv4/ipv6.ignore-auto-dns yes`, Quad9 as `<ip>#<tls-name>`, `dns-search` cleared | dec |
+| LAN names | `/etc/systemd/resolved.conf.d/10-phoinix-lan.conf`, generated: the DHCP-announced resolver, scoped to the DHCP-announced domain (`Domains=~<domain>`), plain port 53 | dec |
+| Ethernet profile | found by TYPE (`802-3-ethernet`), never by name — NM auto-creates it and may name it differently on a fresh install | dec |
+
+**Why the layout looks inverted.** NetworkManager marks the wired link as
+resolved's DNS default route whatever domains it carries, and a link holding
+the default route claims every name — so a "router on the link, Quad9 global"
+arrangement never asks Quad9. Reversed, the more specific global scope wins for
+the LAN domain and the link's catch-all serves everything else.
+
+**Neither the router's address nor the LAN domain is stored** — both come out
+of the DHCP lease at runtime, which is also why this cannot live in stage 2:
+there is no lease in the chroot.
+
+**The LAN half is not cosmetic.** Without it a LAN name does not fail, it
+resolves to a stranger's host on the public internet.
 
 ## qBittorrent (stages 3 and 4)
 

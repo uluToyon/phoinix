@@ -109,6 +109,27 @@ VPN_MARK_APP="0x51"       # = 81; deliberately the same number as the table
 VPN_MARK_WG="0x52"        # = 82; only WireGuard itself ever sets this
 VPN_ROUTE_TABLE=51
 
+# --- DNS (stage 3) ---------------------------------------------------------
+# Who resolves ulu's names, and the reason it is a decision rather than a
+# default. The tunnel carries qBittorrent's packets but NOT its lookups (see
+# stage 3, section 7b), so whatever stands here also sees every tracker name —
+# from the home address, in the clear, unless it is encrypted.
+#
+# Quad9, chosen by ulu 2026-08-01 over Cloudflare and dns0.eu: a foundation
+# rather than a corporation, no client-IP logging by its own policy, and a
+# malware/phishing filter thrown in. The filter is the one risk worth naming,
+# because this resolver now also answers for torrent trackers — a false block
+# would look exactly like a broken tracker. `9.9.9.10` / `dns10.quad9.net` is
+# the same service unfiltered, i.e. the fix is a value here, not a rebuild.
+#
+# Empty DNS_TLS_NAME switches the whole section off and leaves DNS to
+# NetworkManager. The name is not decoration: it is the TLS certificate this
+# resolver must present, and it is what makes "encrypted" mean "encrypted to
+# the intended server" rather than to whoever answers on that address.
+DNS_SERVERS_V4=("9.9.9.9" "149.112.112.112")
+DNS_SERVERS_V6=("2620:fe::fe" "2620:fe::9")
+DNS_TLS_NAME="dns.quad9.net"
+
 # Set to 1 to keep an existing home partition (the "hop back" path):
 # partitioning is skipped entirely, only ESP and root are re-formatted.
 REUSE_HOME=0

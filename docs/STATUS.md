@@ -1,6 +1,45 @@
 # STATUS
 
-_Last updated: 2026-08-01 (session 9 — first reinstall verified and fixed; a SECOND reinstall is next)_
+_Last updated: 2026-08-01 (session 10 — DNS split repaired, audio reopened, Steam/DZGUI unblocked)_
+
+## Session 10 — what changed and what is still open
+
+Started from one observation of ulu's: with the VPN up, some sites believed he
+was in Switzerland.
+
+**DNS: fixed, live and in the scripts.** The split tunnel separated packets but
+not names — every lookup on the machine left through Proton, so CDNs placed the
+whole desktop in Zurich. Stage 3 now strips the resolver from the Proton
+profiles (7b) and puts Quad9 over strict DoT on the wired link with the LAN
+router scoped to its own DHCP domain (new section 7c; printer moved to 7d).
+`config.sh` carries the resolver as a decision. Details in `LOG.md`.
+
+**One manual step is outstanding**, and until it is done `fritz.box` resolves to
+a stranger's host on the public internet (the router answers on
+`192.168.178.1`): the generated `/etc/systemd/resolved.conf.d/10-phoinix-lan.conf`
+needs root. On a fresh install stage 3 writes it itself — this is only the live
+machine catching up.
+
+**Audio: the −26 dB theory is dead, and a real defect turned up next to it.**
+ulu still hears glitches in FFXIV and DayZ, so the level was never the cause
+(this was the condition STATUS named for reopening). Found instead: **PipeWire
+never gets realtime priority** because `rtkit` is not installed — now in
+`packages/audio.txt`, **not yet installed on the live machine**. It produces
+measurable xruns, but two reported glitches fell on moments with none at all,
+and ulu describes the sound as "distortion, very electronic", which is not what
+a missed buffer sounds like. Ten minutes of the digital output recorded and
+analysed: clean. So the cause sits downstream of the computer — USB transport,
+the Concept 12's electronics, or the analog chain. Next probes are listed at
+the end of the `LOG.md` entry; the cheapest untried one is
+`pw-metadata -n settings 0 clock.force-quantum 1024`.
+
+**Steam and DZGUI: unblocked, nothing to change in the repo.** Every Steam game
+failed with "compatibility tool failed" until the client was restarted with its
+`appinfo` cache moved aside, and DZGUI then hung half an hour on mods Steam
+never downloaded — the Web-API subscriptions are accepted but the running
+client only syncs them at logon. Both are client-state problems, both are in
+`LOG.md` with the exact log lines, because neither is diagnosable from the
+symptom.
 
 ## Pick up here
 
@@ -153,9 +192,14 @@ match, not an approximation. ulu confirmed the level right afterwards ("passt
 so, lass es auf -26"), so the 2.77 dB drop is fine in daily use and the
 "probe upward" option is **closed, not deferred** — do not reopen it.
 
-**What is not settled is whether the glitching is gone**; that needs hours of
+~~**What is not settled is whether the glitching is gone**; that needs hours of
 FFXIV or DayZ, and only ulu can report it. If it still glitches at −26 dB, the
-level was never the cause and the investigation reopens somewhere else entirely.
+level was never the cause and the investigation reopens somewhere else entirely.~~
+**ANSWERED 2026-08-01, session 10: it still glitches, at −26 dB, in both games.**
+The level was never the cause, exactly as this paragraph anticipated. Where the
+investigation went instead is under "Session 10" at the top and in `LOG.md`.
+One correction that follows from it: the −26 dB is the *device's* hardware
+volume, not a digital attenuation — it never touched what the machine sends.
 
 Deferred by ulu, not forgotten: **`kdeconnect` is in `packages/kde.txt` but not
 installed on this desktop** (`sudo pacman -S --needed kdeconnect`, then pair the

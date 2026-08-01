@@ -3572,3 +3572,221 @@ compared before and after), with it absent it is restored carrying the mode.
 Accepted cost, named in the script: the data-disk copy goes stale unless
 refreshed by hand — exactly like `XLCORE_BACKUP_DIR`, and now listed beside it
 in `REINSTALL.md`'s pre-flight.
+
+## 2026-08-01 — The split tunnel separated packets, but not names
+
+ulu noticed it from the outside, which is the only way this could have been
+noticed at all: some sites believed he was in Switzerland while the VPN was up,
+and speedtest.net proposed a different German server with the tunnel on than
+with it off. The routing was never at fault. Measured on the live desktop:
+
+| | exit |
+|---|---|
+| ordinary process | Vodafone, Germany |
+| process in group `vpnonly` | Proton, Zurich |
+| **DNS of the whole machine** | **Proton, Zurich** |
+
+`ip rule` knew only `fwmark 0x51 → table 51`, the default route sat on
+`enp8s0`, and only the marked group entered the tunnel — exactly as designed.
+What had moved into the tunnel was every NAME the desktop resolved: the
+WireGuard import gives the connection `DNS = 10.2.0.1` and NetworkManager turns
+that into a `~` search domain, i.e. resolved's DNS DEFAULT ROUTE. The proof was
+blunt — with the tunnel up, `resolvectl query --interface=enp8s0 www.speedtest.net`
+answered "No appropriate name servers or networks for name found". There was no
+path left for a global name to leave over ulu's own line.
+
+**Why that reads as Switzerland.** CDNs place a client by the resolver that
+asks. So the packets left via Vodafone while the lookups came out of Zurich,
+and everything served from an edge network handed him Swiss nodes. Sites that
+read the client IP saw Germany. That is precisely the "some sites, not all"
+pattern ulu described.
+
+**This was half-recorded, and the half that was missing is the interesting
+one.** `system/NetworkManager/10-phoinix-dns.conf` said "while the tunnel is up
+it is authoritative" — the decision was real, but it had been made about
+TIMEOUTS (a dropped tunnel must not stall the desktop in lookup delays), and
+nobody had asked what it does to geolocation while the tunnel is up. The file
+now carries the correction and the reason it never looked broken.
+
+**Fixed in two steps, ulu's choice of variant (he picked the third of four
+options offered: DNS out of the tunnel AND encrypted elsewhere).**
+
+1. The tunnel carries no resolver at all: stage 3 clears `ipv4.dns`,
+   `ipv6.dns` and both `dns-search` values on every imported Proton profile.
+   Clearing the SERVERS matters, not just the domain — a link with servers and
+   no domain is still a candidate for the default route. Applied live with
+   `nmcli device reapply`, which did NOT tear the tunnel down; qBittorrent kept
+   running and kept exiting in Zurich.
+2. Quad9 over TLS on the wired link, the LAN router restricted to the domain
+   its own DHCP lease announces (stage 3, section 7c; printer moved to 7d).
+
+**The arrangement looks inverted and has to be.** The obvious layout — router
+on the link, Quad9 global — does not work: NetworkManager marks the wired link
+as resolved's DNS default route whatever domains it is given (measured: with
+`~fritz.box` as its only domain the link still reported `Default Route: yes`),
+and a link holding the default route claims every name. So the link runs Quad9
+and the more SPECIFIC global scope wins for the LAN domain.
+
+**The LAN half is not optional.** Without it the LAN name does not fail, it
+RESOLVES — to a stranger's host on the public internet, because that domain
+exists out there. A wrong answer that works is worse than an error.
+
+Nothing of this is stored: resolver address and LAN domain both come out of the
+DHCP lease at runtime, which is also why the section cannot live in stage 2 —
+there is no lease in the chroot.
+
+**Quad9 rather than Cloudflare or dns0.eu, ulu's call.** A foundation rather
+than a corporation, no client-IP logging by its own policy, malware filtering
+included. The one risk is named in `config.sh`: this resolver now also answers
+for qBittorrent's trackers, so a false block would look exactly like a broken
+tracker. `9.9.9.10` / `dns10.quad9.net` is the same service unfiltered — the
+fix is a value in `config.sh`, not a rebuild. Strict DoT (`2`), not
+opportunistic: a silent fallback to port 53 would hand the ISP exactly what
+this section exists to withhold.
+
+Accepted and worth naming: the resolver answers by anycast from Frankfurt and
+sends no ECS, so CDNs now place the desktop in Frankfurt instead of Mannheim.
+Against Zurich that is the repair; against the ISP's own resolver it is a small
+loss of precision with no practical effect.
+
+## 2026-08-01 — The audio glitching, reopened: PipeWire has no realtime priority
+
+STATUS said it plainly: if it still glitches at −26 dB, the level was never the
+cause and the investigation reopens somewhere else entirely. ulu played FFXIV
+and reported glitches live, several per hour, so this is that reopening.
+
+**Found within minutes, and it is a real defect regardless of what it
+explains.** PipeWire's own log, every start since the install:
+
+```
+mod.rt: RTKit error: org.freedesktop.DBus.Error.ServiceUnknown
+mod.rt: RTKit does not give us MaxRealtimePriority, using 1
+```
+
+`rtkit` is not installed, `realtime-privileges` is not installed, `ulimit -r`
+is 0, and all three `data-loop.0` threads (pipewire, wireplumber,
+pipewire-pulse) run `SCHED_OTHER`. A fresh Arch does not pull `rtkit` — it is
+an optional dependency of pipewire — so phoinix has been building machines
+whose audio threads compete with a fully loaded game for CPU time. **`rtkit`
+therefore belongs in `packages/audio.txt`.**
+
+**It produces measurable xruns.** `pw-top` counters over an evening of FFXIV:
+the game's node climbed 5 → 63, Brave 4 → 9, the sink 1 → 8. The signature that
+rules out an application bug: at 18:28:03 FFXIV went 7 → 9 and Brave 4 → 6 in
+the SAME sampling second while the sink stayed put. Two unrelated clients
+missing one moment together is a systemic scheduling stall.
+
+**And it does not explain what ulu hears. Two clean negatives.** At 18:49 and
+again at 19:31:35 he reported a glitch and the counters had not moved for 35 s
+in the first case and 10 s in the second — the second one measured four seconds
+after the report, immediately after a live test had put the data threads on
+`SCHED_FIFO 20`. Asked what it sounds like, he described "a distortion, very
+electronic", which is not the sound of a missed buffer: an xrun makes a hole or
+a click.
+
+**What the computer sends is provably clean.** Ten minutes of the sink monitor
+recorded to disk (6 ch, 48 kHz, `pw-record` against the monitor SOURCE — note
+that `--target <pactl sink index>` records silence, the pactl and PipeWire
+numbering spaces are not the same): peak −20.5 dBFS, zero clipping samples,
+zero silent blocks. A sample-level pass over the 31 seconds around one report
+found the largest step between consecutive samples at −33.7 dBFS, i.e. ~680 of
+32768. Digital garbage would sit near full scale.
+
+**A premise of the 2026-07-31 analysis no longer holds.** That entry explained
+the noise with a −73 dBFS source amplified by a cranked-up bar. Today the
+digital level is −20.5 dBFS peak — 50 dB higher — because the game's own sound
+is on. Whatever ulu hears now, it is not that.
+
+**Also corrected, and it matters for how the −26 dB is read:** the sink carries
+`HARDWARE HW_VOLUME_CTRL DECIBEL_VOLUME`. The −26 dB is the DEVICE's own volume
+control, not a digital attenuation inside PipeWire. What the machine puts on
+the wire is untouched by it. `SETTINGS.md` described this differently.
+
+**Where it stands.** The monitor recording sees what the GRAPH produces, not
+what the DEVICE plays, so it can only exonerate the digital side — and it does.
+Everything downstream is still open: USB transport, the Concept 12's own
+electronics, the analog chain. Ruled out along the way: USB autosuspend
+(`power/control` is `on`), kernel USB or ALSA errors (none this boot), a shared
+bus (the device sits alone on its own controller — an earlier claim that it
+shared with the Scarlett and Bluetooth was based on a truncated `lsusb -t` and
+was wrong), and buffer starvation on the ALSA side (period 512/128, ring 32768
+frames = 683 ms).
+
+Not yet tried, in this order: forcing a larger quantum at runtime
+(`pw-metadata -n settings 0 clock.force-quantum 1024`, reversible with `0`),
+then a different cable, then the device on another machine. Also unexplained:
+the ALSA period changed from 512 to 128 frames when the device was replugged
+into the neighbouring port, which makes any before/after comparison across that
+replug unreliable.
+
+## 2026-08-01 — Steam launched nothing, and DZGUI waited for downloads that never started
+
+Two failures in one evening, unrelated to each other and both worth recording
+because neither is diagnosable from the symptom.
+
+**"Compatibility tool failed", every Steam game.** The client asserted on every
+launch:
+
+```
+src/clientdll/compatmanager.cpp (1386) : Assertion Failed:
+Tool 1493710 "Proton Experimental" unsupported version 0.
+GameAction [AppID …] : LaunchApp failed with AppError_51
+```
+
+ulu's first guess was the renamed disk paths, and it was worth checking because
+the compat tools live on the games disk — but `libraryfolders.vdf` carried
+`/mnt/Games/SteamLibrary` with the `contentid` matching the disk's own
+`libraryfolder.vdf`, and 1493710 was in its app list. On disk the tool was
+complete: `toolmanifest.vdf` version 2, `version` file present, its required
+runtime (4183110, Steam Linux Runtime 4.0) installed with StateFlags 4. So:
+everything correct on disk, version 0 in the running client — a client-state
+problem, not an installation problem.
+
+Fixed by quitting Steam (`steam -shutdown`), moving `appcache/appinfo.vdf`
+aside — renamed, not deleted — and starting it again. Afterwards the chain
+resolved and both command prefixes pointed correctly into the games disk.
+**Honest limit:** restart and cache removal happened together, so which of the
+two did it is not separable, and the rebuilt cache came out byte-identical in
+size (2 546 102 B, 1020 apps), which argues for the running client having been
+confused rather than the file on disk. Next time try the plain restart first.
+
+**DZGUI 7 then hung for half an hour at "Steam is staging mods (step 2/2)".**
+The server ulu joins requires **79 mods** and he had 10; the other 69 amount to
+16.4 GiB. DZGUI subscribes each missing item over the Steam Web API
+(`IPublishedFileService/Subscribe/v1`, `notify_client=1`, one second apart) and
+then waits — in `managers/connection.py`, without timeout and without progress
+— first for the directory to exist, then for `get_mod_dir_size()` to equal the
+expected size exactly.
+
+The subscriptions were fine: a single call reproduced by hand returned HTTP 200
+with `x-eresult: 1`. The running client simply never acted on them — no entry
+in `steamapps/downloading`, nothing pending in `appworkshop_221100.acf`, no CDN
+transfer. Pushing the client directly with `steam +workshop_download_item
+221100 <id>` (what DZGUI 6 did, deprecated in 7 in favour of the Web API) was
+accepted 68 times and did nothing each time: `Update Queued → Running →
+Reconfiguring → None → finished, No Error` inside the same second, because the
+client checks its own stale subscription list and finds nothing to do.
+
+**What worked: restarting Steam.** It pulls the subscription list at logon, and
+the 16.4 GiB started immediately (~18 MB/s, done in ten minutes). DZGUI needs
+no cancelling for this — it polls the filesystem, not the client.
+
+Two things learned that are worth more than the fix:
+- **DZGUI 7's staging step cannot distinguish "waiting" from "will wait
+  forever".** No timeout, no byte counter, no list of what it is waiting for.
+  A hang there means: check `steamapps/downloading` and the workshop manifest
+  yourself, then restart Steam.
+- Its expected sizes are a snapshot taken when the join begins. If a mod is
+  updated upstream in the meantime, the equality test can never succeed. Cancel
+  and re-join re-reads everything, and with all mods present it skips both
+  steps.
+
+Two upstream bugs seen in passing, both harmless here, both reproducible for
+any dual-stack user: `get_local_coords()` feeds the public IP through a
+dotted-quad parser, so an IPv6 answer from `ipecho.net` raises and the distance
+sorting silently disappears; and `_update_mods()` sums `row[2]` for the
+"required size" where the size is `row[3]` — that field is the timestamp.
+
+One mistake of ours, recorded because it would be invisible in another run: the
+helper that queued the 69 downloads read its id list with `while read` from a
+file without a trailing newline and silently queued only 68.
