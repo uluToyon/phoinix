@@ -3272,3 +3272,32 @@ Applied live in the same step, with the section sourced from the script rather
 than retyped (the 2026-07-31 lesson about `bash` not inheriting non-exported
 variables): six labels resolved, six separators written in the declared order,
 all 22 bookmarks preserved, and the result parses as XML.
+
+## 2026-08-01 — Session 9 closes the verification list
+
+FFXIV was the last open point and ulu had already played: everything correct.
+Verified afterwards what can be verified without the game running — the rule
+carries `position=3840,1120 size=3440,1440` with class **and** title match, and
+`launcher.ini` has `WaylandEnabled=false`, `GameModeEnabled=true` and both game
+paths on the games disk. The Wayland flag is the load-bearing one: without it
+the client is Wayland-native and no rule of ours could place it. It survived
+the reinstall because `xlcore-backup.sh` carries `launcher.ini`, which is
+exactly the mechanism the gamemode work put in place on 2026-07-31.
+
+**Result of the run, in full: nine points, seven passed outright.** Desktop
+icons (the stopper of the previous run) landed on the right containment,
+qBittorrent started, the commit identity was set, KeePassXC placed itself,
+NumLock was live at the greeter, the Places race behaved exactly as predicted,
+and FFXIV opened borderless. Two failed — the Strawberry window size and the
+playlist import — and both were fixed with the failure on screen rather than
+from memory, which is what the list was written for.
+
+The two failures also each produced something larger than themselves: the
+window-size case retired the parked KWin-script plan on measured grounds, and
+the playlist case led, via the sponsoring dialog, to the discovery that
+`kwriteconfig6` had been corrupting `strawberry.conf` all along in a way no
+fresh install can reveal.
+
+Not done: **nothing is pushed**. GitHub authentication remains the manual
+post-install step recorded on 2026-08-01, and it has not been re-established on
+this machine, so session 9's five commits are local only.

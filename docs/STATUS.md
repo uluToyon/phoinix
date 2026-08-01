@@ -1,21 +1,31 @@
 # STATUS
 
-_Last updated: 2026-08-01 (session 8 — one addition before the reinstall: NumLock at the greeter. Session 7's fix list is unchanged and still the point of the run)_
+_Last updated: 2026-08-01 (session 9 — the reinstall ran; all nine verification points are resolved)_
 
 ## Pick up here
 
-**ulu reinstalls the machine first thing on 2026-08-01, by himself, to test
-this session's fixes.** Nothing is expected from the assistant until that run
-is done — the next conversation starts AFTER the installation, with its
-results. `git pull` in `~/phoinix` once the new system is up; everything below
-is already committed and pushed-ready.
+**The scripted reinstall happened on 2026-08-01 and the whole verification list
+below is closed.** Seven points passed, two failed and were fixed the same
+session with the failure on screen — which is what the list was for. This
+machine is now a genuine fresh-install result, so from here the live system and
+the scripts agree by construction rather than by repair.
 
-Session 7 closed ulu's whole list from the first real run. All of it was
-applied to the live system as well, but **the live proof is worth little** —
-these fixes exist for the fresh-install case, and this machine is not one.
-That is exactly what tomorrow's run measures.
+What the run cost in fixes, all committed: Strawberry starts unmaximized
+(`7ae2907`), the playlist import waits for the single-instance socket and
+retries (`cfeae8f`), one shared QSettings writer for every QSettings file
+(`1e503ea`), the collection stays manual on corrected grounds (`52500f2`), and
+the Places step waits for `user-places.xbel` instead of giving up (`f6e44e2`).
 
-### What the next run must verify — the point of the exercise
+**Nothing is pushed.** GitHub authentication is a manual post-install step (see
+below) and has not been re-established on this machine, so all of the above is
+local. That is the first thing to sort out next session.
+
+Still to do by hand, unchanged and listed under "manual steps" below: Steam
+(then re-run stage 3 once), mpc-qt once plus a re-run, the Strawberry music
+folder, Brave sync, KDE Connect pairing, pCloud login, printer on before
+stage 3.
+
+### The verification list — all nine resolved
 
 1. **Desktop icons get positioned.** The stopper. Stage 4 now finds the Folder
    View containment by `lastScreen` + activity instead of `lastResolution`
@@ -41,9 +51,14 @@ That is exactly what tomorrow's run measures.
    uluToyon <…>` must appear, and afterwards `git var GIT_AUTHOR_IDENT` in
    `~/phoinix` must answer. On the run just made it did NOT exist at all.
 5. **KeePassXC autostarts and lands bottom-right on DP-2**, below qBittorrent.
-6. **FFXIV opens borderless on DP-1** once XIVLauncher has run. Note the rule
-   depends on `WaylandEnabled=false` in `launcher.ini`, which now travels in
-   the xlcore backup.
+6. ~~**FFXIV opens borderless on DP-1**~~ **PASS 2026-08-01** — ulu played and
+   reported everything correct. The preconditions were checked in the config
+   afterwards: the rule carries `position=3840,1120 size=3440,1440` with the
+   class **and** title match, and `launcher.ini` has `WaylandEnabled=false`
+   (plus `GameModeEnabled=true` and both game paths on the games disk). That
+   `WaylandEnabled=false` is what makes the rule possible at all — a
+   Wayland-native client cannot be positioned by anyone — and it survived the
+   reinstall because it travels in the xlcore backup.
 7. ~~**Places order: expect this one to be SKIPPED again, and watch it.**~~
    **SKIPPED as predicted, cause measured, FIXED 2026-08-01.** The observation
    the decision was waiting for: stage 4 warned at 12:13:44 and the file was
