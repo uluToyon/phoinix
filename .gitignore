@@ -1,0 +1,16 @@
+# Claude Code's per-directory settings. LOCAL by convention and by name: it
+# holds whatever permission rules and modes ulu has granted on THIS machine,
+# which is a property of the machine and the person, not of the installer.
+#
+# It was tracked until 2026-08-01, in a PUBLIC repo. Nothing secret was in it,
+# but it is the wrong file to publish — and it is the file a permission mode
+# lands in, so the next entry could have been an announcement that this
+# checkout runs without permission prompts.
+#
+# `.claude/settings.json` (project-wide, team-shared) is deliberately NOT
+# ignored: if this repo ever needs a checked-in Claude Code setting, that is
+# where it belongs, in the open.
+.claude/settings.local.json
+
+# Written by stage 3 on every run, in the working copy itself.
+stage3.log
