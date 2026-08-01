@@ -2998,3 +2998,39 @@ setting stage 3 just made.
 All three paths were tested. The global-identity branch was exercised against a
 throwaway `HOME`, because creating a real global identity to test it is the
 exact thing the repo forbids — the live system still has no `~/.gitconfig`.
+
+## 2026-08-01 — NumLock at the login screen, and who actually switches it
+
+Asked for by ulu right before the reinstall run: the numeric keypad should be
+live at the greeter, not only after login. NumLock was already set — but only
+in ulu's own `kcminputrc` (stage 3, section 6), a file the login screen never
+reads. It runs as its own user with its own config directory.
+
+**The instance that flips it is KWin, not the login manager.** Checked rather
+than assumed, because plasma-login-manager looked like the obvious address:
+it ships no config file at all on this system (no `/etc/plasmalogin.conf`,
+none in the package's file list), while `libkwin.so` exports
+`KWin::Xkb::setNumLockConfig()` and carries the string `NumLock` — the config
+it reads is `kcminputrc`, group `Keyboard`. The greeter starts its own
+`plasma-login-kwin_wayland`, so the same key in the greeter's home does it.
+This is the same shape as the monitor fix: the greeter is a mini-Plasma, and
+what configures Plasma configures it.
+
+**Written with `kwriteconfig6` as the greeter user, not dropped in as a file.**
+The alternative — two lines via `sudo install`, matching the
+`kwinoutputconfig.json` line right above it — was rejected: KDE writes to
+`kcminputrc` itself (keyboard layout persistence, see `SETTINGS.md`), so a
+whole-file write would silently discard whatever else ends up there on a
+re-run. Merging was verified against a throwaway config dir: a pre-existing
+`KeyRepeat` key and a whole `[Mouse]` group survived while `NumLock` changed.
+
+**One thing had to be fixed to make that possible.** The loop's existing
+`install -D` creates `/var/lib/plasmalogin/.config/` as `root:root` — the
+`-o`/`-g` flags apply to the file, not to the directories `-D` invents. Writing
+as the greeter user into a root-owned directory would fail, so the loop now
+creates it explicitly with `install -d -o … -g … -m 700`. That also repairs the
+ownership on a machine where an earlier run already made it root's.
+
+Not verified live, deliberately: proving it would mean restarting the greeter,
+i.e. logging out, and the fresh install ulu is about to run is the better test.
+It is on the verification list in `STATUS.md`.

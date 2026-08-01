@@ -1,6 +1,6 @@
 # STATUS
 
-_Last updated: 2026-08-01 early (session 7 — every defect ulu reported from the first real run is fixed; the next run is the test)_
+_Last updated: 2026-08-01 (session 8 — one addition before the reinstall: NumLock at the greeter. Session 7's fix list is unchanged and still the point of the run)_
 
 ## Pick up here
 
@@ -45,7 +45,14 @@ That is exactly what tomorrow's run measures.
    RACE, not a hard ordering: stage 4 may win or lose it. If it warns again,
    the fix is a wait/retry in that step or moving it later, and the decision
    needs the observation first. (It was applied by hand on the old system.)
-8. **Watch Strawberry's first start** — see the parked KWin-script item under
+8. **NumLock is on at the GREETER**, before the password is typed — new on
+   2026-08-01, added just before this run and never verified live (that would
+   need a logout). Stage 3 writes `Keyboard/NumLock=0` into the greeter's own
+   `kcminputrc`; KWin reads it, the login manager has no such option (LOG
+   2026-08-01). If the keypad is dead at the login screen, check that
+   `/var/lib/plasmalogin/.config/kcminputrc` exists and belongs to
+   `plasmalogin`.
+9. **Watch Strawberry's first start** — see the parked KWin-script item under
    "Still open". This is the one chance to see the dialog case live: ulu saw
    the main window at full monitor width while the "first start" message took
    the rule's 1920. Decide the parked fix with that on screen.

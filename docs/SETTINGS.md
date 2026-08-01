@@ -134,6 +134,12 @@ The greeter gets its own copy of `kwinoutputconfig.json` — without it the firs
 login screen goes black, and the per-output `priority` in that file is also what
 puts the password field on the main monitor instead of the TV.
 
+Its config directory holds a second file, `kcminputrc`, written key by key in
+the same loop (see the NumLock rows below). Anything the greeter needs lands in
+`/var/lib/plasmalogin/.config/`, owned by the greeter user — stage 3 creates
+that directory explicitly, because `install -D` would make it `root:root` and
+the greeter could then not be written for as itself.
+
 Only the PipeWire **drop-in** is carried, never `pipewire.conf` itself: a file
 of that name in `~/.config/pipewire/` shadows the packaged one completely.
 
@@ -147,6 +153,7 @@ of that name in `~/.config/pipewire/` shadows the packaged one completely.
 | `kxkbrc` | `Layout/LayoutList` | `de` | | dec |
 | `kxkbrc` | `Layout/VariantList` | `nodeadkeys` | no dead keys | dec |
 | `kcminputrc` | `Keyboard/NumLock` | `0` | **on** at session start | dec |
+| `kcminputrc` (greeter home) | `Keyboard/NumLock` | `0` | **on** at the login screen | dec |
 | `powerdevilrc` | `AC/Display/DimDisplayWhenIdle` | `false` | never dims | dec |
 | `powerdevilrc` | `AC/Display/TurnOffDisplayWhenIdle` | `false` | never blanks | dec |
 | `powerdevilrc` | both `…IdleTimeoutSec` | `-1` | timeouts disabled | dec |

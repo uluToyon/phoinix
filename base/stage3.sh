@@ -183,11 +183,30 @@ install -Dm644 "$REPO_DIR/dotfiles/p10k.zsh" "$HOME/.p10k.zsh"
 # missing, even with usable output (aborted a run once). One lookup per user.
 for greeter_user in plasmalogin sddm; do
     greeter_home="$(getent passwd "$greeter_user" | cut -d: -f6)" || continue
+
+    # Own the directory explicitly. `install -D` below would create it too, but
+    # as root:root — and the kwriteconfig6 line further down writes as the
+    # greeter user, which then could not.
+    sudo install -d -o "$greeter_user" -g "$greeter_user" -m 700 \
+        "$greeter_home/.config"
+
     if [[ -f "$HOME/.config/kwinoutputconfig.json" ]]; then
         sudo install -Dm644 -o "$greeter_user" -g "$greeter_user" \
             "$HOME/.config/kwinoutputconfig.json" \
             "$greeter_home/.config/kwinoutputconfig.json"
     fi
+
+    # NumLock on at the LOGIN SCREEN as well — the session setting in section 6
+    # writes ulu's own kcminputrc, which the greeter never reads.
+    # The instance that actually flips the LED is KWin, not the login manager:
+    # `KWin::Xkb::setNumLockConfig()` reads `kcminputrc` [Keyboard]NumLock, and
+    # the greeter runs its own kwin_wayland as this user. So the same key in
+    # this home does it — plasmalogin itself has no such option.
+    # Written with kwriteconfig6 rather than dropped in as a file: KDE writes to
+    # kcminputrc by itself (keyboard layout persistence), so this must merge.
+    sudo -u "$greeter_user" env \
+        HOME="$greeter_home" XDG_CONFIG_HOME="$greeter_home/.config" \
+        kwriteconfig6 --file kcminputrc --group Keyboard --key NumLock 0
 done
 
 # ------------------------------------------------- 6. Plasma settings (explicit)
