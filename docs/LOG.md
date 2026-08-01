@@ -3235,3 +3235,40 @@ with a `schema_version` guard (23 today) to turn an upstream change into a
 message instead of corruption. Recorded so the reasoning survives, not just the
 outcome: the scripted version was designed, costed, and declined — do not
 rebuild it without being asked.
+
+## 2026-08-01 — The Places race, measured to the millisecond and closed
+
+Verification point 7 existed because the previous run left an ambiguity: the
+step reported the file missing at 22:44:00 and the file carried mtime 22:44,
+i.e. "somewhere in the same minute". Not enough to tell a race from an ordering
+problem, so STATUS asked for the observation before the decision. It came:
+
+```
+12:13:44        WARNING: user-places.xbel does not exist yet
+12:13:44.871    the file is created
+```
+
+The same SECOND, a few hundred milliseconds after the check. A race, confirmed,
+and nothing to do with where the step sits in the script.
+
+Two further facts made the fix easy. The session creates the file by itself
+(KIO/plasmashell) rather than waiting for a human to open Dolphin, so it is
+only ever *early*, never absent — waiting is guaranteed to terminate on a
+healthy session. And nothing rewrote it afterwards, not even the plasmashell
+restart at 12:14:06, so whoever gets to write it keeps it.
+
+**Fix (ulu's call): wait, do not move.** The existence check becomes a bounded
+wait — up to 30 s for the file to appear AND to contain its closing `</xbel>`.
+The completeness half is not decoration: the file is being written at exactly
+this moment, so "exists" and "usable" are genuinely different states here. On
+timeout the old warning stands, now phrased so it does not claim the file is
+merely missing.
+
+Moving the step behind the plasmashell restart was the alternative and was
+rejected as the same bet with better odds — a slower machine would lose it
+again, and then the warning appears with no explanation attached.
+
+Applied live in the same step, with the section sourced from the script rather
+than retyped (the 2026-07-31 lesson about `bash` not inheriting non-exported
+variables): six labels resolved, six separators written in the declared order,
+all 22 bookmarks preserved, and the result parses as XML.

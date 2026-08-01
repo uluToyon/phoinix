@@ -211,14 +211,29 @@ done
 # mean authoring KDE's bookmark ids as well.
 PLACES_FILE="$HOME/.local/share/user-places.xbel"
 
+# And it has to be WAITED for, because stage 4 and the session that creates it
+# start together. Measured on the reinstall run of 2026-08-01: the step gave up
+# at 12:13:44 and the file was created at 12:13:44.871 — the same second, a few
+# hundred milliseconds after the check. The session creates it by itself
+# (KIO/plasmashell), so waiting is reliable; it is only ever early, never
+# absent. The closing tag is part of the test on purpose: a file caught halfway
+# through being written exists without being usable, and here it is being
+# written at exactly this moment.
+if [[ ${#PLACES_ORDER[@]} -gt 0 ]]; then
+    for _ in $(seq 30); do
+        [[ -f "$PLACES_FILE" ]] && grep -q "</xbel>" "$PLACES_FILE" 2>/dev/null && break
+        sleep 1
+    done
+fi
+
 if [[ ${#PLACES_ORDER[@]} -eq 0 ]]; then
     # A host that declares no ordering keeps KDE's. Distinct from the guard
     # further down, which catches a declared ordering that resolved to nothing
     # — that one means disks are missing and must not rewrite the file.
     echo "places: no PLACES_ORDER declared for $HOST — sidebar left untouched"
-elif [[ ! -f "$PLACES_FILE" ]]; then
-    echo "WARNING: $PLACES_FILE does not exist yet — Places order not applied."
-    echo "         Open Dolphin once, then re-run: $0 $HOST"
+elif [[ ! -f "$PLACES_FILE" ]] || ! grep -q "</xbel>" "$PLACES_FILE" 2>/dev/null; then
+    echo "WARNING: $PLACES_FILE still absent or incomplete after 30s —"
+    echo "         Places order not applied. Open Dolphin once, then re-run: $0 $HOST"
 else
     separators=""
     for label in "${PLACES_ORDER[@]}"; do

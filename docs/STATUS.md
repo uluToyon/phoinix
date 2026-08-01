@@ -44,19 +44,19 @@ That is exactly what tomorrow's run measures.
 6. **FFXIV opens borderless on DP-1** once XIVLauncher has run. Note the rule
    depends on `WaylandEnabled=false` in `launcher.ini`, which now travels in
    the xlcore backup.
-7. **Places order: expect this one to be SKIPPED again, and watch it.**
-   `user-places.xbel` did not exist when stage 4 ran at 22:44:00 — but the file
-   carries mtime 22:44, i.e. it appeared within the same minute. This is a
-   RACE, not a hard ordering: stage 4 may win or lose it. If it warns again,
-   the fix is a wait/retry in that step or moving it later, and the decision
-   needs the observation first. (It was applied by hand on the old system.)
-8. **NumLock is on at the GREETER**, before the password is typed — new on
-   2026-08-01, added just before this run and never verified live (that would
-   need a logout). Stage 3 writes `Keyboard/NumLock=0` into the greeter's own
-   `kcminputrc`; KWin reads it, the login manager has no such option (LOG
-   2026-08-01). If the keypad is dead at the login screen, check that
-   `/var/lib/plasmalogin/.config/kcminputrc` exists and belongs to
-   `plasmalogin`.
+7. ~~**Places order: expect this one to be SKIPPED again, and watch it.**~~
+   **SKIPPED as predicted, cause measured, FIXED 2026-08-01.** The observation
+   the decision was waiting for: stage 4 warned at 12:13:44 and the file was
+   created at 12:13:44.871 — the same second. A race, not an ordering problem.
+   Fixed by a bounded wait (30 s, for the file AND its closing `</xbel>`)
+   rather than by moving the step, which would have been the same bet with
+   better odds. Order applied live: six labels resolved, 22 bookmarks intact.
+   See `LOG.md` 2026-08-01.
+8. ~~**NumLock is on at the GREETER**~~ **PASS 2026-08-01** — ulu confirmed the
+   keypad was live at the login screen. The diagnosis behind it holds: KWin
+   reads `Keyboard/NumLock` from the greeter's own `kcminputrc`, the login
+   manager has no such option (LOG 2026-08-01). This one could only ever be
+   verified by a real login, which is why it went on this list unverified.
 9. ~~**Watch Strawberry's first start.**~~ **DONE 2026-08-01, and the cause was
    one step deeper than the parked diagnosis.** The main window was not
    oversized, it was **maximized** — 3840x2105 is exactly DP-2's maximize area
