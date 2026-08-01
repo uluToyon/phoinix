@@ -634,10 +634,13 @@ Still open:
 
 1. **The complicated question**, then **keychron-launcher** — both at the top of
    this file.
-2. **Decide where `qemu-base` + `edk2-ovmf` belong.** Installed on the desktop
-   for the test loop but in no package list, so the repo cannot currently
-   rebuild its own test rig. Either into a package list — which makes
-   `DESIGN.md`'s testing loop reproducible — or off the machine after use.
+2. ~~**Decide where `qemu-base` + `edk2-ovmf` belong.**~~ **DONE** — both sit in
+   `packages/dev.txt` with `socat`, each with its justification, and the
+   reinstall installed them from there. The repo rebuilds its own test rig.
+   What the rig now lacks is the **ISO**: `scripts/qemu-test.sh` defaults to
+   `/mnt/Downloads/archlinux-x86_64.iso`, and that copy was deleted on
+   2026-08-01. It is a download, not an asset — fetch a current one and either
+   drop it at that path or point `PHOINIX_ISO` at it.
 3. **The soundbar question is no longer blocked.** It waited on FFXIV and DayZ
    being installed; both are now here (DayZ 24 GB in the Steam library, FFXIV
    via XIVLauncher). The choice stands: set the sink back to exactly −26 dB, the
