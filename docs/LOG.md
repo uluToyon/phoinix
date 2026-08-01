@@ -3348,3 +3348,45 @@ Stage 3 installs it as `hicolor/128x128/apps/phoinix-dzgui.png` and substitutes
 when the file is absent. A NAME, never a path, and that is deliberate: a path
 to a file that failed to install renders nothing, while a name that cannot be
 resolved still falls back to a generic icon.
+
+## 2026-08-01 — The SSH key nobody noticed was gone
+
+A sidequest — ulu asked what the three folders on the Downloads disk were for
+— turned up a real hole. `~/.ssh` on the rebuilt machine contained exactly one
+file, `authorized_keys`, written by stage 3 from the repo. **The private key
+was never restored**, and the only copy was the rescue directory made before
+the reinstall.
+
+**Why it stayed invisible.** Incoming SSH works: `authorized_keys` is in the
+repo, so the laptop can still reach the desktop and nothing looks broken. What
+was missing is the machine's own identity — the outgoing direction, which
+nobody exercised in the hours after the install. `REINSTALL.md` documented how
+to RESCUE `~/.ssh` and never said a word about putting it back, so the step
+existed in nobody's list, mine included.
+
+Restored from `/mnt/Downloads/rescue/ssh/`, fingerprint verified identical
+(`SHA256:z9vRGeFt…`, `ulutoyon@desktop`), key parses and carries no passphrase.
+`authorized_keys` deliberately NOT copied back: the live one is the repo's, with
+the comment sanitised, and the key material is identical anyway.
+
+The return path is now written into `REINSTALL.md` next to the rescue that
+produces it, and deliberately not scripted into stage 3 — a private key is the
+last file an installer that also runs unattended in a VM should be moving
+around, and a missing rescue directory must be noticed rather than skipped.
+
+**What the same look at those folders established, by measurement rather than
+assumption:**
+
+- `rescue/` is load-bearing: besides the key it holds the only copy of the 15
+  pre-reinstall transcripts, and a live `.credentials.json` at 0600.
+- `backup-nvme1n1-20260730/` (20 MB) is redundant with one exception. All 7 of
+  its transcripts are byte-identical inside `rescue/` — compared file by file,
+  zero differences, zero files present only there. Its config captures are
+  either in the repo (`kwinrc`, `kdeglobals`, `kwinoutputconfig.json`,
+  `10-clock.conf`, the wireplumber state, `.zshrc`, `.p10k.zsh`), deliberately
+  excluded (the stale `pipewire.conf`, `disabled-forceclock.bak`), replaced by
+  explicit keys (`kscreenlockerrc`), or superseded (`.local/share/kscreen` is
+  the Plasma 5 location). The exception is `.claude.json`, which
+  `REINSTALL.md`'s rescue never copied and which exists nowhere else.
+- `keepassxc-pre-merge-2026-07-31/` (1.4 MB) stays, per the standing note: keep
+  until the database has been in daily use for a while. One day is not that.

@@ -53,6 +53,35 @@ Done for the 2026-07-31 run: both sit in `/mnt/Downloads/rescue/` (`ssh/` with
 the private key still at 0600, `claude/` with 46 MB including that day's seven
 transcripts). The 2026-07-30 backup is still beside it, untouched.
 
+### Putting the key back — the step this file used to be missing
+
+Rescuing is only half of it, and the missing half went unnoticed for a whole
+reinstall: **nothing restores `~/.ssh`.** Stage 3 writes `authorized_keys` from
+the repo, so incoming SSH works and the gap is invisible — the machine simply
+has no identity of its own until someone notices. Found on 2026-08-01, hours
+after the run, and only because ulu asked what those folders on the Downloads
+disk were for.
+
+Run this once the new system is up:
+
+```
+install -m 700 -d ~/.ssh
+install -m 600 /mnt/Downloads/rescue/ssh/id_ed25519     ~/.ssh/id_ed25519
+install -m 644 /mnt/Downloads/rescue/ssh/id_ed25519.pub ~/.ssh/id_ed25519.pub
+install -m 600 /mnt/Downloads/rescue/ssh/known_hosts    ~/.ssh/known_hosts
+ssh-keygen -lf ~/.ssh/id_ed25519      # fingerprint must match the rescue copy
+```
+
+**Not `authorized_keys`.** The live one comes from the repo with a sanitised
+comment; the rescued one carries the original. Copying it back would undo that
+deliberately, and the key material is identical either way.
+
+Deliberately not scripted into stage 3: a private key is exactly the file that
+must not be moved around by an installer that also runs unattended in a VM, and
+the rescue directory is a hand-made thing whose absence must be noticed rather
+than skipped over. It is a checklist item here, next to the rescue that
+produces it.
+
 Everything else in the home directory is either rebuilt or restored: Steam
 re-attaches its library from `/mnt/Games`, XIVLauncher restores from the 80 MB
 backup, Brave comes back through Brave Sync, and Discord, unity3d, baloo, NuGet,
