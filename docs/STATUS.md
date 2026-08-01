@@ -16,9 +16,11 @@ retries (`cfeae8f`), one shared QSettings writer for every QSettings file
 (`1e503ea`), the collection stays manual on corrected grounds (`52500f2`), and
 the Places step waits for `user-places.xbel` instead of giving up (`f6e44e2`).
 
-**Nothing is pushed.** GitHub authentication is a manual post-install step (see
-below) and has not been re-established on this machine, so all of the above is
-local. That is the first thing to sort out next session.
+**GitHub authentication survived the reinstall by itself** — the mechanism
+added in `230470e` works: `GIT_CREDENTIALS_FILE` on the FilesMusic disk, wired
+by stage 3 as a repo-local `credential.helper`. Verified on this machine with
+`git ls-remote` (exit 0). It is no longer a manual step, and the entry under
+"manual steps" that still said so was stale.
 
 Still to do by hand, unchanged and listed under "manual steps" below: Steam
 (then re-run stage 3 once), mpc-qt once plus a re-run, the Strawberry music
@@ -372,17 +374,23 @@ this topology — until proven, the cap stays.
   exit, so the file tracks the playlist by itself. Stage 4 imports it back on a
   fresh install. Accepted cost (ulu's call): a crash or power cut loses that
   session's additions.
-- **GitHub authentication has to be re-established by hand after every
-  reinstall.** Found 2026-08-01 when the session's commits could not be pushed:
-  no `gh`, no SSH key, no credential helper, no stored token — the fresh
-  machine has no way to authenticate, and none of it may live in this repo
-  (`DESIGN.md`, "Never in the repo"). The commits themselves are fine; only the
-  push needs a human. Fastest: `git push` and enter `uluToyon` plus a Personal
-  Access Token (GitHub has not accepted account passwords for years). Worth
-  deciding once, with ulu: a token in a credential helper, `github-cli` in
-  `packages/cli.txt` plus `gh auth login`, or an SSH key anchored on a data
-  disk the way the WireGuard configs already are. Until then it is a manual
-  step like the others here.
+- ~~**GitHub authentication has to be re-established by hand after every
+  reinstall.**~~ **SOLVED before the reinstall (`230470e`) and PROVEN by it
+  (2026-08-01).** The problem was real — a fresh machine has no `gh`, no SSH
+  key, no credential helper and no stored token, and none of that may live in
+  this repo (`DESIGN.md`, "Never in the repo"). The fix follows the
+  `VPN_CONFIG_DIR` shape: the token lives in `GIT_CREDENTIALS_FILE` on the
+  FilesMusic disk (`/mnt/FilesMusic/phoinix/git-credentials`, mode 0600, one
+  line `https://uluToyon:<token>@github.com`), and stage 3 wires it as a
+  **repo-local** `credential.helper` — repo-local because a global one would
+  offer the token to every clone on the machine. Only the path is versioned.
+  Verified on the fresh system: the helper was set by stage 3 and
+  `git ls-remote origin` authenticated without a prompt.
+  **Open, and it will bite silently: the token EXPIRES and the date is
+  recorded nowhere.** `hosts/desktop/config.sh` says "see STATUS.md for the
+  date" and STATUS never got one. The token is fine-grained, limited to
+  `uluToyon/phoinix`, permission "Contents: Read and write". When it expires,
+  the symptom is a push asking for credentials — write the date here.
 - **KDE Connect: pair the phone by hand.** The pairing exchanges keys between
   the two devices and is confirmed on the phone, so it cannot be scripted from
   here. Nothing else is needed — the package is in `packages/kde.txt` and our
