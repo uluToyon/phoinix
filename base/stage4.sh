@@ -680,23 +680,58 @@ if [[ -n "${PLAYLIST_FILE:-}" && -f "$PLAYLIST_FILE" ]]; then
             # whatever is left in its cgroup is killed the moment ExecStart
             # returns — the instance would die together with the stage, quite
             # possibly before it had written anything. A transient scope is a
-            # unit of its own and outlives us. Strawberry autostarts anyway
-            # (stage 3), so this only pulls that start forward, and a second
-            # launch merely raises the first window.
+            # unit of its own and outlives us.
+            #
+            # And this branch is the NORMAL case, not the exception: measured
+            # 2026-08-01, stage 4 reached this point at 12:13:45 while the
+            # autostart entry from stage 3 only fired at 12:14:06. Stage 4 wins
+            # that race by 21 seconds, so it starts the instance it needs.
             systemd-run --user --scope --quiet strawberry >/dev/null 2>&1 &
             for _ in $(seq 30); do pgrep -x strawberry >/dev/null && break; sleep 1; done
         fi
 
-        strawberry --create "$PLAYLIST_NAME" "$PLAYLIST_FILE" >/dev/null 2>&1 || true
-
-        # VERIFY instead of trusting the exit code — the whole point of this
-        # rewrite. Strawberry writes the playlist asynchronously, so poll.
-        tracks=0
-        for _ in $(seq 20); do
-            tracks="$(sb_track_count)"
-            [[ "$tracks" =~ ^[0-9]+$ ]] || tracks=0
-            (( tracks > 0 )) && break
+        # Waiting for the PROCESS is not enough — wait for the single-instance
+        # SOCKET. KDSingleApplication listens on /tmp/kdsingleapp-<user>-<app>,
+        # and a `--create` fired before that socket exists does not reach the
+        # running instance at all: the second invocation finds no server, takes
+        # itself for the first instance and starts a whole second Strawberry.
+        # Reproduced 2026-08-01; the window is only ~60 ms wide, which is
+        # exactly why it is worth closing rather than hoping.
+        # `id -un` rather than $USER: this runs as a systemd user unit, and the
+        # manager's environment is whatever the session imported into it.
+        SB_SOCK="kdsingleapp-$(id -un)-strawberry"
+        for _ in $(seq 30); do
+            grep -q "$SB_SOCK" /proc/net/unix 2>/dev/null && break
             sleep 1
+        done
+
+        # RETRY, because reachable is not the same as ready. On 2026-08-01 the
+        # message was delivered to a one-second-old instance on a virgin
+        # database and simply vanished — no error, exit 0, no playlist. There is
+        # no readiness signal for "Strawberry will now accept a playlist", so
+        # the import is attempted repeatedly and VERIFIED against the database
+        # after each attempt.
+        #
+        # A resend only happens while the playlist is ABSENT. That is the
+        # duplicate guard: `--create` does not merge by name, so a second one
+        # landing after the first would leave two playlists called the same
+        # thing. Once the row exists, this only waits for its items — those are
+        # written asynchronously and lag the row by a second or two.
+        tracks=0
+        for attempt in 1 2 3 4; do
+            if [[ -z "$(sb_playlist_id)" ]]; then
+                # Output is logged, never discarded: the 2026-08-01 failure left
+                # not one line to work with because this call was silenced.
+                sb_out="$(strawberry --create "$PLAYLIST_NAME" "$PLAYLIST_FILE" 2>&1)" || true
+                [[ -n "$sb_out" ]] && echo "playlist: attempt $attempt — ${sb_out//$'\n'/ | }"
+            fi
+            for _ in $(seq 10); do
+                tracks="$(sb_track_count)"
+                [[ "$tracks" =~ ^[0-9]+$ ]] || tracks=0
+                (( tracks > 0 )) && break
+                sleep 1
+            done
+            (( tracks > 0 )) && break
         done
 
         if (( tracks > 0 )); then

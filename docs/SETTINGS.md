@@ -259,7 +259,7 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Window rule: Strawberry | origin of `STRAWBERRY_CONNECTOR`, size `1920,2105`, **starts unmaximized** | dec |
 | Window rule: KeePassXC | `KEEPASSXC_CONNECTOR` + `KEEPASSXC_OFFSET`, size `1920,1053` — below qBittorrent | dec |
 | Window rule: FFXIV | origin **and size** of `FFXIV_CONNECTOR`; matched on class **plus title** | dec |
-| Strawberry playlist | `PLAYLIST_FILE` imported as `PLAYLIST_NAME`, **Strawberry started first if needed**, result verified in the database | dec |
+| Strawberry playlist | `PLAYLIST_FILE` imported as `PLAYLIST_NAME`, **Strawberry started and waited for**, import retried, result verified in the database | dec |
 | Final step | `systemctl --user restart plasma-plasmashell.service` | dec |
 
 **All window rules live in stage 4, none in stage 3.** `count` and `rules` in
@@ -271,6 +271,17 @@ elsewhere once a screen moves, so the repo stores a connector name and the
 origin is computed at runtime. Rule ids are fixed UUIDs authored here, so
 re-runs update rules instead of appending duplicates, and
 `org.kde.KWin.reconfigure()` makes them apply without waiting for a re-login.
+
+**The playlist import waits for a socket, not for a process, and retries.**
+`strawberry --create` is an IPC message, and three separate things have to be
+true for it to arrive: an instance must exist, its KDSingleApplication socket
+(`/tmp/kdsingleapp-<user>-strawberry`) must be listening, and the instance must
+be old enough to act on the message. Only the first two are observable. Before
+the socket exists the second invocation takes itself for the first instance and
+starts a whole second Strawberry — a ~60 ms window, measured. The third is not
+observable at all, so the import is attempted up to four times and verified
+against the database after each, and a resend happens only while the playlist
+is absent, because `--create` does not merge by name.
 
 **Strawberry's rule carries two maximize keys, and a size rule alone is not
 enough without them.** Measured on the first start after the scripted reinstall

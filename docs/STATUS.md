@@ -28,10 +28,15 @@ That is exactly what tomorrow's run measures.
    on Arch; the wrapper uses `newgrp` now and VERIFIES the resulting gid.
    Launcher and autostart both go through it, so both of ulu's reports hang on
    this one line.
-3. **The playlist import reports a track count.** It used to print success
-   while doing nothing (`strawberry --create` is IPC to a running instance;
-   there was none). Expect `playlist: imported … ('Default') (N tracks)` with
-   N ≈ 160 — a bare warning now means it genuinely failed.
+3. ~~**The playlist import reports a track count.**~~ **FAILED on the run, and
+   the honesty is the good news** — it warned instead of lying, which is what
+   the session-7 rewrite was for. Three causes, all fixed 2026-08-01: stage 4
+   beats the autostart entry by 21 s (so it always starts Strawberry itself),
+   it waited for the *process* rather than the single-instance socket, and a
+   one-second-old Strawberry silently drops the message anyway. Now: wait for
+   `/tmp/kdsingleapp-<user>-strawberry`, retry up to four times, verify against
+   the database, and log the output instead of discarding it. ulu's playlist is
+   imported (160 tracks). See `LOG.md` 2026-08-01.
 4. **Stage 3 sets the commit identity.** `git: repo-local identity set to
    uluToyon <…>` must appear, and afterwards `git var GIT_AUTHOR_IDENT` in
    `~/phoinix` must answer. On the run just made it did NOT exist at all.

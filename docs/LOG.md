@@ -3083,3 +3083,65 @@ at 1920 wide, and KWin still does not consider it a dialog
 (`dialog=false, normal=true, transient=true`) — the `transient` finding from
 session 7 reproduces exactly on the new system. ulu's 2026-07-31 decision to
 accept parent-sized dialogs stands; nothing here reopens it.
+
+## 2026-08-01 — Why the playlist import did nothing, in three parts
+
+ulu's second report: no playlist and no library. The library is the documented
+manual step and is treated separately. The playlist is verification point 3,
+and the rewritten step did the one thing it was rewritten for — it **warned**
+instead of claiming success:
+
+```
+12:14:06 WARNING: 'Default' is empty or absent after the import —
+```
+
+Since the same command, typed by hand at a Strawberry that had been up for
+minutes, imported all 160 tracks instantly, the command was never the problem.
+The journal has the rest:
+
+```
+12:13:45  Started [systemd-run] /usr/bin/strawberry     ← stage 4, itself
+12:13:46  strawberry --create Default …
+12:14:06  Starting Strawberry…                          ← the autostart entry
+12:14:06  "Strawberry is already running - activating existing window"
+```
+
+**Part one: the comment in the script was backwards.** It read "Strawberry
+autostarts anyway, so this only pulls that start forward". In fact stage 4
+reaches this step 21 seconds BEFORE the autostart entry fires, so the branch
+that launches Strawberry is not a fallback, it is the normal path. Every fresh
+install imports into an instance that is one second old.
+
+**Part two: waiting for the process is not waiting for the instance.** The loop
+broke as soon as `pgrep` saw a process. Reproduced deliberately: `--create`
+fired in that gap printed Strawberry's startup banner instead of the
+"already running" line, i.e. it found no server and became a second primary
+instance. The server is `KDSingleApplication`, listening on
+`/tmp/kdsingleapp-<user>-strawberry`, and it appears **60 ms** after the
+process — measured, not estimated. Narrow, but it is a real hole and it is
+cheap to close by grepping `/proc/net/unix` for the socket instead.
+
+**Part three, the one that actually bit on 2026-08-01: reachable is not ready.**
+At 12:13:46 the socket had been up for a second, so the message did reach the
+instance. It vanished anyway — no error, exit 0, no playlist row. A one-second
+old Strawberry on a virgin database is evidently not yet in a state to accept
+one. There is no signal for that, so the fix is not a longer wait but a
+**retry that verifies**: up to four attempts, each checked against the
+database, and a resend only while the playlist row is ABSENT — `--create` does
+not merge by name, so an unconditional retry would leave two playlists called
+"Default".
+
+Also removed: the `>/dev/null 2>&1` on that call. It swallowed every diagnostic
+this investigation needed; there was not one line about the failed attempt
+anywhere.
+
+Verified on a cold start with a throwaway playlist name, so ulu's imported
+playlist was never at risk: socket up after 1 s, import landed on attempt 1,
+160 tracks. The retry path itself is therefore insurance rather than something
+this test exercised — the failure it covers could not be reproduced on demand,
+which is precisely why it is a retry and not a longer sleep.
+
+MPRIS was considered as the readiness signal and **rejected by measurement**:
+`org.mpris.MediaPlayer2.strawberry` appears 0.1 s after launch — it is a real
+name (gone while Strawberry is stopped), but it would report "ready" long
+before anything else is, i.e. it would look like a fix and change nothing.
