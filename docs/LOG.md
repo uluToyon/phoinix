@@ -3468,3 +3468,37 @@ One more out-of-repo path exists and is not in that directory either: the Arch
 ISO `scripts/qemu-test.sh` defaults to. It is a download rather than an asset,
 already overridable with `PHOINIX_ISO`, and ulu deleted the copy that was on
 the Downloads disk while clearing it out.
+
+## 2026-08-01 — mpc-qt drops out of stage 3, and no step needs a second run
+
+ulu: remove the mpc-qt configuration entirely, he will set the player up
+himself, because he does not want to run stage 3 twice.
+
+The reason it ever needed two runs is worth keeping now that the code is gone.
+mpc-qt 26.07 segfaults in `QScreen::availableGeometry()` out of `main` when
+`settings.json` exists and `geometry_v2.json` does not — and the crashing run
+leaves exactly that state behind, so the player never starts again. Tested three
+ways in session 6: a two-key `settings.json` alone crashes, so does one paired
+with an empty `geometry_v2.json`, so does a stub. The profile therefore could
+not be seeded, only edited, and editing needs a profile that exists — hence
+"start it once, then re-run stage 3".
+
+Two track preferences were not worth that shape, and ulu is the one who pays
+for it. Removed: the profile repair and both `jq` writes.
+
+**What this closes is bigger than mpc-qt.** Together with the DZGUI shortcut
+dropped earlier the same day, the last reason to run stage 3 twice is gone.
+"Set up Steam, then re-run stage 3" and "start mpc-qt once, then re-run" were
+the only two, and both existed for the same structural reason: a step that
+could only act on state some application had to create first.
+
+**Kept deliberately: the mpc-qt window rule in stage 4** (`adaptivesync=false`).
+It is a different kind of setting — it needs no profile, no second run and no
+cooperation from the application, and it fixes the video flicker documented
+beside it. Removing it would bring back the exact symptom that drove ulu up the
+wall on YouTube, on a machine where VRR must stay on for games.
+
+Kept in `SETTINGS.md` too, though the code is gone: the contrast with
+LibreOffice, where seeding was verified to work. Same question, opposite
+answer, and only the measurement told them apart — that is the kind of finding
+that gets re-derived expensively if it is deleted along with its code.

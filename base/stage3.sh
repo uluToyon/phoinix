@@ -49,8 +49,9 @@ read_list() { grep -hvE '^\s*(#|$)' "$@" | awk '{print $1}'; }
 # twice because the fix was local to the first one.
 #
 # Fresh installs hide it — a file that does not exist yet has nothing to
-# corrupt — so the damage only ever shows on a RE-RUN, which is a documented
-# part of the workflow (the Steam step in STATUS.md).
+# corrupt — so the damage only ever shows on a RE-RUN. No post-install step
+# requires one any more (both reasons went on 2026-08-01), but this script is
+# re-runnable by design and gets re-run during development constantly.
 #
 # Line-oriented on purpose: it touches exactly the one line it owns and leaves
 # every byte it does not understand alone.
@@ -511,33 +512,21 @@ else
     echo "libreoffice: profile exists — left alone"
 fi
 
-# --- mpc-qt ----------------------------------------------------------------
-# First, a repair. mpc-qt 26.07 segfaults in QScreen::availableGeometry() out
-# of main when settings.json exists and geometry_v2.json does not — and the
-# crashing run leaves exactly that state behind, so it never starts again. Any
-# interrupted first launch is enough to create it. Removing settings.json ends
-# the loop; a clean run then writes all six profile files.
-MPC_DIR="$HOME/.config/mpc-qt"
-if [[ -f "$MPC_DIR/settings.json" && ! -f "$MPC_DIR/geometry_v2.json" ]]; then
-    rm -f "$MPC_DIR/settings.json"
-    echo "mpc-qt: removed a half-written profile that would have segfaulted on start"
-fi
-
-# The settings themselves are written INTO an existing profile, never seeded.
-# Seeding was tested three ways and is unsafe: a two-key settings.json alone
-# crashes, and so does one paired with an empty geometry_v2.json — the crash
-# needs a real geometry entry, which would mean writing this desk's window
-# coordinates into the repo. The contrast with LibreOffice, where seeding was
-# verified to work, is worth keeping in mind: same question, opposite answer,
-# and only the measurement told them apart.
-if [[ -f "$MPC_DIR/settings.json" ]]; then
-    mpc_tmp="$(mktemp)"
-    jq '.playbackAudioTracks = "eng,en" | .playbackSubtitleTracks = "none,no"' \
-        "$MPC_DIR/settings.json" > "$mpc_tmp" && mv "$mpc_tmp" "$MPC_DIR/settings.json"
-    echo "mpc-qt: track preferences written (English audio, no subtitles)"
-else
-    echo "mpc-qt: no profile yet — start it once, then re-run stage 3."
-fi
+# --- mpc-qt: REMOVED 2026-08-01 (ulu) ---------------------------------------
+# Stage 3 used to repair a half-written mpc-qt profile and then write two
+# track preferences into it. Both are gone, and the reason is the shape of
+# the step rather than the settings: mpc-qt cannot be SEEDED (it segfaults on
+# a settings.json without a real geometry entry, LOG 2026-07-31), so the
+# settings could only be written into a profile that already existed — which
+# meant "start mpc-qt once, then run stage 3 AGAIN". ulu is not willing to
+# run stage 3 twice for it and configures the player himself.
+#
+# With this out, nothing in stage 3 needs a second run any more. The other
+# reason vanished the same day when DZGUI's Steam shortcut was dropped.
+#
+# NOT removed: the mpc-qt window rule in stage 4 (adaptive sync off). It is a
+# different kind of setting — applied at first login, needing no profile and
+# no re-run, and it fixes the video flicker documented next to it there.
 
 # ------------------------------------------------- 7b. ProtonVPN split tunnel
 # Stage 2 built the system side (group, nftables rule, resolved). This is the

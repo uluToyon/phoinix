@@ -22,10 +22,10 @@ by stage 3 as a repo-local `credential.helper`. Verified on this machine with
 `git ls-remote` (exit 0). It is no longer a manual step, and the entry under
 "manual steps" that still said so was stale.
 
-Still to do by hand, unchanged and listed under "manual steps" below: Steam
-(then re-run stage 3 once), mpc-qt once plus a re-run, the Strawberry music
-folder, Brave sync, KDE Connect pairing, pCloud login, printer on before
-stage 3.
+Still to do by hand, listed under "manual steps" below: the Steam library,
+the Strawberry music folder, Brave sync, KDE Connect pairing, pCloud login,
+printer on before stage 3. **No step needs stage 3 run twice any more** —
+both reasons went on 2026-08-01 (DZGUI's Steam shortcut, then mpc-qt).
 
 ### The verification list — all nine resolved
 
@@ -87,13 +87,13 @@ stage 3.
    described it (`transient=true` is still the only discriminator) and stays
    parked. See `LOG.md` 2026-08-01.
 
-### After the run — manual steps, unchanged
+### After the run — manual steps
 
-Steam first: log in → Settings → Storage → add `/mnt/Games/SteamLibrary` →
-quit Steam → delete `~/Desktop/steam.desktop` → **re-run stage 3 once** (it
-restores the DZGUI shortcut now that `userdata/` exists). Then mpc-qt once +
-re-run, the Strawberry music folder, Brave sync, KDE Connect pairing, pCloud
-login, printer switched on before stage 3.
+Steam: log in → Settings → Storage → add `/mnt/Games/SteamLibrary` → quit
+Steam → delete `~/Desktop/steam.desktop`. **No stage 3 re-run needed** — the
+DZGUI entry is a desktop icon now, placed on the first run. Then the
+Strawberry music folder, Brave sync, KDE Connect pairing, pCloud login,
+printer switched on before stage 3.
 
 ### Was NOT reproduced by a script and must not be forgotten
 
@@ -420,9 +420,13 @@ this topology — until proven, the cap stays.
   start, which cannot be verified here (the QEMU host has neither a Steam
   account nor the games disk). An unverifiable script whose failure silently
   hides 837 GB is the worse trade against twenty seconds of clicking.
-- **mpc-qt: start it once before stage 3 can write its settings.** Seeding the
-  profile is unsafe (it segfaults on a settings file without a geometry file —
-  see `SETTINGS.md`), so stage 3 skips with a message and needs a re-run.
+- ~~**mpc-qt: start it once before stage 3 can write its settings.**~~
+  **DROPPED 2026-08-01 (ulu): phoinix no longer configures mpc-qt at all.**
+  The settings could not be seeded (segfault on a settings file without a
+  geometry file, see `SETTINGS.md`), so they could only be written into an
+  existing profile — which meant running stage 3 a second time. ulu
+  configures the player himself instead. The stage-4 window rule stays: it
+  needs no profile and no re-run.
 - **Printer: switch it on before stage 3**, or the queue is skipped with a
   warning — the device URI can only be resolved from a device that answers.
 - Brave: join the sync chain by hand (profile comes via Brave Sync).
