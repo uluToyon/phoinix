@@ -93,16 +93,29 @@ KEEPASS_DB="/mnt/FilesMusic/KeePassXC/Passwords.kdbx"
 # because a silent skip here means a black first login.
 CAPTURED_CONFIGS=1
 
+# --- Everything phoinix USES but must not CARRY -----------------------------
+# One directory for the whole class (ulu, 2026-08-01). These files are
+# deliberately outside the repo — secrets, credentials, third-party artwork —
+# but the scripts read them, so they need a home that survives a reinstall.
+# They used to be scattered across four places on two disks, which made "what
+# does this repo depend on that is not in it?" an unanswerable question.
+#
+# On FilesMusic rather than Games: both are data disks phoinix never formats,
+# but the games disk is the one that gets emptied when a library is moved.
+#
+# Only the PATH is ever versioned — never the contents. A missing file is a
+# loud warning in stage 3, never a silent skip.
+PHOINIX_DATA="/mnt/FilesMusic/phoinix"
+
 # --- ProtonVPN split tunnel (stage 3) --------------------------------------
-# The WireGuard configs live WITH the data, on a disk phoinix never touches, so
-# they survive a reinstall by construction — the same anchor pattern as the
-# Strawberry playlist. They must never enter the repo: each file carries a
-# PrivateKey, and for Proton that key IS the credential (no user/password).
+# In PHOINIX_DATA, so they survive a reinstall by construction. They must never
+# enter the repo: each file carries a PrivateKey, and for Proton that key IS
+# the credential (no user/password).
 # Two are present, CH and NL, both generated with "NAT-PMP (Port Forwarding)
 # = on" and "Moderate NAT = off" — Proton allows only one of those two at a
 # time, and port forwarding is the one qBittorrent needs.
 # Only the PATH is versioned. Every .conf in here is imported.
-VPN_CONFIG_DIR="/mnt/FilesMusic/VPN"
+VPN_CONFIG_DIR="$PHOINIX_DATA/vpn"
 
 # --- GitHub credentials (stage 3) ------------------------------------------
 # Same principle as VPN_CONFIG_DIR above: the secret lives on a data disk this
@@ -126,7 +139,7 @@ VPN_CONFIG_DIR="/mnt/FilesMusic/VPN"
 # date STATUS.md never carried). So nothing here rots on a timer; the flip side
 # is that a leaked token stays valid until it is revoked by hand at GitHub,
 # which is the one action to take if this file ever escapes the data disk.
-GIT_CREDENTIALS_FILE="/mnt/FilesMusic/phoinix/git-credentials"
+GIT_CREDENTIALS_FILE="$PHOINIX_DATA/git-credentials"
 
 # --- qBittorrent paths (stage 3) -------------------------------------------
 # On a data disk, not in ~/Downloads: the system disk is what a reinstall
@@ -175,21 +188,17 @@ PRINTER_OPTIONS=("PageSize=A4" "printer-is-shared=false")  # Letter is the drive
 #
 # The file holds exactly {"steam_api": "...", "ip_list": [...]}, mode 0600.
 # Everything else in DZGUI's config is plain settings and is authored below.
-DZGUI_PRIVATE_FILE="/mnt/FilesMusic/DZGUI/dzgui-private.json"
+DZGUI_PRIVATE_FILE="$PHOINIX_DATA/dzgui-private.json"
 DZGUI_NAME="uluToyon"        # in-game name; ulu's public handle anyway
 
 # --- DZGUI desktop icon artwork (stage 3) -----------------------------------
 # The DayZ icon, 128x128 with alpha, extracted once from
-# steamapps/common/DayZ/DayZ_x64.exe and parked on the games disk. Same shape
-# as every other asset that may not enter a public repo: the file lives on a
-# data disk, only its path is versioned. Here the reason is not secrecy but
-# copyright — it is Bohemia's artwork, and this repo is public.
-#
-# The games disk is never formatted by anything here, so it survives a
-# reinstall by construction. Missing file = stage 3 falls back to a theme icon
-# and says so; nothing breaks. How it was extracted is in LOG.md 2026-08-01,
+# steamapps/common/DayZ/DayZ_x64.exe. In PHOINIX_DATA like the rest, and here
+# the reason is not secrecy but copyright — it is Bohemia's artwork and this
+# repo is public. Missing file = stage 3 falls back to a theme icon and says
+# so; nothing breaks. How it was extracted is in LOG.md 2026-08-01,
 # reproducible without any extra package.
-DZGUI_ICON="/mnt/Games/phoinix/dzgui-icon.png"
+DZGUI_ICON="$PHOINIX_DATA/dzgui-icon.png"
 
 # --- Steam non-Steam shortcuts: DROPPED 2026-08-01 (ulu) --------------------
 # There used to be a STEAM_SHORTCUTS_FILE here, restoring a shortcuts.vdf whose
@@ -197,7 +206,9 @@ DZGUI_ICON="/mnt/Games/phoinix/dzgui-icon.png"
 # now gets a desktop icon (system/applications/phoinix-dzgui.desktop, placed by
 # stage 3 and positioned by DESKTOP_ICONS above).
 #
-# The backup file itself stays on the games disk, untouched and unused.
+# The old shortcuts.vdf is still on the games disk at /mnt/Games/phoinix/,
+# unused and deliberately NOT moved into PHOINIX_DATA — that directory is for
+# what the scripts read, and nothing reads this any more.
 
 # --- Desktop icons (stages 3 and 4) -----------------------------------------
 # The icons ulu keeps on an otherwise empty desktop. Steam's was deleted; these
@@ -249,12 +260,12 @@ MONITOR_SWITCH=(
 MONITOR_SWITCH_REF="XZ322QU V3"
 
 # --- XIVLauncher / Dalamud (stage 3) ----------------------------------------
-# Next to the game on the games disk, where it belongs thematically and where
-# it survives by construction. Holds ~80 MB: launcher settings, the Dalamud
+# In PHOINIX_DATA (it used to sit next to the game on the games disk).
+# Holds ~80 MB: launcher settings, the Dalamud
 # plugin profile with its third-party repo list, per-plugin settings, and the
 # plugin binaries. Everything else in ~/.xlcore (2.6 GB of Proton prefix,
 # Dalamud, runtime, assets, Browsingway's browser) re-downloads itself.
 #
 # accounts.json in there is a credential (account name, last OTP) and is kept
 # at 0600. Only the PATH is versioned — never the contents.
-XLCORE_BACKUP_DIR="/mnt/Games/FFXIV/xlcore-backup"
+XLCORE_BACKUP_DIR="$PHOINIX_DATA/xlcore-backup"

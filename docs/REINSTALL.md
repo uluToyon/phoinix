@@ -24,13 +24,27 @@ Verified 2026-07-31, before the first supervised run:
 |---|---|
 | Target vs. data disks | separate devices — target `nvme1n1`; `Games` on `nvme0n1p1`, `Video` `sda1`, `Downloads` `sdb1`, `FilesMusic` `sdc1` |
 | `scripts/check-drift.sh desktop` | 10 in sync, 0 drifted |
-| `XLCORE_BACKUP_DIR` | 80 MB, same day |
-| `STEAM_SHORTCUTS_FILE` | present, same day |
-| `DZGUI_PRIVATE_FILE` | present, same day |
-| `VPN_CONFIG_DIR` | both `.conf` files, CH and NL |
 | `PLAYLIST_FILE` | present |
 | `KEEPASS_DB` | present |
 | `hosts/desktop/authorized_keys` | key material identical to the live file, so SSH survives — only the comment is sanitised, deliberately |
+
+**`PHOINIX_DATA` replaces four of the old rows.** Since 2026-08-01 everything
+the scripts read but the repo may not carry lives in one directory,
+`/mnt/FilesMusic/phoinix/`, so one check covers the lot:
+
+```
+ls -lR /mnt/FilesMusic/phoinix
+```
+
+Expect `git-credentials` (0600), `dzgui-private.json` (0600), `dzgui-icon.png`,
+`vpn/` with both `.conf` files at 0600 (CH and NL), and `xlcore-backup/` at
+~80 MB. Anything missing there becomes a warning during stage 3, never a silent
+skip — but finding it here is cheaper than finding it afterwards.
+
+Two paths stay outside that directory on purpose, and both are listed above:
+`PLAYLIST_FILE` because the playlist stores RELATIVE paths and only resolves
+next to the music, and `KEEPASS_DB` because it is ulu's live database rather
+than an asset of this repo.
 
 **Two things are irreplaceable and covered by none of the above.** Copy them to a
 data disk first — both are tiny:

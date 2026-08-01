@@ -384,7 +384,7 @@ application. Rationale in `LOG.md` 2026-07-31.
 
 | Setting | Value | Origin |
 |---|---|---|
-| `VPN_CONFIG_DIR` | `/mnt/FilesMusic/VPN` — WireGuard configs, **never in the repo** (each carries a PrivateKey, which for Proton *is* the credential) | dec |
+| `VPN_CONFIG_DIR` | `$PHOINIX_DATA/vpn` — WireGuard configs, **never in the repo** (each carries a PrivateKey, which for Proton *is* the credential) | dec |
 | `VPN_INTERFACE` | `proton0` — authored, not discovered. Both connections share it, so qBittorrent's binding survives switching country | dec |
 | `VPN_GROUP` | `vpnonly` | dec |
 | `VPN_GATEWAY` | `10.2.0.1` — Proton's in-tunnel gateway: NAT-PMP peer and DNS | dec |
@@ -604,7 +604,7 @@ DZGUI 7 uses `dzgui`, not the `dztui` recorded during the package rounds.
 
 | Setting | Value | Origin |
 |---|---|---|
-| `DZGUI_PRIVATE_FILE` | `/mnt/FilesMusic/DZGUI/dzgui-private.json`, mode 0600 — **path only**, never the contents | dec |
+| `DZGUI_PRIVATE_FILE` | `$PHOINIX_DATA/dzgui-private.json`, mode 0600 — **path only**, never the contents | dec |
 | `DZGUI_NAME` | `uluToyon` | dec |
 | the rest | `client=steam`, `start_tab=1`, `fullscreen=false`, `use_miles=false`, Steam path derived from `$HOME` | dec |
 
@@ -676,7 +676,7 @@ is what proves ulu moved the icon rather than accepting a default placement.
 
 `~/.xlcore` is ~2.7 GB and almost all of it rebuilds itself. What does not is
 about 80 MB, kept next to the game on the games disk
-(`XLCORE_BACKUP_DIR = /mnt/Games/FFXIV/xlcore-backup`) and written by
+(`XLCORE_BACKUP_DIR = $PHOINIX_DATA/xlcore-backup`) and written by
 `scripts/xlcore-backup.sh`. Only the path is versioned.
 
 **The backup runs itself, since 2026-07-31.** `phoinix-xlcore-backup.service`

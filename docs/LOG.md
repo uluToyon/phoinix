@@ -3422,3 +3422,49 @@ Also folded into `REINSTALL.md`: `~/.claude.json` joins the rescue list. It
 existed only inside the 2026-07-30 backup, was never covered by the rescue
 procedure, and went with it — the same shape of gap as the SSH key, found the
 same afternoon.
+
+## 2026-08-01 — One home for everything the repo uses but must not carry
+
+ulu asked for all files that are deliberately outside the repo, yet read by it,
+to live in one place: `/mnt/FilesMusic/phoinix/`. They had accumulated across
+four directories on two disks, each with its own good local reason and no
+overall shape — which made "what does this repo depend on that is not inside
+it?" a question nobody could answer without grepping.
+
+New config variable `PHOINIX_DATA`, and the five paths derive from it. Moved by
+copy → verify → delete, so a failed compare would have kept the original:
+
+| What | From | To |
+|---|---|---|
+| GitHub token | `/mnt/FilesMusic/phoinix/git-credentials` | unchanged — it was already the model |
+| WireGuard configs (CH, NL) | `/mnt/FilesMusic/VPN/` | `$PHOINIX_DATA/vpn/` |
+| DZGUI secret + server list | `/mnt/FilesMusic/DZGUI/dzgui-private.json` | `$PHOINIX_DATA/dzgui-private.json` |
+| DayZ icon artwork | `/mnt/Games/phoinix/dzgui-icon.png` | `$PHOINIX_DATA/dzgui-icon.png` |
+| XIVLauncher backup, 80 MB | `/mnt/Games/FFXIV/xlcore-backup/` | `$PHOINIX_DATA/xlcore-backup/` |
+
+Permissions came along: both `.conf` files and `dzgui-private.json` are still
+0600. Nothing outside the repo referenced the old paths — checked before
+moving, because the VPN configs are imported into NetworkManager and a live
+tunnel reading its source path would have broken. It does not; NM keeps its own
+copy.
+
+**FilesMusic rather than Games**, deliberately: both are data disks phoinix
+never formats, but the games disk is the one that gets emptied when a library
+is moved somewhere else.
+
+**Two paths stay out, and the reasons are different in kind.**
+`PLAYLIST_FILE` cannot move: the `.m3u` stores RELATIVE paths
+(`Lovebites/2017 - …/01 - ….mp3`), resolved against its own directory, so
+moving it away from the music root breaks all 160 entries. That is arithmetic,
+not preference. `KEEPASS_DB` could move but should not: it is ulu's live
+password database, opened daily by KeePassXC, and phoinix only points at it —
+it is not an asset of this repo, and this repo never touches it.
+
+Left behind on the games disk: `/mnt/Games/phoinix/shortcuts.vdf`, dead since
+the Steam shortcut mechanism was dropped earlier the same day. Deliberately NOT
+moved — `PHOINIX_DATA` is for what the scripts read, and nothing reads it.
+
+One more out-of-repo path exists and is not in that directory either: the Arch
+ISO `scripts/qemu-test.sh` defaults to. It is a download rather than an asset,
+already overridable with `PHOINIX_ISO`, and ulu deleted the copy that was on
+the Downloads disk while clearing it out.
