@@ -121,7 +121,11 @@ VPN_CONFIG_DIR="/mnt/FilesMusic/VPN"
 # the path to it is not, and that is enough to make the step reproducible.
 #
 # The token is fine-grained, limited to uluToyon/phoinix, permission
-# "Contents: Read and write". It EXPIRES — see STATUS.md for the date.
+# "Contents: Read and write", and has NO expiry date (confirmed by ulu
+# 2026-08-01 — an earlier comment here claimed the opposite and pointed at a
+# date STATUS.md never carried). So nothing here rots on a timer; the flip side
+# is that a leaked token stays valid until it is revoked by hand at GitHub,
+# which is the one action to take if this file ever escapes the data disk.
 GIT_CREDENTIALS_FILE="/mnt/FilesMusic/phoinix/git-credentials"
 
 # --- qBittorrent paths (stage 3) -------------------------------------------

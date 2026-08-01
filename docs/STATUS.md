@@ -386,11 +386,11 @@ this topology — until proven, the cap stays.
   offer the token to every clone on the machine. Only the path is versioned.
   Verified on the fresh system: the helper was set by stage 3 and
   `git ls-remote origin` authenticated without a prompt.
-  **Open, and it will bite silently: the token EXPIRES and the date is
-  recorded nowhere.** `hosts/desktop/config.sh` says "see STATUS.md for the
-  date" and STATUS never got one. The token is fine-grained, limited to
-  `uluToyon/phoinix`, permission "Contents: Read and write". When it expires,
-  the symptom is a push asking for credentials — write the date here.
+  The token is fine-grained, limited to `uluToyon/phoinix`, permission
+  "Contents: Read and write", and **has no expiry date** (ulu, 2026-08-01).
+  `config.sh` used to claim it expires and pointed here for a date that was
+  never written; both are corrected. Nothing rots on a timer, and the trade is
+  the usual one: a leaked token stays valid until revoked by hand at GitHub.
 - **KDE Connect: pair the phone by hand.** The pairing exchanges keys between
   the two devices and is confirmed on the phone, so it cannot be scripted from
   here. Nothing else is needed — the package is in `packages/kde.txt` and our
