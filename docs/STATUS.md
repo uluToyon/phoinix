@@ -241,9 +241,13 @@ during the 2026-07-31 clean-up, along with `/mnt/FilesMusic/Linux/`.
 - **The repo is self-contained** (since 2026-07-31): captured config lives in
   `hosts/<host>/home/` and `dotfiles/`, not in an external backup. A missing
   source is a hard error rather than a silent skip.
-- Backup of the old system's Claude data + config captures is on the
-  `Downloads` disk: `backup-nvme1n1-20260730/`. It has proven useful beyond
-  restoring — the soundbar investigation was mined out of those transcripts.
+- **All session transcripts before 2026-08-01 are gone** (ulu deleted the
+  Downloads-disk copies that day: `backup-nvme1n1-20260730/`, `rescue/`,
+  `keepassxc-pre-merge-2026-07-31/`). They had proven useful beyond restoring —
+  the soundbar's −26 dB and its reason were recovered out of them after the
+  knowledge had been lost. That fallback no longer exists, which raises the
+  stakes on `LOG.md`: a rationale that is not written down here is not
+  recoverable anywhere else.
 - Repo is live: https://github.com/uluToyon/phoinix (public; commits use
   the GitHub noreply address, author name `uluToyon`). Rule: curated config
   imports + secret scan before pushing anything captured from a live system.
@@ -499,19 +503,22 @@ Still open:
   commits carry the anonymous identity automatically. Do not add a global
   `user.name`/`user.email` — that is exactly how 35 commits acquired the real
   name in the first place.
-  Out of scope but worth remembering: the old system's backup on the Downloads
-  disk (`backup-nvme1n1-20260730/`, the Claude transcripts) still contains the
-  name. It was never published, but it is on disk.
+  ~~Out of scope but worth remembering: the old system's backup on the Downloads
+  disk still contains the name.~~ **Gone 2026-08-01** — ulu deleted those
+  directories, so the last copies of the name on this machine went with them.
+  It was never published in the first place; now it is not on disk either.
 - **KeePassXC: a pointless private key sits in `keepassxc.ini`.** KeePassXC
   generated a KeeShare signing key when that settings page was opened; the
   share list is empty, so it protects nothing. Deleting the `[KeeShare]`
   section removes it; it only comes back if the page is opened again. phoinix
   never touches that section either way. ulu's call.
 - **KeePassXC databases: 4 conflict copies deleted 2026-07-31** (ulu's call —
-  sizes grew monotonically, so divergence was unlikely). Full backup of all six
-  files at `/mnt/Downloads/keepassxc-pre-merge-2026-07-31/`; keep it until the
-  database has been in use for a while. Syncthing (which caused the conflicts)
-  was retired years ago and is deliberately not part of phoinix.
+  sizes grew monotonically, so divergence was unlikely), **and the pre-merge
+  backup was deleted 2026-08-01.** There is no way back now: if an old entry
+  turns out to be missing from `KEEPASS_DB`, it is missing for good. The
+  divergence was never proven either way, only judged unlikely. Syncthing
+  (which caused the conflicts) was retired years ago and is deliberately not
+  part of phoinix.
 - **Application phase — process rules learned on Dolphin:** close a KDE
   application before diffing (they write their config on exit), and treat a
   file that merely grew with suspicion rather than dismissing it as noise.

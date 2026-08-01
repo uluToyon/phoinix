@@ -3390,3 +3390,35 @@ assumption:**
   `REINSTALL.md`'s rescue never copied and which exists nowhere else.
 - `keepassxc-pre-merge-2026-07-31/` (1.4 MB) stays, per the standing note: keep
   until the database has been in daily use for a while. One day is not that.
+
+## 2026-08-01 — The Downloads-disk backups are gone (ulu's call)
+
+Straight after the SSH key was restored, ulu deleted all three directories:
+`rescue/`, `backup-nvme1n1-20260730/` and `keepassxc-pre-merge-2026-07-31/`.
+The consequences were put to him first and he took them; recorded here because
+two of them outlive the decision.
+
+**Every session transcript before 2026-08-01 is gone.** That was the archive
+the soundbar's −26 dB and its reason were recovered from, months after the
+knowledge had been lost — the precedent that made those files worth keeping in
+the first place. There is no second copy anywhere. In practice this raises the
+stakes on this log: a rationale not written down here is now unrecoverable,
+where before it could be dug out of a transcript.
+
+**The four KeePassXC conflict copies are unrecoverable.** They were judged
+unlikely to have diverged (sizes grew monotonically) but that was never proven.
+If an entry turns out to be missing from the live database, it is missing.
+
+One thing resolved rather than lost: those directories held the last copies of
+ulu's real name on this machine, and a live `.credentials.json` on a data disk.
+Both are gone with them.
+
+Docs corrected to match: `STATUS.md` (three references), `REINSTALL.md` (the
+"done for the 2026-07-31 run" note). This log keeps its earlier entries as they
+were written — they describe what was true at the time, which is the point of
+an append-only log.
+
+Also folded into `REINSTALL.md`: `~/.claude.json` joins the rescue list. It
+existed only inside the 2026-07-30 backup, was never covered by the rescue
+procedure, and went with it — the same shape of gap as the SSH key, found the
+same afternoon.

@@ -49,9 +49,18 @@ cp -a ~/.claude /mnt/Downloads/rescue/claude
   proved their worth once: the soundbar's `−26 dB` and its reason were recovered
   out of older transcripts after the knowledge had been lost.
 
-Done for the 2026-07-31 run: both sit in `/mnt/Downloads/rescue/` (`ssh/` with
-the private key still at 0600, `claude/` with 46 MB including that day's seven
-transcripts). The 2026-07-30 backup is still beside it, untouched.
+Done for the 2026-07-31 run, and **deleted again on 2026-08-01** once the key
+had been restored (ulu's call, along with the 2026-07-30 backup). So the
+Downloads disk currently holds no rescue copy at all: the next reinstall starts
+this list from scratch, and `~/.ssh/id_ed25519` exists in exactly one place —
+the system disk, which is the disk that gets wiped.
+
+Add `~/.claude.json` to the copy list while you are at it. It sat only in the
+2026-07-30 backup, was never part of the rescue above, and is gone with it:
+
+```
+cp -a ~/.claude.json /mnt/Downloads/rescue/claude.json
+```
 
 ### Putting the key back — the step this file used to be missing
 
