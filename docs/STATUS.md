@@ -1,33 +1,53 @@
 # STATUS
 
-_Last updated: 2026-08-01 (session 9 — the reinstall ran; all nine verification points are resolved)_
+_Last updated: 2026-08-01 (session 9 — first reinstall verified and fixed; a SECOND reinstall is next)_
 
 ## Pick up here
 
-**The scripted reinstall happened on 2026-08-01 and the whole verification list
-below is closed.** Seven points passed, two failed and were fixed the same
-session with the failure on screen — which is what the list was for. This
-machine is now a genuine fresh-install result, so from here the live system and
-the scripts agree by construction rather than by repair.
+**ulu reinstalls again, right after this session.** The first run (2026-08-01,
+morning) closed its whole nine-point list; everything it turned up was fixed the
+same day, applied live AND written into the scripts. But the live proof is worth
+little for the same reason as last time — these fixes exist for the fresh-install
+case, and this machine is no longer one. That is what the next run measures.
 
-What the run cost in fixes, all committed: Strawberry starts unmaximized
-(`7ae2907`), the playlist import waits for the single-instance socket and
-retries (`cfeae8f`), one shared QSettings writer for every QSettings file
-(`1e503ea`), the collection stays manual on corrected grounds (`52500f2`), and
-the Places step waits for `user-places.xbel` instead of giving up (`f6e44e2`).
+Pre-flight was done at the end of the session: repo pushed, `check-drift.sh`
+clean (10 in sync, 0 drifted), `PHOINIX_DATA` complete, boot stick `ARCH_202607`
+plugged in, xlcore backup refreshed after today's FFXIV session, and the rescue
+copy remade — see `REINSTALL.md`, which is the file to follow.
 
-**GitHub authentication survived the reinstall by itself** — the mechanism
-added in `230470e` works: `GIT_CREDENTIALS_FILE` on the FilesMusic disk, wired
-by stage 3 as a repo-local `credential.helper`. Verified on this machine with
-`git ls-remote` (exit 0). It is no longer a manual step, and the entry under
-"manual steps" that still said so was stale.
+### What the SECOND run must verify
 
-Still to do by hand, listed under "manual steps" below: the Steam library,
-the Strawberry music folder, Brave sync, KDE Connect pairing, pCloud login,
-printer on before stage 3. **No step needs stage 3 run twice any more** —
-both reasons went on 2026-08-01 (DZGUI's Steam shortcut, then mpc-qt).
+1. **Strawberry opens unmaximized**, `1920x2105` at DP-2's origin, and the
+   sponsoring dialog does not appear at all. Both are new since the last run.
+2. **The playlist import reports a track count** — `playlist: imported …
+   (160 tracks)`. It now waits for `/tmp/kdsingleapp-<user>-strawberry` and
+   retries up to four times. A bare warning still means it genuinely failed.
+   **The retry path has never fired in anger**; this run is its first real test.
+3. **`strawberry.conf` comes out intact.** Written by `qs_set` now, not
+   `kwriteconfig6`. A fresh install cannot expose the bug that motivated it, so
+   what this run proves is only that the new writer works at all — the
+   corruption case needs a RE-RUN to show, and no post-install step demands one
+   any more.
+4. **Three desktop icons, in a row that means something**: XIVLauncher at
+   `2,2`, DZGUI at `2,3` (directly right of it), monitor switch at `4,4` — and
+   DZGUI must carry the DayZ artwork, not a generic theme icon. Cells are
+   **ROW,COLUMN**; the first number moves an icon down.
+5. **The Places order is applied, not skipped.** The step now waits up to 30 s
+   for `user-places.xbel` and its closing tag. Last time it lost that race by
+   under a second.
+6. **Everything resolves out of `PHOINIX_DATA`** — VPN configs imported, DZGUI
+   config seeded without its wizard, the DayZ icon installed, the xlcore backup
+   restored, `git push` working without a prompt. Five paths that all moved
+   today, so a typo in any of them shows up here first.
+7. **No step asks for a second stage 3 run.** Both reasons were removed today.
+   If any output still says "re-run stage 3", something was missed.
+8. **`~/.ssh` must be restored BY HAND** — `REINSTALL.md`, "Putting the key
+   back". Nothing scripts this, and its absence is invisible because incoming
+   SSH keeps working. This is the one that got missed last time.
 
-### The verification list — all nine resolved
+### The first run — all nine points resolved
+
+
 
 1. **Desktop icons get positioned.** The stopper. Stage 4 now finds the Folder
    View containment by `lastScreen` + activity instead of `lastResolution`

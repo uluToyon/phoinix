@@ -50,31 +50,33 @@ than an asset of this repo.
 data disk first — both are tiny:
 
 ```
-install -d /mnt/Downloads/rescue
-cp -a ~/.ssh    /mnt/Downloads/rescue/ssh
-cp -a ~/.claude /mnt/Downloads/rescue/claude
+install -d $PHOINIX_DATA/rescue
+cp -a ~/.ssh         $PHOINIX_DATA/rescue/ssh
+cp -a ~/.claude      $PHOINIX_DATA/rescue/claude
+cp -a ~/.claude.json $PHOINIX_DATA/rescue/claude.json
 ```
+
+(`PHOINIX_DATA` is `/mnt/FilesMusic/phoinix` — see `hosts/desktop/config.sh`.
+The rescue copy lives there with everything else the repo cannot carry, ulu's
+call 2026-08-01. It used to sit on the Downloads disk, which was one more place
+to remember.)
 
 - `~/.ssh/id_ed25519` — the private key. It is NOT in the repo and must never be
   (see DESIGN.md "Never in the repo"). Losing it means re-registering a new key
   everywhere it is authorised.
-- `~/.claude` — the session transcripts. The existing backup on the Downloads
-  disk is from 2026-07-30 and predates the last two sessions. These have already
-  proved their worth once: the soundbar's `−26 dB` and its reason were recovered
-  out of older transcripts after the knowledge had been lost.
+- `~/.claude` — the session transcripts. There is no other copy: every
+  transcript older than 2026-08-01 was deleted that day. They had already
+  proved their worth once — the soundbar's `−26 dB` and its reason were
+  recovered out of them after the knowledge had been lost — and that fallback
+  is gone, which is exactly why this copy matters.
+- `~/.claude.json` — on the list since 2026-08-01. It was never part of the
+  rescue before, sat only in the old backup, and went when that was deleted.
 
-Done for the 2026-07-31 run, and **deleted again on 2026-08-01** once the key
-had been restored (ulu's call, along with the 2026-07-30 backup). So the
-Downloads disk currently holds no rescue copy at all: the next reinstall starts
-this list from scratch, and `~/.ssh/id_ed25519` exists in exactly one place —
-the system disk, which is the disk that gets wiped.
-
-Add `~/.claude.json` to the copy list while you are at it. It sat only in the
-2026-07-30 backup, was never part of the rescue above, and is gone with it:
-
-```
-cp -a ~/.claude.json /mnt/Downloads/rescue/claude.json
-```
+Made fresh on 2026-08-01 before the second reinstall, in
+`/mnt/FilesMusic/phoinix/rescue/` (`ssh/` with the private key at 0600,
+`claude/`, `claude.json`). The 2026-07-31 copy on the Downloads disk was
+deleted earlier that day once the key had been restored from it — which is
+why this list exists: after a wipe, `~/.ssh/id_ed25519` has no second home.
 
 ### Putting the key back — the step this file used to be missing
 
@@ -89,9 +91,11 @@ Run this once the new system is up:
 
 ```
 install -m 700 -d ~/.ssh
-install -m 600 /mnt/Downloads/rescue/ssh/id_ed25519     ~/.ssh/id_ed25519
-install -m 644 /mnt/Downloads/rescue/ssh/id_ed25519.pub ~/.ssh/id_ed25519.pub
-install -m 600 /mnt/Downloads/rescue/ssh/known_hosts    ~/.ssh/known_hosts
+D=/mnt/FilesMusic/phoinix/rescue/ssh
+install -m 600 "$D/id_ed25519"     ~/.ssh/id_ed25519
+install -m 644 "$D/id_ed25519.pub" ~/.ssh/id_ed25519.pub
+install -m 600 "$D/known_hosts"    ~/.ssh/known_hosts
+cp -a /mnt/FilesMusic/phoinix/rescue/claude.json ~/.claude.json
 ssh-keygen -lf ~/.ssh/id_ed25519      # fingerprint must match the rescue copy
 ```
 

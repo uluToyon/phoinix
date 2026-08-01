@@ -3502,3 +3502,36 @@ Kept in `SETTINGS.md` too, though the code is gone: the contrast with
 LibreOffice, where seeding was verified to work. Same question, opposite
 answer, and only the measurement told them apart — that is the kind of finding
 that gets re-derived expensively if it is deleted along with its code.
+
+## 2026-08-01 — Pre-flight for the second reinstall
+
+ulu goes straight into another reinstall. The checks from `REINSTALL.md` were
+run rather than assumed, and one came back red.
+
+- Repo pushed, `main` = `origin/main`.
+- `check-drift.sh desktop`: 10 in sync, 0 drifted, 1 expected to differ (the
+  wireplumber stream-properties, per-application state).
+- `PHOINIX_DATA` complete, permissions intact.
+- Boot stick `ARCH_202607` present, so the deleted ISO does not matter.
+- **The rescue copy was missing.** Deleted earlier the same day, correctly —
+  but that left `~/.ssh/id_ed25519` in exactly one place, on the partition
+  stage 1 formats. Remade, fingerprint verified identical after the copy, and
+  `~/.claude.json` included this time.
+
+**The rescue copy now lives in `PHOINIX_DATA` too** (ulu, mid-operation: "den
+rescue kram packst du in /mnt/FilesMusic/phoinix/"). It is not read by any
+script, so it is a slightly different class from the rest of that directory —
+but it is the same question for the human: what does a reinstall need that the
+repo cannot hold? One place, one answer. The Downloads disk was one more place
+to remember.
+
+Also refreshed: `scripts/xlcore-backup.sh desktop`, because ulu played FFXIV
+after the morning's install and the backup was from the evening before. Exactly
+the trap the GameMode flag set on 2026-07-31, where an unrefreshed backup would
+have restored the old value. It landed in the new location by itself —
+`XLCORE_BACKUP_DIR` derives from `PHOINIX_DATA` now.
+
+`STATUS.md` rewritten for the run: eight points, of which the interesting ones
+are the retry path in the playlist import (never fired in anger), the five paths
+that moved into `PHOINIX_DATA` today, and the manual SSH restore — the step
+that was missed last time precisely because its absence is invisible.
