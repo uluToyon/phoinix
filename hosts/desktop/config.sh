@@ -107,6 +107,23 @@ CAPTURED_CONFIGS=1
 # loud warning in stage 3, never a silent skip.
 PHOINIX_DATA="/mnt/FilesMusic/phoinix"
 
+# --- Claude Code's local settings for this checkout (stage 3) ---------------
+# `.claude/settings.local.json` in the repo working copy: permission rules and
+# the permission MODE ulu has granted for this directory. Gitignored since
+# 2026-08-01 (it is machine-local and this repo is public), which is exactly
+# why it needs a home here — a gitignored file does not come back with the
+# clone, so without this a reinstall silently resets it.
+#
+# **This restores `defaultMode: bypassPermissions`, i.e. a fresh machine comes
+# up with permission prompts disabled for this checkout, without anyone
+# deciding again.** ulu's explicit call (2026-08-01) after the trade was put to
+# him: the assistant is deliberately blocked by the harness from setting that
+# mode itself, and automating it in stage 3 puts the same result one step
+# further back. He chose automation over the second handgrip. Recorded here so
+# the next reader knows it is a decision and not an oversight — deleting this
+# variable is all it takes to undo.
+CLAUDE_SETTINGS_FILE="$PHOINIX_DATA/claude-settings.local.json"
+
 # --- ProtonVPN split tunnel (stage 3) --------------------------------------
 # In PHOINIX_DATA, so they survive a reinstall by construction. They must never
 # enter the repo: each file carries a PrivateKey, and for Proton that key IS

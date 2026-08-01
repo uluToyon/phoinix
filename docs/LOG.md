@@ -3535,3 +3535,40 @@ have restored the old value. It landed in the new location by itself —
 are the retry path in the playlist import (never fired in anger), the five paths
 that moved into `PHOINIX_DATA` today, and the manual SSH restore — the step
 that was missed last time precisely because its absence is invisible.
+
+## 2026-08-01 — Claude Code's local settings survive a reinstall, by ulu's call
+
+Adding `.gitignore` for `.claude/settings.local.json` created a hole the same
+minute it closed one, and ulu spotted it: the file is gitignored, so it does not
+come back with the clone, and it lives in `~/phoinix/.claude/` — on `/home`,
+which stage 1 formats. It was also not covered by the rescue copy, which takes
+`~/.claude`, a different directory entirely. Before the .gitignore it would at
+least have returned with the checkout.
+
+Worth stating what was NOT at risk, since "then everything's gone" was the
+worry: the transcripts and `~/.claude.json` are in the rescue copy. Only this
+one settings file was.
+
+**Two ways were put to him** — restore it by hand next to the SSH key, or have
+stage 3 install it from `PHOINIX_DATA` like every other file in that class. The
+recommendation was by hand, for a reason worth recording: the harness twice
+refused to let the assistant set `bypassPermissions` itself, deliberately, and
+writing it into stage 3 puts the same result one step further back. **ulu chose
+automation.** His machine, his call, and the concern is recorded here and in
+`config.sh` rather than re-litigated. Undoing it is deleting one variable.
+
+**The first implementation was wrong and the test caught it inside a minute.**
+It used `install -Dm644` unconditionally, which restored the data-disk copy over
+the live file — destroying four permission rules Claude Code had appended during
+this very session. Restored from a scratch copy taken before the test.
+
+The fix is the pattern this repo already uses for the DZGUI config and the
+KeePassXC recent-database: **seed only when absent**. An existing file is ulu's
+and is newer by construction, because Claude Code appends a rule every time he
+grants one, while the data-disk copy is a hand-made snapshot. Both branches were
+then verified explicitly: with the file present it is left untouched (md5
+compared before and after), with it absent it is restored carrying the mode.
+
+Accepted cost, named in the script: the data-disk copy goes stale unless
+refreshed by hand — exactly like `XLCORE_BACKUP_DIR`, and now listed beside it
+in `REINSTALL.md`'s pre-flight.

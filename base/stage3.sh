@@ -128,6 +128,41 @@ if [[ -d "$REPO_DIR/.git" ]]; then
             echo "         https://$GIT_IDENTITY_NAME:<token>@github.com"
         fi
     fi
+
+    # Claude Code's local settings for this checkout. Gitignored on purpose, so
+    # it cannot ride along in the clone — which is precisely why it is restored
+    # from a data disk instead, like every other file in that class.
+    #
+    # It carries `defaultMode: bypassPermissions`. Stating that plainly because
+    # the file name does not: this line brings a fresh machine up with
+    # permission prompts disabled for this directory. ulu's decision, taken
+    # explicitly (config.sh has the reasoning). It is one variable to remove.
+    # SEEDED ONLY WHEN ABSENT, like the DZGUI config and the KeePassXC recent
+    # database. An existing file is ulu's and is NEWER by construction: Claude
+    # Code appends every permission rule he grants during a session, while the
+    # copy on the data disk is a snapshot taken by hand. Overwriting it was the
+    # first implementation and it destroyed four freshly granted rules within a
+    # minute of being tested — the restore is for an EMPTY checkout, not for
+    # keeping two copies in step.
+    #
+    # Consequence, and it is deliberate: the data-disk copy goes stale unless
+    # it is refreshed, same as XLCORE_BACKUP_DIR. Refresh it with
+    #   cp -a "$REPO_DIR/.claude/settings.local.json" "$CLAUDE_SETTINGS_FILE"
+    CLAUDE_SETTINGS_DEST="$REPO_DIR/.claude/settings.local.json"
+    if [[ -n "${CLAUDE_SETTINGS_FILE:-}" ]]; then
+        if [[ -e "$CLAUDE_SETTINGS_DEST" ]]; then
+            echo "claude: local settings exist — left alone (they are newer than the backup)"
+        elif [[ -f "$CLAUDE_SETTINGS_FILE" ]]; then
+            install -Dm644 "$CLAUDE_SETTINGS_FILE" "$CLAUDE_SETTINGS_DEST"
+            echo "claude: local settings restored from $CLAUDE_SETTINGS_FILE" \
+                 "(mode: $(jq -r '.permissions.defaultMode // "default"' "$CLAUDE_SETTINGS_FILE" 2>/dev/null))"
+        else
+            # Loud, not fatal: without it Claude Code simply falls back to its
+            # normal prompting, which breaks nothing.
+            echo "WARNING: $CLAUDE_SETTINGS_FILE missing — Claude Code keeps its default"
+            echo "         permission behaviour in this checkout."
+        fi
+    fi
 fi
 
 # ------------------------------------------------- 1. official packages

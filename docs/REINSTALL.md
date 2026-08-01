@@ -37,8 +37,14 @@ ls -lR /mnt/FilesMusic/phoinix
 ```
 
 Expect `git-credentials` (0600), `dzgui-private.json` (0600), `dzgui-icon.png`,
-`vpn/` with both `.conf` files at 0600 (CH and NL), and `xlcore-backup/` at
-~80 MB. Anything missing there becomes a warning during stage 3, never a silent
+`claude-settings.local.json`, `vpn/` with both `.conf` files at 0600 (CH and
+NL), `xlcore-backup/` at ~80 MB, and `rescue/` (see below).
+
+Two of those go stale unless refreshed by hand, because both are snapshots of
+something that keeps changing — `xlcore-backup/` (run
+`scripts/xlcore-backup.sh desktop`) and `claude-settings.local.json` (`cp -a`
+from `.claude/settings.local.json`, which grows a line every time a permission
+is granted). Anything missing there becomes a warning during stage 3, never a silent
 skip — but finding it here is cheaper than finding it afterwards.
 
 Two paths stay outside that directory on purpose, and both are listed above:
