@@ -1,0 +1,24 @@
+[Desktop Entry]
+# Written by stage 3 from this template — @HOME@ is substituted there, the same
+# way @REPO_DIR@/@HOST@ are for the monitor switch.
+#
+# DZGUI is fetched from upstream by stage 3 into ~/Applications/dzgui/ and ships
+# NO .desktop file and no icon of its own, so both are authored here.
+#
+# @ICON@ is substituted too: `phoinix-dzgui` when stage 3 could install the
+# DayZ artwork from DZGUI_ICON, otherwise the theme icon `applications-games`.
+# An icon NAME either way, never a path — a path pointing at a file that failed
+# to install shows nothing at all, while a missing theme name at least falls
+# back to a generic icon.
+#
+# Path= matters — DZGUI is a shell application that expects to run from its own
+# directory. The Steam shortcut this replaces set the same thing as StartDir.
+Type=Application
+Name=DZGUI
+GenericName=DayZ server browser
+Comment=Browse and join DayZ servers
+Exec=@HOME@/Applications/dzgui/dzgui
+Path=@HOME@/Applications/dzgui/
+Icon=@ICON@
+Terminal=false
+Categories=Game;

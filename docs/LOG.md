@@ -3301,3 +3301,50 @@ fresh install can reveal.
 Not done: **nothing is pushed**. GitHub authentication remains the manual
 post-install step recorded on 2026-08-01, and it has not been re-established on
 this machine, so session 9's five commits are local only.
+
+## 2026-08-01 — DZGUI moves out of Steam and onto the desktop
+
+ulu dropped the idea of a DZGUI entry inside Steam and asked for a desktop icon
+beside XIVLauncher instead. Three things came out of it.
+
+**The removal takes a manual step with it.** The Steam mechanism restored a
+`shortcuts.vdf` whose only entry was DZGUI — verified by reading it, one entry,
+one exec path. But `shortcuts.vdf` can only be written into
+`userdata/<id>/config`, which does not exist until Steam has been logged into,
+and Steam rewrites the file when it exits. That ordering is precisely what put
+"set up Steam, THEN re-run stage 3" on the post-install list. A desktop file
+depends on nothing but the DZGUI binary, so the requirement disappears with the
+mechanism. `STEAM_SHORTCUTS_FILE` is gone from the config; the backup file
+stays on the games disk, unused.
+
+**The icon cell is `ROW,COLUMN`, and the script said otherwise.** Placing DZGUI
+at `3,2` to put it right of XIVLauncher at `2,2` put it UNDERNEATH — ulu saw it
+immediately. The variables in stage 4 were named `cell_col cell_row` while the
+pair is in fact row-first. Harmless as long as values are only copied from a
+running system (the pair is written in the order it is read), and actively
+misleading the moment someone reasons about a position. Renamed, commented with
+the measurement, and the config now says `2,3`.
+
+**The icon comes out of the game, without a new package.** No `.desktop` and no
+icon ship with DZGUI, and the Steam sources were all wrong-shaped: a 32x32 app
+icon, a 640x360 wordmark, a 300x450 portrait capsule. The real icon sits inside
+`steamapps/common/DayZ/DayZ_x64.exe` — seven icon groups, sizes up to 128x128,
+all of them 32-bit DIBs rather than PNG. Reading the PE resource directory and
+converting a BGRA DIB to PNG is about fifty lines of Python with only `zlib`
+and `struct`, so `icoutils` was not needed. All seven 128x128 entries turned
+out to be the same image.
+
+Where it lives is the part that had to be decided rather than done: the PNG is
+parked at `/mnt/Games/phoinix/dzgui-icon.png` and only the path is versioned —
+the same shape as `DZGUI_PRIVATE_FILE` and `GIT_CREDENTIALS_FILE`, except that
+here the reason is copyright rather than secrecy. It is Bohemia's artwork and
+this repo is public. The games disk is never formatted, so it survives a
+reinstall by construction. Rejected alternatives: carrying a PE parser in the
+repo (fifty lines to maintain for one icon) and adding `icoutils` (a package
+whose sole consumer would be a desktop icon).
+
+Stage 3 installs it as `hicolor/128x128/apps/phoinix-dzgui.png` and substitutes
+`@ICON@` in the template with `phoinix-dzgui`, or with `applications-games`
+when the file is absent. A NAME, never a path, and that is deliberate: a path
+to a file that failed to install renders nothing, while a name that cannot be
+resolved still falls back to a generic icon.

@@ -831,33 +831,57 @@ if [[ -n "${DZGUI_PRIVATE_FILE:-}" ]]; then
     fi
 fi
 
-# --- Steam non-Steam shortcuts ---------------------------------------------
-# Restored, but only when Steam has a place to put it. `userdata/<id>/config`
-# exists solely after a Steam login, which is a manual post-install step — so
-# on a fresh install this finds nothing and says so, and the SECOND stage 3 run
-# (after logging in) does the work. No separate command to remember.
+# --- DZGUI desktop link -----------------------------------------------------
+# DZGUI ships no .desktop of its own, so one is generated from the template,
+# same mechanism as the monitor switch. Its POSITION is Plasma state and lives
+# in DESKTOP_ICONS (stage 4), which places it beside XIVLauncher.
 #
-# Never overwrites: an existing shortcuts.vdf is Steam's, and it holds every
-# non-Steam game ulu has added since. Losing those to restore one is the wrong
-# trade — and Steam rewrites this file when it exits, so a restore underneath a
-# running Steam would be discarded anyway.
-if [[ -n "${STEAM_SHORTCUTS_FILE:-}" && -f "$STEAM_SHORTCUTS_FILE" ]]; then
-    steam_cfg=""
-    for d in "$HOME/.local/share/Steam/userdata"/*/config; do
-        [[ -d "$d" ]] && { steam_cfg="$d"; break; }
-    done
-    if [[ -z "$steam_cfg" ]]; then
-        echo "steam: no userdata yet — log in once, then re-run stage 3 to restore shortcuts"
-    elif [[ -e "$steam_cfg/shortcuts.vdf" ]]; then
-        echo "steam: shortcuts.vdf exists — left alone"
-    elif pgrep -x steam >/dev/null; then
-        echo "WARNING: Steam is running — it rewrites shortcuts.vdf on exit."
-        echo "         Quit Steam and re-run stage 3 to restore the shortcuts."
-    else
-        install -Dm644 "$STEAM_SHORTCUTS_FILE" "$steam_cfg/shortcuts.vdf"
-        echo "steam: non-Steam shortcuts restored"
+# This REPLACES the non-Steam shortcut phoinix used to restore into Steam's
+# shortcuts.vdf (ulu's call, 2026-08-01). That mechanism needed Steam to have
+# been logged into once and quit again before it could do anything, which is
+# what made "re-run stage 3 after setting up Steam" a manual step. A desktop
+# file depends on nothing but the binary, so the step is gone with it.
+if [[ -x "$HOME/Applications/dzgui/dzgui" ]]; then
+    apps_dir="$HOME/.local/share/applications"
+    install -d "$apps_dir" "$HOME/Desktop"
+
+    # The artwork is DayZ's own icon, kept on the games disk because it is
+    # Bohemia's and this repo is public. Installed into the hicolor theme under
+    # our own name, so the .desktop can reference an icon NAME: a name degrades
+    # to a generic icon if anything went wrong, a path degrades to nothing.
+    dzgui_icon="applications-games"
+    if [[ -n "${DZGUI_ICON:-}" && -f "$DZGUI_ICON" ]]; then
+        install -Dm644 "$DZGUI_ICON" \
+            "$HOME/.local/share/icons/hicolor/128x128/apps/phoinix-dzgui.png"
+        dzgui_icon="phoinix-dzgui"
+    elif [[ -n "${DZGUI_ICON:-}" ]]; then
+        echo "WARNING: $DZGUI_ICON missing — DZGUI keeps a generic theme icon"
     fi
+
+    sed -e "s|@HOME@|$HOME|g" -e "s|@ICON@|$dzgui_icon|g" \
+        "$REPO_DIR/system/applications/phoinix-dzgui.desktop" \
+        > "$apps_dir/phoinix-dzgui.desktop"
+    chmod 644 "$apps_dir/phoinix-dzgui.desktop"
+    ln -sf "$apps_dir/phoinix-dzgui.desktop" "$HOME/Desktop/phoinix-dzgui.desktop"
+    echo "desktop: DZGUI link placed (icon: $dzgui_icon)"
+else
+    echo "WARNING: ~/Applications/dzgui/dzgui not present — no DZGUI desktop link"
 fi
+
+# --- Steam non-Steam shortcuts: REMOVED 2026-08-01 --------------------------
+# phoinix used to restore a shortcuts.vdf holding one entry, DZGUI, so that
+# DayZ could be launched from inside Steam. ulu dropped the idea; DZGUI gets a
+# desktop icon instead (see "DZGUI desktop link" above).
+#
+# Worth keeping the reason, because the removal takes a manual step with it:
+# shortcuts.vdf can only be written into `userdata/<id>/config`, which does not
+# exist until Steam has been logged into — and Steam rewrites the file when it
+# exits, so it also had to be quit. That is what forced "set up Steam, then
+# re-run stage 3" onto the post-install list. A desktop file depends on nothing
+# but the DZGUI binary, so the ordering requirement is gone.
+#
+# `/mnt/Games/phoinix/shortcuts.vdf` is left on the data disk untouched. It is
+# not ours to delete, and it costs nothing where it is.
 
 # ------------------------------------------------- 7c. printer
 # CUPS is enabled in section 10; this creates the queue.

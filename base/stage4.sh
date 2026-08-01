@@ -609,15 +609,22 @@ if [[ ${#DESKTOP_ICONS[@]} -gt 0 ]]; then
                 [[ -n "${ex_b:-}" ]] && lead_b="$ex_b"
             fi
 
+            # The cell is "ROW,COLUMN" — the first number moves an icon DOWN,
+            # the second one to the RIGHT. These variables used to be named the
+            # other way round, which was harmless (the pair is written in the
+            # order it is read) but actively misleading: placing an icon "right
+            # of" another by raising the first number put it underneath
+            # instead. Measured on the live desktop, 2026-08-01, when DZGUI at
+            # "3,2" landed below XIVLauncher at "2,2".
             pos_items=""; chg_items=""; placed=""
             for icon in "${DESKTOP_ICONS[@]}"; do
                 icon_name="${icon%%:*}"
-                IFS=, read -r cell_col cell_row <<< "${icon##*:}"
+                IFS=, read -r cell_row cell_col <<< "${icon##*:}"
                 icon_url="desktop:/$icon_name"
-                pos_items+=",\"$icon_url\",\"$cell_col\",\"$cell_row\""
+                pos_items+=",\"$icon_url\",\"$cell_row\",\"$cell_col\""
                 if [[ -n "$chg_items" ]]; then chg_items+=","; fi
-                chg_items+="\"$icon_url\":[\"$res\",\"$cell_col\",\"$cell_row\"]"
-                placed+=" $icon_name@$cell_col,$cell_row"
+                chg_items+="\"$icon_url\":[\"$res\",\"$cell_row\",\"$cell_col\"]"
+                placed+=" $icon_name@$cell_row,$cell_col"
             done
 
             systemctl --user stop plasma-plasmashell.service || true
