@@ -3879,3 +3879,88 @@ restarted without `sudo`, always.
 pure Python — an `array('h')` over the raw frames, a coarse pass in 1 ms blocks
 at C speed, and the per-sample work confined to the windows around the reports.
 Eleven minutes of six-channel audio analyse in under two seconds that way.
+
+## 2026-08-02, later — two different faults, and the Teufel's one is invisible from here
+
+The same evening continued, and it produced the first clean separation since the
+glitching was reported. Three things were changed one at a time, and each one
+answered something.
+
+**Output moved to the Scarlett Solo (headphones), 22:47.** This test had never
+been run: everything measured so far described the digital stream, and the
+digital stream is clean, so the untested part was everything after it. ulu's
+verdict: the crackling is there on headphones too — "but quieter and shorter,
+and not so electrically distorted". That splits the problem in two. Something
+the computer does reaches both devices; the "electric" character belongs to the
+Concept 12 alone.
+
+Worth recording as a side effect: on headphones the game was barely audible at
+75 % because FFXIV sends at about −38 dBFS with its stream already at 100 %.
+The bar's amplifier had been hiding that all along.
+
+**`clock.force-quantum 1024`, 22:59 — wrong, and reverted at 23:00:31.** The
+reasoning was sound (no realtime priority, so give the graph four times the
+deadline), the result was not: ulu reported the crackling went to "almost
+permanent", and reverting brought it back to occasional. Presumably because
+FFXIV keeps delivering at 256 and the adapter has to convert. But the same ten
+minutes produced the harder result: **not one xrun was counted while the
+crackling was nearly continuous.** FFXIV stayed at 19, the sink at 2. The xruns
+are real and they are not this sound. That line of investigation is closed.
+
+**The kernel log was the thing nobody had looked at.** 123 entries that evening:
+
+```
+xhci_hcd 0000:0c:00.0: Frame ID 1917 (reg 15332, index 42) beyond range (1919, 763)
+```
+
+An isochronous audio packet the host controller could no longer schedule — the
+slot was already gone. The packet is lost *below* PipeWire, which is exactly why
+the digital capture is clean and no xrun is counted: PipeWire delivered on time,
+the controller dropped it. The bursts cluster where the crackling was worst:
+one at 22:22, four at 22:27, 66 at 22:48 (the minute the Scarlett was switched
+in), 45 across 22:57–22:58, 27 at 23:17:15.
+
+`0c:00.0` is the AMD chipset controller and carries the Scarlett, a second USB
+audio device, Bluetooth and the input devices. **The Concept 12 hangs off a
+different controller entirely** (ASMedia `70:00.0`), which logged nothing all
+evening.
+
+**The counter-test, 23:18:57 — switched back to the Teufel.** Since that moment
+the kernel log is silent, and ulu reported the distortion twice, at 23:21:53 and
+23:22:31. Nothing in the kernel either time. The xrun counter did move on this
+path (27 → 31 between 23:21:02 and 23:21:48) but the second report came 43
+seconds after the last one.
+
+So the two paths fail in completely different ways:
+
+| | Teufel (ASMedia) | Scarlett (AMD) |
+|---|---|---|
+| PipeWire xruns | yes | none |
+| xHCI slot errors | none | yes, in bursts |
+| what ulu hears | long, electric distortion | short, quiet crackle |
+
+**The Teufel's fault is now invisible to every observable this computer has.**
+Digital stream clean (twice, sample level, with a control window that scored
+worse than the report windows). No xrun at the moment of the report. No kernel
+message. Nothing left to read.
+
+**Therefore the next instrument is not a counter but a microphone.** ulu has one
+on the Scarlett. Recording the room while the bar plays finally captures the
+artefact itself instead of its absence everywhere else, and its shape — harmonic
+distortion, noise burst, or dropout — says which part of the analog chain to
+suspect. That is the first measurement in this whole investigation that looks at
+the thing ulu is actually complaining about.
+
+**One mechanism is worth carrying forward, because it reconciles the two
+reports.** The Concept 12 receives roughly −64 dBFS at its converter (−38 dBFS
+from the game, −26 dB inside the device) and its amplifier makes all of that
+back up. Any disturbance is amplified along with it. The same event that is
+"short and quiet" on headphones can be "long and electric" through the bar
+without being a different event. The level is not the cause — that was tested
+and refuted twice — but it is plausibly the amplifier of whatever the cause is.
+
+**Trap, recorded because it cost time twice:** `pkill -f <pattern>` kills the
+invoking shell when the pattern appears in its own command line. Both times it
+aborted the command that was supposed to restart a monitor, and both times the
+monitor was silently gone afterwards. Use `pkill -x <name>`, or check with
+`pgrep -a` after.

@@ -1,6 +1,39 @@
 # STATUS
 
-_Last updated: 2026-08-01 (session 10 — DNS split repaired, audio reopened, Steam/DZGUI unblocked)_
+_Last updated: 2026-08-02 (session 11 — the glitching is two faults, not one)_
+
+## Session 11 — audio only, and it finally split in two
+
+Nothing was installed, nothing in the scripts changed except `packages/audio.txt`
+(see below). This session was measurement, and it ended the two theories that
+had been running since 2026-07-31.
+
+**The glitching is two separate faults.** Playing an evening through the Scarlett
+Solo instead of the Concept 12 — the one test never run in days of work — showed
+the crackling is present on both devices, but "quieter and shorter, and not so
+electrically distorted". The kernel log then separated them cleanly: the AMD
+chipset controller (Scarlett, Bluetooth, input devices) logs bursts of
+`xhci_hcd … Frame ID … beyond range`, isochronous audio packets the host
+controller could no longer schedule — lost *below* PipeWire, which is why no
+xrun is counted and the digital capture is clean. The ASMedia controller, where
+the Concept 12 hangs, logged nothing at all evening. Full evidence in `LOG.md`.
+
+**The xrun theory is dead.** `clock.force-quantum 1024` made the crackling
+almost continuous while the xrun counters did not move at all — reverted, and
+the state is back to the default. The realtime deficit is real and measured, but
+it is not the sound ulu hears.
+
+**The Concept 12's fault is invisible from this computer.** Clean digital
+stream, no xrun at the moment of the report, no kernel message. Every observable
+has been checked. The next instrument is the microphone on the Scarlett:
+recording the room while the bar plays is the first measurement that looks at
+the artefact itself rather than at its absence everywhere else.
+
+**`rtkit` is rejected**, see the session-10 note below and `packages/audio.txt`.
+That is the only repo change of this session.
+
+**Live machine state at the end:** output back on the Concept 12 at 37 %,
+default quantum, `rtkit` uninstalled, no phoinix processes left running.
 
 ## Session 10 — what changed and what is still open
 
