@@ -5,17 +5,18 @@ pipewire
 pipewire-alsa
 pipewire-pulse
 wireplumber
-# rtkit — PipeWire asks for realtime priority at every start and, without this
-# package, is refused it. Measured on this desktop 2026-08-01, in PipeWire's own
-# log since the install: "RTKit error: ServiceUnknown / RTKit does not give us
-# MaxRealtimePriority, using 1", all three data-loop threads on SCHED_OTHER,
-# `ulimit -r` = 0. The consequence is invisible at idle and shows up under a
-# loaded game as xruns — two unrelated clients missed the same sampling second,
-# which no application bug can do. It is an optional dependency of pipewire, so
-# a fresh Arch does not pull it and every machine phoinix built lacked it.
-# Chosen over `realtime-privileges` (group + hard rlimits for ALL of ulu's
-# processes, needs a re-login): rtkit needs no group, no re-login, and demotes
-# runaway realtime threads by design. See LOG.md 2026-08-01.
-rtkit
+# rtkit REJECTED — it was in this file for one day (added 2026-08-01, removed
+# 2026-08-02) because PipeWire is refused realtime priority without it. Both
+# halves of that are still true: the log says "RTKit does not give us
+# MaxRealtimePriority, using 1" at every start, all data-loop threads run
+# SCHED_OTHER, `ulimit -r` is 0, and that costs measurable xruns under a loaded
+# game. Installing it on the live desktop on 2026-08-02 also worked as
+# advertised — pipewire's data-loop came up SCHED_RR 20. And then WirePlumber
+# was SIGKILLed within seconds of every start, 23 times in 90 seconds, until
+# every ALSA device was gone and only `auto_null` was left. Reproducible outside
+# systemd, gone the moment rtkit was uninstalled. Do not re-add it without a
+# fix for that; the realtime question stays open. See LOG.md 2026-08-02.
+# `realtime-privileges` was already rejected as the alternative — it grants hard
+# rlimits to ALL of ulu's processes and needs a re-login.
 # pipewire-jack rejected — no JACK apps in use (Scarlett works class-compliant;
 # revisit only if a DAW ever shows up)

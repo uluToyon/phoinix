@@ -3790,3 +3790,92 @@ sorting silently disappears; and `_update_mods()` sums `row[2]` for the
 One mistake of ours, recorded because it would be invisible in another run: the
 helper that queued the 69 downloads read its id list with `while read` from a
 file without a trailing newline and silently queued only 68.
+
+## 2026-08-02 — rtkit granted the priority and took the sound card with it
+
+ulu reported the glitching was frequent right then, so a second live session was
+run: raw sink monitor to disk plus `pw-top` with a timestamp on every line, and
+"da" from ulu whenever he heard it. Six reports over eight minutes. This entry
+records what that measured, and how it ended.
+
+**The systemic stall is confirmed, harder than yesterday.** FFXIV's node went
+14 → 39 xruns in eleven minutes and Brave incremented at the SAME timestamps
+every single time: 22:22:17, :18, :21, then 22:24:19, :25, then 22:25:11, :29,
+:33. Eight coincidences, zero divergences. Two unrelated clients cannot miss
+the same moments by accident — this is the graph stalling, not an application.
+The sink's own counter stayed at 1 throughout.
+
+**And the reports still do not sit on the stalls.** Six "da": 22:22:34 (three
+in a row), 22:22:53, 22:25:28, 22:26:23, 22:26:52, 22:29:53. Only one of them
+lands near an xrun — 22:26:52, with a stall 1.4 s earlier, which is within the
+delay of hearing it and typing. The three at 22:22:34 sit in the middle of a
+two-minute stretch with no xrun at all. That is the same negative as yesterday,
+now with a bigger sample.
+
+**A control window settles it.** For each report the six seconds before it were
+scanned for the largest sample-to-sample step relative to the local signal peak,
+and the same scan was run on a twenty-second stretch nobody complained about.
+Report windows: ratios 0.70 to 1.11. Control window: 0.81 to 1.20. The control
+is *worse*. There is no digital signature of the glitch, at all — the file
+leaving the computer is clean, twice measured, in two sessions.
+
+**The level theory dies a second time, and this time with the right model.**
+Measured over 154 s: peak per second between −34 and −43 dBFS, RMS −52 dBFS,
+while FFXIV's own stream sits at 100 %. Then the sink attenuates another 26 dB —
+and `pactl` reports `HW_VOLUME_CTRL` for this device, so that happens *inside*
+the Concept 12, after the monitor tap. The DAC therefore sees about −64 dBFS
+and the bar's amplifier makes all of it back up, along with its own noise. That
+is a genuinely plausible mechanism for a noise that sounds "electronic", so it
+was tested: sink to 100 % at 22:28:17, ulu turning the bar down first. Nothing
+changed — neither the sound nor the xrun rate (34 → 39 afterwards, same 1.7 per
+minute). The volume was put back to 37 %.
+
+**Two side findings from the same recording**, both unexplained and both parked:
+of six channels only front left/right and LFE carry anything; rear left, rear
+right and center are flat over 154 seconds (peak 128 of 32768). And the graph
+runs at quantum 256, not the 1024 in the configuration, because FFXIV asks for
+256 and the smallest request wins.
+
+### The rtkit failure
+
+`rtkit` had been added to `packages/audio.txt` yesterday and was still not
+installed here, so it was installed now and the user audio stack restarted. It
+worked exactly as documented: `data-loop.0` came up `RR 20`, `rtkit-daemon`
+active. Ninety seconds later ulu wrote that the audio devices had had a stroke.
+
+`pactl list short sinks` showed one line: `auto_null`. Every real device was
+gone, FFXIV's stream was routed to sink `4294967295` — nowhere. The journal:
+
+```
+wireplumber.service: Main process exited, code=killed, status=9/KILL
+wireplumber.service: Scheduled restart job, restart counter is at 23.
+```
+
+SIGKILL, two to three seconds after every start, twenty-three times. Not
+systemd doing it: the unit has no watchdog and `LimitRTTIME=infinity`. Started
+by hand in the foreground with the service stopped, it died just as fast, its
+log ending after the harmless libcamera warning — so it is the process being
+killed from outside, not a crash. WirePlumber's `data-loop.0` had `RR 1` at the
+time; PipeWire's had `RR 20` and was never touched.
+
+The most likely mechanism is `RLIMIT_RTTIME`: a realtime thread that overruns
+its budget gets `SIGXCPU` and then `SIGKILL` from the kernel, which logs
+nothing in userspace. Not proven — and deliberately not chased further, because
+the machine was unusable while it was being chased.
+
+**Recovery, in the order it worked:** kill the stray wireplumber, restart the
+three user units, put the default sink and the 37 % back. Devices returned,
+restart counter 0. ulu then removed the package himself. `rtkit` is now marked
+rejected in `packages/audio.txt` with the reason, and the realtime deficit goes
+back on the open list — it is real, it is measured, and the obvious fix for it
+breaks this machine.
+
+**One trap worth writing down.** `sudo systemctl --user restart pipewire` fails
+with "$DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined" — `--user`
+under `sudo` looks for root's session bus, which does not exist. User units are
+restarted without `sudo`, always.
+
+**And one on tooling:** this desktop has no `python-numpy`, so the analysis is
+pure Python — an `array('h')` over the raw frames, a coarse pass in 1 ms blocks
+at C speed, and the per-sample work confined to the windows around the reports.
+Eleven minutes of six-channel audio analyse in under two seconds that way.

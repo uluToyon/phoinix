@@ -23,15 +23,19 @@ machine catching up.
 **Audio: the −26 dB theory is dead, and a real defect turned up next to it.**
 ulu still hears glitches in FFXIV and DayZ, so the level was never the cause
 (this was the condition STATUS named for reopening). Found instead: **PipeWire
-never gets realtime priority** because `rtkit` is not installed — now in
-`packages/audio.txt`, **not yet installed on the live machine**. It produces
-measurable xruns, but two reported glitches fell on moments with none at all,
-and ulu describes the sound as "distortion, very electronic", which is not what
-a missed buffer sounds like. Ten minutes of the digital output recorded and
-analysed: clean. So the cause sits downstream of the computer — USB transport,
-the Concept 12's electronics, or the analog chain. Next probes are listed at
-the end of the `LOG.md` entry; the cheapest untried one is
-`pw-metadata -n settings 0 clock.force-quantum 1024`.
+never gets realtime priority** because `rtkit` is not installed. It produces
+measurable xruns, but reported glitches keep falling on moments with none at
+all, and ulu describes the sound as "distortion, very electronic", which is not
+what a missed buffer sounds like. The digital output has now been recorded and
+analysed twice, in two sessions: clean both times. So the cause sits downstream
+of the computer — USB transport, the Concept 12's electronics, or the analog
+chain.
+
+**`rtkit` was tried on 2026-08-02 and is rejected** (`packages/audio.txt`,
+`LOG.md`). It did grant PipeWire the priority — and WirePlumber was then killed
+with SIGKILL within seconds of every start, 23 times running, until every ALSA
+device had disappeared. Uninstalling it restored the machine. The realtime
+question is therefore still open, and the desktop is back to `SCHED_OTHER`.
 
 **Steam and DZGUI: unblocked, nothing to change in the repo.** Every Steam game
 failed with "compatibility tool failed" until the client was restarted with its
