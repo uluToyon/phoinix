@@ -32,6 +32,17 @@ the artefact itself rather than at its absence everywhere else.
 **`rtkit` is rejected**, see the session-10 note below and `packages/audio.txt`.
 That is the only repo change of this session.
 
+**ulu's own observation is the best lead, and it may undo that split:** the
+faults only appear while a game is open — both of them. During play the GPU sits
+at 100 %, `gamemoded` is active, and PipeWire runs `nice 0` / `SCHED_OTHER`
+against it. One cause, two layers: a late audio thread is an xrun, a late USB
+packet is a frame-ID error.
+
+**Next, and it is ulu's to run:** music alone through the bar for ten minutes,
+then the same with the game running at in-game volume zero. Crackling in the
+second case means system load; a clean second case means Wine/Proton's audio
+path. Only after that is the `limits.d` realtime question worth reopening.
+
 **Live machine state at the end:** output back on the Concept 12 at 37 %,
 default quantum, `rtkit` uninstalled, no phoinix processes left running.
 

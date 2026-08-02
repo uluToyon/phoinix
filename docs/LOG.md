@@ -3964,3 +3964,39 @@ invoking shell when the pattern appears in its own command line. Both times it
 aborted the command that was supposed to restart a monitor, and both times the
 monitor was silently gone afterwards. Use `pkill -x <name>`, or check with
 `pgrep -a` after.
+
+### Addendum, same night: ulu's observation, and the load hypothesis
+
+Late in the session ulu said he thought we were looking in the wrong place: the
+audio faults only ever appear **while a game is open**. That is sharper than
+anything measured tonight, and it fits both fault types at once — the xruns
+came only under game load, and so did the xHCI bursts. The split into "two
+faults on two controllers" may therefore be the wrong axis.
+
+The state during play, checked rather than assumed: GPU at 100 % busy,
+`gamemoded` running and reporting active, and PipeWire at `nice 0`,
+`SCHED_OTHER`, no realtime priority — competing on equal terms with a game that
+is using every core. One cause would then produce both symptoms, because both
+are the same thing at different layers: the PipeWire thread scheduled late is an
+xrun, the USB driver queueing its packet late is `Frame ID … beyond range`.
+
+**The test ulu runs next (his call, deferred to the morning):** music alone
+through the bar for ten minutes, then the same with the game running and its
+in-game volume at zero — GPU loaded, no game audio. Crackling in the second case
+means system load and nothing to do with the game's audio path; a clean second
+case means Wine/Proton's audio path, which is a far smaller target.
+
+If it is the load, the road leads back to realtime priority — the thing `rtkit`
+was supposed to deliver and for which it destroyed the session manager. The
+alternative that was rejected on 2026-08-01 deserves a second hearing then: a
+`limits.d` entry granting the user `rtprio` directly, no daemon in between. It
+was rejected for applying to all of ulu's processes and needing a re-login,
+which weighs differently after tonight. Not before the test — one screw was
+already turned tonight without evidence (`force-quantum`) and it made things
+worse.
+
+**A rule from DESIGN.md survived a test it did not ask for.** "Never run the bar
+at 100 %" — the sink was at 100 % from 22:28 to 23:18 during this session, to
+test the level theory, and ulu reported no change either way. The rule stands on
+its 2026-07-31 evidence; tonight neither confirms nor refutes it, and the sink
+is back at 37 %.

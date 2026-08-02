@@ -243,6 +243,14 @@ Password prompts are fine: `passwd` and `sudo` open `/dev/tty` themselves.
 SSH private keys, wifi PSKs, plaintext passwords. Use `openssl passwd -6` hashes
 with `chpasswd -e`, or prompt interactively. Encrypt with `age`/`sops` if stored.
 
+**And process listings.** XIVLauncher passes ulu's session token as a plain
+command-line argument, so `ps`, `pgrep -a` and anything built on them expose a
+live credential while the game runs. Noticed 2026-08-02 while looking for the
+game's thread priorities. Diagnostic output goes through the eye before it goes
+into a file — quoting a process list into `LOG.md` would leak it, and the one
+leak that ever reached this repo got in exactly that way, through hand-written
+text no import check looked at.
+
 ---
 
 ## Audio: operating rules for the Teufel CONCEPT 12
