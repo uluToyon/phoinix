@@ -252,6 +252,29 @@ case "${CAPTURED_CONFIGS:-}" in
     ;;
 esac
 
+# --- Audio: the two halves of the 2026-08-02 glitching fix -------------------
+# Both are decisions, not captured state, so they live in the repo rather than
+# in hosts/*/home/. See LOG.md 2026-08-02/03.
+
+# 1. Headroom for USB audio. USB is a batch device — the controller only hands
+#    over whole isochronous slots, so a late wakeup cannot be caught up the way
+#    it can on a PCI card. With headroom 0 (the default) PipeWire aims at the
+#    last possible moment and misses it under game load; the kernel then logs
+#    "xhci_hcd … Frame ID … beyond range" and the packet is simply gone —
+#    below PipeWire, which is why no xrun is counted and every recording of the
+#    digital stream came back clean.
+install -Dm644 "$REPO_DIR/system/wireplumber/50-phoinix-usb-headroom.conf" \
+               "$HOME/.config/wireplumber/wireplumber.conf.d/50-phoinix-usb-headroom.conf"
+
+# 2. Realtime priority for the audio threads, WITHOUT rtkit — see
+#    packages/audio.txt for why that package is rejected. The drop-in has to be
+#    on user@.service: PID 1 starts the user manager directly, not through PAM,
+#    so /etc/security/limits.d/ never reaches pipewire.service. Takes effect at
+#    the next login.
+sudo install -Dm644 "$REPO_DIR/system/user@.service.d/10-phoinix-realtime.conf" \
+                    /etc/systemd/system/user@.service.d/10-phoinix-realtime.conf
+sudo systemctl daemon-reload
+
 # Distro-agnostic shell config (see DESIGN.md's dotfiles/ vs system/ split).
 # The phoinix alias block is deliberately NOT in this file — section 6 owns it,
 # so there is exactly one place where those aliases are defined.
