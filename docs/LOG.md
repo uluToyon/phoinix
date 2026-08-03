@@ -4000,3 +4000,109 @@ at 100 %" — the sink was at 100 % from 22:28 to 23:18 during this session, to
 test the level theory, and ulu reported no change either way. The rule stands on
 its 2026-07-31 evidence; tonight neither confirms nor refutes it, and the sink
 is back at 37 %.
+
+## 2026-08-03 — two fixes that hold, and a measurement that finally sees the fault
+
+ulu's patience ran out — "ich brauche keine romane, ich brauche einen fix" — so
+this entry leads with what changed on the machine and only then explains what
+was ruled out.
+
+### The two fixes
+
+**Realtime priority, without rtkit.** `LimitRTPRIO=95` / `LimitMEMLOCK=infinity`
+/ `LimitNICE=-19` as a drop-in on `user@.service`. After the relogin: `ulimit -r`
+95, `data-loop.0` at `SCHED_FIFO 88` in pipewire and 83 in wireplumber and
+pipewire-pulse, `nice -11` on the rest, WirePlumber stable. **FFXIV went from
+~1.7 xruns per minute to 2 in eleven minutes.**
+
+`limits.d` cannot do this job and that is not a detail: PID 1 starts the user
+manager directly, never through PAM, so `/etc/security/limits.d/` never reaches
+`pipewire.service`. The file installed there on this machine has no effect and
+`ulutoyon` never entered the `audio` group — the drop-in alone did all the work.
+
+And this is why it does not repeat yesterday's disaster: rtkit demands a finite
+`RLIMIT_RTTIME` and the kernel kills any realtime thread that overruns it. Over
+plain rlimits PipeWire keeps `rt.time = -1` and that kill path does not exist.
+
+**Headroom for USB audio**, `api.alsa.headroom = 2048`, plus
+`api.alsa.disable-tsched = true` and `period-num = 16` (buffer 4096 frames
+instead of 768). The ALSA device had been draining to within **6 frames** of
+empty (`avail_max 762` of 768).
+
+`api.alsa.period-size` must stay at **256**. Raising it to 1024 made the
+crackling instant and continuous, exactly as `clock.force-quantum 1024` had the
+day before: FFXIV asks for 256, and the conversion between the two is audible.
+Twice reproduced, in opposite directions — this is settled.
+
+### The crackling: solved, and it was the controller
+
+Switched to the Scarlett for an evening and the kernel log answered: 120 entries
+of `xhci_hcd 0000:0c:00.0: Frame ID … beyond range`, all on the AMD chipset
+controller, all during the crackling. The Concept 12 hangs off the ASMedia
+controller and it logged nothing. Since the output went back to the bar ulu
+reports no crackling at all — only the distortion. **Audio devices belong on the
+ASMedia controller**; the AMD one also carries Bluetooth and the input devices.
+
+### The distortion: what it is not
+
+Each of these was tested with the game running and ulu listening.
+
+- **Not electrical pickup.** Everything muted, converter still running, game
+  under load: silence. Nothing to hear.
+- **Not a speaker.** A sine played through each of the six drivers in turn,
+  eight seconds each: all six clean.
+- **Not PipeWire's scheduling.** Zero xruns during it, larger buffer, tsched
+  off, CPU affinity keeping the game off the two cores that take the USB
+  interrupts (7 and 8 — the first attempt at this test left both of them inside
+  the game's mask and was worthless).
+- **Not the game's audio stream.** Moved to a null sink; the disturbance stayed.
+- **Not the test tone.** It only appears on real material — YouTube, music,
+  the Dalamud TTS. FFXIV itself produces almost no sound.
+
+It is load-dependent: with the game closed the tone is clean, with it open it is
+not. And ulu's own observation stands, "es fühlt sich so an, dass es irgendwann
+aufhört" — the measurement below agrees with him.
+
+### The tooling failure, because it cost the whole evening
+
+`pw-record --target <name>` **silently falls back to the default source** when
+it does not like the target. Three separate "paired" recordings were in truth
+the same stream twice; one was bit-identical to the monitor's front-left
+channel, 14400 of 14400 sampled values. Two conclusions were built on that and
+both were wrong: that the microphone was a loopback (it is not — with the output
+muted it records ulu's voice at full level), and that the speaker was provably
+clean (it was never measured).
+
+Rules from that, now in the probe's docstring: record with **`parec -d`**, and
+**verify with `pw-link -l`** that the two recorders sit on different nodes
+before trusting a single number. A correlation near 1.0 between "input" and
+"output" is not a great result, it is the signature of this bug.
+
+Also: the microphone is on `Mic2`, not `Mic1` — the XLR socket maps to the
+second source, and `Mic1` stays at its own noise floor whatever the gain and
+phantom power do.
+
+### The measurement that works
+
+`scripts/audio-distortion-probe.py`. Compare the microphone against the digital
+signal, not by level — room, distance and gain are unknown — but by the ratio of
+high-frequency to low-frequency energy, which those unknowns leave alone and
+distortion does not.
+
+Two corrections are what make it work at all. Aligning the two recordings by
+cross-correlating their envelopes (−200 ms here, correlation 0.85) took the
+spread of the ratio from 14.6 dB down to something usable; without it every
+event drowned. And each output level gets its own baseline, because at a quiet
+passage the microphone hears mostly the room and the ratio rises for reasons
+that have nothing to do with the amplifier.
+
+**The result on 372 seconds with the game running:** ten blocks where the
+microphone carries 23 to 35 dB more high-frequency energy than the digital
+signal accounts for at that loudness. All ten fall between 129.6 s and 202.7 s —
+a 73-second window, with 129 seconds of nothing before it and 168 seconds of
+nothing after. ulu had reported "3 oder 4 Vorkommnisse" in that recording.
+
+That is not proof yet; ten events in one window could still be something else in
+the room. But the method is reproducible, it runs unattended, and it needs ulu
+only to confirm. If the next recordings put the excess in bounded windows again,
+the bar is convicted by its own output.

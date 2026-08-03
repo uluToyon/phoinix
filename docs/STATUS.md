@@ -1,6 +1,42 @@
 # STATUS
 
-_Last updated: 2026-08-02 (session 11 — the glitching is two faults, not one)_
+_Last updated: 2026-08-03 (session 12 — crackling fixed, distortion measured for the first time)_
+
+## Session 12 — the crackling is gone, the distortion is now measurable
+
+**Two fixes are live and in stage 3.** Realtime priority via a `LimitRTPRIO`
+drop-in on `user@.service` (not `limits.d` — PID 1 starts the user manager
+outside PAM, so it never reaches `pipewire.service`; and not `rtkit`, which
+killed WirePlumber yesterday): FFXIV went from ~1.7 xruns per minute to 2 in
+eleven minutes. And `api.alsa.headroom = 2048` with `disable-tsched` and a 4096-
+frame buffer for USB devices, which had been draining to within six frames of
+empty. `api.alsa.period-size` must stay 256 — raising it makes the crackling
+instant, twice reproduced.
+
+**The crackling was the AMD USB controller** (`xhci_hcd 0000:0c:00.0`, 120
+`Frame ID … beyond range` entries during it). The Concept 12 hangs off the
+ASMedia controller, which logged nothing, and since the output went back there
+ulu reports no crackling at all. **Audio devices belong on the ASMedia
+controller.**
+
+**The distortion is the remaining fault, and it is not** electrical pickup (
+silence is silent), not a speaker (a sine through each of the six is clean), not
+PipeWire scheduling, not the game's stream, and not visible on a test tone — it
+needs real material. It is load-dependent.
+
+**It has now been measured**, with `scripts/audio-distortion-probe.py`: over 372
+seconds, ten blocks where the microphone carries 23–35 dB more high-frequency
+energy than the digital signal accounts for, **all inside one 73-second
+window**, matching ulu's "3 oder 4 Vorkommnisse". Not proof yet — repeat it, and
+if the excess keeps landing in bounded windows the bar is convicted by its own
+output.
+
+**Read the tooling section of the `LOG.md` entry before recording anything.**
+`pw-record --target` silently falls back to the default source and produced
+three worthless "paired" recordings in one evening. Use `parec -d` and verify
+with `pw-link -l`.
+
+_Previously: 2026-08-02 (session 11 — the glitching is two faults, not one)_
 
 ## Session 11 — audio only, and it finally split in two
 
