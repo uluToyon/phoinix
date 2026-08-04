@@ -67,9 +67,13 @@ The rescue copy lives there with everything else the repo cannot carry, ulu's
 call 2026-08-01. It used to sit on the Downloads disk, which was one more place
 to remember.)
 
-- `~/.ssh/id_ed25519` — the private key. It is NOT in the repo and must never be
-  (see DESIGN.md "Never in the repo"). Losing it means re-registering a new key
-  everywhere it is authorised.
+- ~~`~/.ssh/id_ed25519` — the private key.~~ **No longer part of the rescue
+  (2026-08-04).** That key was retired and deleted on both sides. GitHub is now
+  reached with `$PHOINIX_DATA/ssh/github_ed25519`, which stage 3 installs by
+  itself — it is not a rescue item but a first-class one, like the VPN configs,
+  and it is still NOT in the repo and never may be (DESIGN.md "Never in the
+  repo"). What the `cp -a ~/.ssh` above now saves is `authorized_keys` and
+  `known_hosts`, neither of which is irreplaceable.
 - `~/.claude` — the session transcripts. There is no other copy: every
   transcript older than 2026-08-01 was deleted that day. They had already
   proved their worth once — the soundbar's `−26 dB` and its reason were
@@ -84,30 +88,41 @@ Made fresh on 2026-08-01 before the second reinstall, in
 deleted earlier that day once the key had been restored from it — which is
 why this list exists: after a wipe, `~/.ssh/id_ed25519` has no second home.
 
-### Putting the key back — the step this file used to be missing
+### Putting the key back — stage 3 does it now
 
-Rescuing is only half of it, and the missing half went unnoticed for a whole
-reinstall: **nothing restores `~/.ssh`.** Stage 3 writes `authorized_keys` from
-the repo, so incoming SSH works and the gap is invisible — the machine simply
-has no identity of its own until someone notices. Found on 2026-08-01, hours
-after the run, and only because ulu asked what those folders on the Downloads
-disk were for.
+~~Nothing restores `~/.ssh`.~~ **Superseded 2026-08-04.** That was true for a
+whole reinstall and cost the machine its own identity until someone noticed. It
+is now stage 3's job: the GitHub key lives at `$PHOINIX_DATA/ssh/github_ed25519`
+(`SSH_GITHUB_KEY` in `hosts/desktop/config.sh`), and the stage installs it with
+the modes ssh insists on, writes `~/.ssh/config`, and adds github.com to
+`known_hosts` only after checking the host key against `GITHUB_HOST_KEY_FP`.
+Nothing to type.
 
-Run this once the new system is up:
+The old key `~/.ssh/id_ed25519` and its copy in `rescue/ssh/` were **deleted on
+2026-08-04**, together with its entry at GitHub. Do not go looking for them; the
+commands that used to stand here would now fail.
+
+What still has no automatic restore, and belongs in the run:
 
 ```
-install -m 700 -d ~/.ssh
-D=/mnt/FilesMusic/phoinix/rescue/ssh
-install -m 600 "$D/id_ed25519"     ~/.ssh/id_ed25519
-install -m 644 "$D/id_ed25519.pub" ~/.ssh/id_ed25519.pub
-install -m 600 "$D/known_hosts"    ~/.ssh/known_hosts
 cp -a /mnt/FilesMusic/phoinix/rescue/claude.json ~/.claude.json
-ssh-keygen -lf ~/.ssh/id_ed25519      # fingerprint must match the rescue copy
 ```
 
 **Not `authorized_keys`.** The live one comes from the repo with a sanitised
 comment; the rescued one carries the original. Copying it back would undo that
 deliberately, and the key material is identical either way.
+
+**Verify afterwards** — one line, and it proves key, permissions, host pin and
+the identity rules at once:
+
+```
+ssh -o BatchMode=yes -T git@github.com     # must answer "Hi uluToyon!"
+```
+
+If it does not: the key is missing from the data disk, and the fine-grained PAT
+in `$PHOINIX_DATA/git-credentials` is the way out — stage 3 wires it repo-locally
+for exactly this case. That is the token's only remaining job; the repository is
+public, so cloning never needed it.
 
 Deliberately not scripted into stage 3: a private key is exactly the file that
 must not be moved around by an installer that also runs unattended in a VM, and

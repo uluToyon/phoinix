@@ -4279,3 +4279,17 @@ directory and from GitHub, and authentication re-tested afterwards: still "Hi
 uluToyon!". Only two keys remain in the account — the laptop's RSA key, which
 also lives in this desktop's `authorized_keys` and therefore has a second job,
 and the new `phoinix-desktop` key that stage 3 can restore from the data disk.
+
+**And REINSTALL.md had to be corrected the same day.** It still told a human to
+restore `~/.ssh/id_ed25519` from the rescue directory — the file deleted hours
+earlier — so the checklist would have failed at exactly the point it exists for.
+Its claim that "nothing restores `~/.ssh`" is also no longer true: stage 3 does,
+for the GitHub key. Replaced with what actually happens now, plus a one-line
+verification (`ssh -T git@github.com` must answer "Hi uluToyon!") that proves
+key, permissions, host pin and identity rules together.
+
+Recorded while checking: **the repository is public.** Verified from outside the
+checkout with global and system git config disabled and prompts off —
+`git ls-remote https://github.com/uluToyon/phoinix` answers. So bootstrap's
+clone never needed a credential at all, and the PAT's only remaining job is a
+fresh machine whose key is missing from the data disk.
