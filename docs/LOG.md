@@ -4136,3 +4136,63 @@ disk is desktop-only. Blurring that line costs more than it saves.
 
 So: one package line, one post-install step (open Obsidian once, select the
 vault). Same pattern as Brave Sync and the pCloud login.
+
+## 2026-08-04 — GitHub over SSH, and an identity that cannot be forgotten
+
+ulu is starting a second project and asked to automate "the GitHub situation".
+The state it replaces: one fine-grained PAT, scoped to `uluToyon/phoinix` alone,
+in `$PHOINIX_DATA/git-credentials`, wired repo-locally by stage 3. That token
+cannot push anything else, so every new project would have cost a visit to
+GitHub, a file on the data disk and a line in the script.
+
+**A key costs nothing per project.** ed25519, no passphrase (ulu's call — the
+key file is then the secret, exactly as the token already was, and the restore
+stays a single file). It lives beside the VPN configs on the data disk; only the
+path is versioned. Comment `uluToyon` rather than ssh-keygen's `user@host`,
+because that comment is visible in the key list at GitHub and the machine name
+has no business being there.
+
+The host key is pinned in `config.sh` and checked with `ssh-keyscan` before
+`known_hosts` is written. Without an entry the first connection asks a question
+no unattended install can answer; accepting blindly would throw away the
+protection the key exists for.
+
+`IdentitiesOnly yes` is in `dotfiles/ssh_config` for a reason worth keeping:
+without it ssh offers every key it can reach and GitHub closes the connection
+after a few failures with "Too many authentication failures" — which reads like
+a broken key and is not one.
+
+**The second half is the identity, and it is the more valuable one.** Until
+today the defence against the 2026-07-31 name leak was a repo-local identity set
+by hand in each checkout — the kind of guard that is forgotten on the one
+repository where it matters. `~/.config/git/config` now carries no `[user]`
+section at all and instead pulls one in conditionally, when a remote points at
+ulu's own GitHub account. Both spellings are listed because the condition tests
+the URL as WRITTEN, not as `insteadOf` rewrites it.
+
+Verified with four throwaway repositories:
+
+| remote | identity |
+|---|---|
+| `git@github.com:uluToyon/…` | `uluToyon` |
+| `https://github.com/uluToyon/…` | `uluToyon`, and the URL resolves to ssh |
+| `https://github.com/fremder/…` | Author identity unknown |
+| none | Author identity unknown |
+
+The last two are the point: git refuses the commit rather than inventing an
+author. And `git config --global user.name` still answers nothing, so stage 3's
+existing warning about a global identity does not start crying wolf — the
+conditional include is not evaluated without a repository context.
+
+**Kept, not removed: the PAT.** It is the fallback if a key is ever missing on a
+fresh machine, which would otherwise leave no way to push the commits that
+record the install. It can be revoked at GitHub once SSH has been trusted for a
+while.
+
+**Two existing keys at GitHub, both identified**, neither touched:
+`SHA256:wMBJ…SsSk` is the laptop's RSA key — also the one in this desktop's
+`authorized_keys`, so it has a second job and stays. `SHA256:z9vR…3tt4` is this
+desktop's OLD ed25519 key; its private half survives only by accident, in the
+rescue snapshot of 2026-08-01, and nothing on the machine uses it. It is what
+the new key replaces and can be deleted once SSH has proven itself — the rescue
+copy with it.

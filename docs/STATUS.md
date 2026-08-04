@@ -1,6 +1,32 @@
 # STATUS
 
-_Last updated: 2026-08-03 (session 12 — crackling fixed, distortion measured for the first time)_
+_Last updated: 2026-08-04 (session 13 — Obsidian, and GitHub over SSH)_
+
+## Session 13 — Obsidian and the GitHub situation
+
+**Obsidian** is in `packages/apps.txt` (official `extra`) and pinned last on the
+taskbar in stage 4. Its settings are deliberately NOT captured: there is no
+vault and no configuration yet, so a capture would restore an empty directory.
+Revisit when a second vault exists — see `LOG.md`.
+
+**GitHub now works over SSH, for every repository rather than only this one.**
+The key lives in `$PHOINIX_DATA/ssh/`, stage 3 installs it with the modes ssh
+insists on and writes `known_hosts` only after checking GitHub's host key
+against a pin in `config.sh`. The PAT stays as a fallback and can be revoked
+later.
+
+**The identity is now structural.** `~/.config/git/config` has no global
+`[user]`; it pulls one in only when a remote points at ulu's own GitHub account.
+A repository with no remote, or someone else's, gets none — and git refuses the
+commit instead of inventing an author. That is the 2026-07-31 leak made
+impossible rather than defended against by hand.
+
+**Open on the GitHub side:** `anemos` still has no remote (ulu creates it), and
+the old desktop key at GitHub (`SHA256:z9vR…3tt4`) can be deleted once SSH has
+been trusted for a while — together with its accidental copy in
+`$PHOINIX_DATA/rescue/ssh/`.
+
+_Previously: 2026-08-03 (session 12 — crackling fixed, distortion measured for the first time)_
 
 ## Session 12 — the crackling is gone, the distortion is now measurable
 

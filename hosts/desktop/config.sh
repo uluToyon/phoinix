@@ -158,6 +158,34 @@ VPN_CONFIG_DIR="$PHOINIX_DATA/vpn"
 # which is the one action to take if this file ever escapes the data disk.
 GIT_CREDENTIALS_FILE="$PHOINIX_DATA/git-credentials"
 
+# --- GitHub over SSH (stage 3) ---------------------------------------------
+# Since 2026-08-04 the token above is the FALLBACK, not the way in. GitHub is
+# reached with an SSH key, for one reason: a token is scoped to the repositories
+# it names, so every new project cost a visit to GitHub, a file on the data disk
+# and a line in this script. A key costs nothing per project — clone and push
+# work immediately, for every repository of ulu's, with no configuration at all.
+#
+# ed25519, no passphrase, comment "uluToyon" rather than ssh-keygen's default
+# `user@host`: that comment is visible in the key list at GitHub, and the
+# machine name has no business being there. Without a passphrase the key file
+# IS the secret — the same risk the token already carried, and it keeps the
+# restore down to a single file. It lives on the data disk with the VPN
+# configs; only the path is versioned.
+#
+# The token can be revoked at GitHub once SSH has been trusted for a while. It
+# is kept for now because a broken key on a fresh machine would otherwise leave
+# no way to push the very commits that record the install.
+SSH_KEY_DIR="$PHOINIX_DATA/ssh"
+SSH_GITHUB_KEY="$SSH_KEY_DIR/github_ed25519"
+
+# GitHub's ed25519 host key, pinned. Stage 3 fetches the key with ssh-keyscan
+# and refuses to write known_hosts unless the fingerprint matches this line.
+# Without a known_hosts entry the first connection asks an interactive question
+# and an unattended install stops there; accepting blindly instead would make
+# the whole key exercise pointless. Published by GitHub at
+# docs.github.com -> "GitHub's SSH key fingerprints".
+GITHUB_HOST_KEY_FP="SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU"
+
 # --- qBittorrent paths (stage 3) -------------------------------------------
 # On a data disk, not in ~/Downloads: the system disk is what a reinstall
 # wipes, and half-finished torrents have no business living there. TempPath

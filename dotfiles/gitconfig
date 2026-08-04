@@ -1,0 +1,41 @@
+# Installed by stage 3 to ~/.config/git/config.
+#
+# There is deliberately NO [user] section at this level. A global identity is
+# what once put ulu's real name into 35 commits (LOG.md 2026-07-31), and the
+# defence used to be a repo-local identity set by hand in every checkout —
+# which is exactly the kind of guard that is forgotten on the one repository
+# that matters. The includeIf rules below make it structural instead: an
+# identity appears only when the remote points at ulu's own GitHub account, and
+# nowhere else. A repository with no remote, or someone else's remote, still
+# has no identity at all, so git refuses the commit rather than quietly
+# inventing an author. That refusal is the feature.
+#
+# `hasconfig:remote.*.url` needs git >= 2.36. Both spellings are listed on
+# purpose: the condition tests the URL as it is WRITTEN in .git/config, not the
+# one insteadOf rewrites it to, so an https clone has to match as well.
+
+[includeIf "hasconfig:remote.*.url:git@github.com:uluToyon/**"]
+	path = identity-github
+[includeIf "hasconfig:remote.*.url:ssh://git@github.com/uluToyon/**"]
+	path = identity-github
+[includeIf "hasconfig:remote.*.url:https://github.com/uluToyon/**"]
+	path = identity-github
+
+# Push over SSH even when the URL was copied out of the browser, which always
+# offers https. Without this, an https remote asks for a password GitHub no
+# longer accepts, and the fix looks like a broken key when it is a broken URL.
+[url "git@github.com:uluToyon/"]
+	insteadOf = https://github.com/uluToyon/
+
+[init]
+	defaultBranch = main
+
+[pull]
+	# Merge commits from a routine `git pull` say nothing and complicate the
+	# history of a repo that is read as documentation.
+	rebase = true
+
+[push]
+	# Push the current branch to its upstream of the same name, and only that
+	# branch. `matching` would push everything that happens to exist.
+	default = simple

@@ -1,0 +1,12 @@
+# Installed by stage 3 to ~/.ssh/config (mode 0600).
+#
+# IdentitiesOnly is not optional here. Without it ssh offers every key it can
+# find — including the ones an agent holds — and GitHub closes the connection
+# after a handful of failures with "Too many authentication failures". That
+# reads like a broken key and is not one, which is why it belongs in the file
+# rather than in a note somewhere.
+Host github.com
+	HostName github.com
+	User git
+	IdentityFile ~/.ssh/github_ed25519
+	IdentitiesOnly yes

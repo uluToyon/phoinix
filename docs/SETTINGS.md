@@ -761,6 +761,40 @@ account, settings, all ten plugins — and carried through into the game, with
 Dalamud re-downloading its framework around the restored config. The restored
 directory was then kept and the original deleted.
 
+## Git and GitHub (stage 3)
+
+Two problems, one section. GitHub has to be reachable from a rebuilt machine
+without a manual login, and no commit of ulu's may ever carry his real name.
+Both are solved for *every* repository on the machine, not only for this
+checkout — a project cloned next year has to be right without anyone
+remembering. Rationale in `LOG.md` 2026-08-04.
+
+| Setting | Value | Origin |
+|---|---|---|
+| `SSH_GITHUB_KEY` | `$PHOINIX_DATA/ssh/github_ed25519` — ed25519, no passphrase, **never in the repo**; only the path is versioned | dec |
+| Key comment | `uluToyon`, not `user@host` — the comment is visible in the key list at GitHub | dec |
+| `~/.ssh/config` | `dotfiles/ssh_config`, mode 0600: `github.com` bound to that key, `IdentitiesOnly yes` | dec |
+| `GITHUB_HOST_KEY_FP` | `SHA256:+DiY3wvv…UvCOqU`, checked against `ssh-keyscan` before `known_hosts` is written | dec |
+| `~/.config/git/config` | `dotfiles/gitconfig` — **no global `[user]`**; identity via `includeIf` | dec |
+| Identity condition | remote matching `github.com/uluToyon` (ssh, ssh://, https) → `identity-github` | dec |
+| `~/.config/git/identity-github` | generated from `GIT_IDENTITY_NAME` / `GIT_IDENTITY_EMAIL`, so `config.sh` stays the only source | dec |
+| `url.insteadOf` | `https://github.com/uluToyon/` → `git@github.com:uluToyon/` | dec |
+| `init.defaultBranch` | `main` | dec |
+| `pull.rebase` | `true` — merge commits from a routine pull say nothing | dec |
+| `push.default` | `simple` | dec |
+| `GIT_CREDENTIALS_FILE` | the fine-grained PAT, now the **fallback only**; still wired repo-locally to this checkout | dec |
+
+**The refusal is the feature.** A repository with no remote, or someone else's
+remote, gets no identity at all and git declines to commit — instead of quietly
+inventing an author, which is how 35 commits once acquired ulu's real name.
+Verified 2026-08-04 with four throwaway repositories: ssh remote → `uluToyon`,
+https remote → `uluToyon` (and rewritten to ssh), a stranger's repository →
+"Author identity unknown", no remote → the same.
+
+**Why a key and not another token.** A fine-grained token is scoped to the
+repositories it names, so every new project cost a visit to GitHub, a file on
+the data disk and a line in the script. The key costs nothing per project.
+
 ## Known gaps and open items
 
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and
