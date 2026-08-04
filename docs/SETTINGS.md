@@ -782,7 +782,7 @@ remembering. Rationale in `LOG.md` 2026-08-04.
 | `init.defaultBranch` | `main` | dec |
 | `pull.rebase` | `true` — merge commits from a routine pull say nothing | dec |
 | `push.default` | `simple` | dec |
-| `GIT_CREDENTIALS_FILE` | the fine-grained PAT, now the **fallback only**; still wired repo-locally to this checkout | dec |
+| ~~`GIT_CREDENTIALS_FILE`~~ | the fine-grained PAT — **retired 2026-08-04**, revoked and deleted. It sat on the same disk as the key, so it never covered the failure that matters | dec |
 
 **The refusal is the feature.** A repository with no remote, or someone else's
 remote, gets no identity at all and git declines to commit — instead of quietly

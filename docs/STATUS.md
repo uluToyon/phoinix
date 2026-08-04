@@ -12,8 +12,8 @@ Revisit when a second vault exists — see `LOG.md`.
 **GitHub now works over SSH, for every repository rather than only this one.**
 The key lives in `$PHOINIX_DATA/ssh/`, stage 3 installs it with the modes ssh
 insists on and writes `known_hosts` only after checking GitHub's host key
-against a pin in `config.sh`. The PAT stays as a fallback and can be revoked
-later.
+against a pin in `config.sh`. The PAT that used to do this job was retired the
+same day — see below.
 
 **The identity is now structural.** `~/.config/git/config` has no global
 `[user]`; it pulls one in only when a remote points at ulu's own GitHub account.
@@ -26,9 +26,14 @@ impossible rather than defended against by hand.
 re-tested afterwards and still answers "Hi uluToyon!". The laptop's RSA key
 stays — it has a second job in this desktop's `authorized_keys`.
 
-**Open on the GitHub side:** `anemos` has no remote yet (ulu creates it, in
-another session), and the PAT is still on the data disk as the fallback for a
-machine whose key is missing. Revoking it is a decision, not a leftover.
+**The PAT is gone too (2026-08-04).** Revoked, file deleted, every reference
+removed from the scripts and the docs. It had been kept for a few hours as a
+fallback until the obvious was noticed: it lived on the same data disk as the
+key, so the realistic failure took both at once. And the repository is public,
+so cloning never needed it. Pushing now has exactly one credential.
+
+**Open on the GitHub side:** `anemos` has no remote yet — ulu creates it in
+another session.
 
 _Previously: 2026-08-03 (session 12 — crackling fixed, distortion measured for the first time)_
 
@@ -570,6 +575,10 @@ this topology — until proven, the cap stays.
   offer the token to every clone on the machine. Only the path is versioned.
   Verified on the fresh system: the helper was set by stage 3 and
   `git ls-remote origin` authenticated without a prompt.
+  **Superseded 2026-08-04**: an SSH key replaced the token for every repository
+  rather than one, and the token was revoked and removed. The shape of the fix
+  survives — the secret on the data disk, only the path versioned — it is just a
+  key now.
   The token is fine-grained, limited to `uluToyon/phoinix`, permission
   "Contents: Read and write", and **has no expiry date** (ulu, 2026-08-01).
   `config.sh` used to claim it expires and pointed here for a date that was

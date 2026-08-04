@@ -111,23 +111,16 @@ if [[ -d "$REPO_DIR/.git" ]]; then
         echo "         from 2026-07-31. Unset them before committing."
     fi
 
-    # Push credentials. The token itself is a secret and lives on a data disk;
-    # only its path is versioned, exactly like VPN_CONFIG_DIR. The helper is
-    # set REPO-LOCALLY on purpose — a global one would offer ulu's token to
-    # every clone on the machine.
-    if [[ -n "${GIT_CREDENTIALS_FILE:-}" ]]; then
-        git -C "$REPO_DIR" config credential.helper "store --file=$GIT_CREDENTIALS_FILE"
-        if [[ -s "$GIT_CREDENTIALS_FILE" ]]; then
-            echo "git: push credentials from $GIT_CREDENTIALS_FILE"
-        else
-            # Loud, not fatal: an install must not stop over this, but a silent
-            # skip would only be discovered at the first push — which is
-            # typically the commit that records the install itself.
-            echo "WARNING: $GIT_CREDENTIALS_FILE is missing or empty — push will ask for"
-            echo "         credentials. One line, mode 0600:"
-            echo "         https://$GIT_IDENTITY_NAME:<token>@github.com"
-        fi
-    fi
+    # A personal access token used to be wired in here, repo-locally, as the way
+    # to push. Retired 2026-08-04 with the token itself. It was kept for a few
+    # hours as a fallback for "the key is missing on a fresh machine" — until
+    # the obvious was noticed: the token lived on the SAME data disk as the key,
+    # so the realistic failure (no data disk) took both at once, and the only
+    # case it covered was a key that had gone missing on its own. Two secrets
+    # for one job, one of them protecting almost nothing.
+    #
+    # Also relevant, and checked rather than assumed: the repository is public,
+    # so bootstrap's clone never needed a credential either.
 
     # --- GitHub over SSH ---------------------------------------------------
     # The way in since 2026-08-04; the token above is only the fallback. See

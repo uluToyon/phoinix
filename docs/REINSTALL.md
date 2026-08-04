@@ -36,9 +36,10 @@ the scripts read but the repo may not carry lives in one directory,
 ls -lR /mnt/FilesMusic/phoinix
 ```
 
-Expect `git-credentials` (0600), `dzgui-private.json` (0600), `dzgui-icon.png`,
-`claude-settings.local.json`, `vpn/` with both `.conf` files at 0600 (CH and
-NL), `xlcore-backup/` at ~80 MB, and `rescue/` (see below).
+Expect `ssh/github_ed25519` (0600) with its `.pub`, `dzgui-private.json`
+(0600), `dzgui-icon.png`, `claude-settings.local.json`, `vpn/` with both
+`.conf` files at 0600 (CH and NL), `xlcore-backup/` at ~80 MB, and `rescue/`
+(see below). No `git-credentials` — the token was retired 2026-08-04.
 
 Two of those go stale unless refreshed by hand, because both are snapshots of
 something that keeps changing — `xlcore-backup/` (run
@@ -123,16 +124,20 @@ the identity rules at once:
 ssh -o BatchMode=yes -T git@github.com     # must answer "Hi uluToyon!"
 ```
 
-If it does not: the key is missing from the data disk, and the fine-grained PAT
-in `$PHOINIX_DATA/git-credentials` is the way out — stage 3 wires it repo-locally
-for exactly this case. That is the token's only remaining job; the repository is
-public, so cloning never needed it.
+If it does not, the key is missing or unreadable on the data disk and pushing is
+not possible until it is back. There is no second credential any more: the token
+that used to serve as one lived on the same disk, so it fell with the key rather
+than catching it. Cloning is unaffected — the repository is public.
 
-Deliberately not scripted into stage 3: a private key is exactly the file that
-must not be moved around by an installer that also runs unattended in a VM, and
-the rescue directory is a hand-made thing whose absence must be noticed rather
-than skipped over. It is a checklist item here, next to the rescue that
-produces it.
+~~Deliberately not scripted into stage 3: a private key is exactly the file that
+must not be moved around by an installer that also runs unattended in a VM.~~
+**Reversed 2026-08-04.** The objection was aimed at the *rescue* directory — a
+hand-made snapshot whose absence must be noticed rather than skipped over. The
+GitHub key is not that: it has a declared home in `config.sh`, like the VPN
+configs the same installer has always placed, and a run in a VM finds no key
+there and says so instead of copying anything. What must not be scripted is
+restoring a key from a snapshot; placing a key the repo knows about is the same
+class of work as the rest of stage 3.
 
 Everything else in the home directory is either rebuilt or restored: Steam
 re-attaches its library from `/mnt/Games`, XIVLauncher restores from the 80 MB

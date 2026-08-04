@@ -4293,3 +4293,33 @@ checkout with global and system git config disabled and prompts off —
 `git ls-remote https://github.com/uluToyon/phoinix` answers. So bootstrap's
 clone never needed a credential at all, and the PAT's only remaining job is a
 fresh machine whose key is missing from the data disk.
+
+## 2026-08-04, end of day — the token is gone, and the reason it was worth losing
+
+ulu's call, against the recommendation to keep it until after the next reinstall.
+He was right, and the argument only became visible while carrying it out: **the
+token lived on the same data disk as the key.** The failure it was supposed to
+cover — a fresh machine that cannot push — is in practice "the data disk is not
+there", and that took both at once. The only case it genuinely covered was a key
+that had gone missing by itself while its neighbour survived. Two permanent
+secrets for one job, the second protecting almost nothing.
+
+Checked rather than assumed, and it removes the other half of the argument:
+**the repository is public.** `git ls-remote https://github.com/uluToyon/phoinix`
+answers from outside the checkout with global and system git config disabled and
+prompts off. Bootstrap's clone never needed a credential at all.
+
+Removed: the file on the data disk, the repo-local `credential.helper` on the
+live checkout, `GIT_CREDENTIALS_FILE` and its rationale from `config.sh`, the
+wiring block from stage 3, and the rows in `SETTINGS.md`, `STATUS.md` and
+`REINSTALL.md`. The stage-3 and config comments are replaced by a note of what
+stood there and why it went, so nobody reinvents it in six weeks.
+
+One contradiction fell out of it that had nothing to do with the token.
+`REINSTALL.md` argued that a private key "must not be moved around by an
+installer that also runs unattended in a VM" — written when the only key was a
+rescue snapshot. It no longer holds: the GitHub key has a declared home in
+`config.sh`, exactly like the VPN configs the same installer has always placed,
+and a VM run finds nothing there and says so. Restoring a key from a hand-made
+snapshot is what must stay manual; placing a key the repo knows about is
+ordinary stage-3 work.

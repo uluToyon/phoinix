@@ -134,36 +134,23 @@ CLAUDE_SETTINGS_FILE="$PHOINIX_DATA/claude-settings.local.json"
 # Only the PATH is versioned. Every .conf in here is imported.
 VPN_CONFIG_DIR="$PHOINIX_DATA/vpn"
 
-# --- GitHub credentials (stage 3) ------------------------------------------
-# Same principle as VPN_CONFIG_DIR above: the secret lives on a data disk this
-# repo never formats, and only the PATH is versioned. The file is git's own
-# `store` format, one line, mode 0600:
-#
-#   https://uluToyon:<personal-access-token>@github.com
-#
-# Stage 3 points a REPO-LOCAL credential.helper at it, so the token is offered
-# to this repository and nothing else — a global helper would hand it to every
-# clone on the machine.
-#
-# Why it exists at all: a rebuilt machine has no gh, no SSH key and no stored
-# credentials, so the very commits that record the reinstall cannot be pushed
-# (found 2026-08-01). A token is a secret and must never enter the repo, but
-# the path to it is not, and that is enough to make the step reproducible.
-#
-# The token is fine-grained, limited to uluToyon/phoinix, permission
-# "Contents: Read and write", and has NO expiry date (confirmed by ulu
-# 2026-08-01 — an earlier comment here claimed the opposite and pointed at a
-# date STATUS.md never carried). So nothing here rots on a timer; the flip side
-# is that a leaked token stays valid until it is revoked by hand at GitHub,
-# which is the one action to take if this file ever escapes the data disk.
-GIT_CREDENTIALS_FILE="$PHOINIX_DATA/git-credentials"
-
 # --- GitHub over SSH (stage 3) ---------------------------------------------
-# Since 2026-08-04 the token above is the FALLBACK, not the way in. GitHub is
-# reached with an SSH key, for one reason: a token is scoped to the repositories
-# it names, so every new project cost a visit to GitHub, a file on the data disk
-# and a line in this script. A key costs nothing per project — clone and push
-# work immediately, for every repository of ulu's, with no configuration at all.
+# A fine-grained personal access token stood here until 2026-08-04, in
+# `$PHOINIX_DATA/git-credentials`, wired repo-locally by stage 3. It is gone:
+# revoked at GitHub, file deleted, references removed. Written down so nobody
+# reinvents it.
+#
+# It was replaced because a token is scoped to the repositories it names, so
+# every new project cost a visit to GitHub, a file on the data disk and a line
+# in this script. A key costs nothing per project — clone and push work
+# immediately, for every repository of ulu's, with no configuration at all.
+#
+# It was then kept for a few hours as a fallback and dropped on the same day,
+# once it was clear how little it covered: the token lived on the SAME disk as
+# the key, so the realistic failure — no data disk — took both at once. The only
+# case left was a key that had gone missing by itself, which is not worth a
+# second permanent credential. And the repository is public (verified with
+# global and system git config disabled), so cloning never needed one either.
 #
 # ed25519, no passphrase, comment "uluToyon" rather than ssh-keygen's default
 # `user@host`: that comment is visible in the key list at GitHub, and the
