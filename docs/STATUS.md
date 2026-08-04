@@ -120,11 +120,13 @@ profiles (7b) and puts Quad9 over strict DoT on the wired link with the LAN
 router scoped to its own DHCP domain (new section 7c; printer moved to 7d).
 `config.sh` carries the resolver as a decision. Details in `LOG.md`.
 
-**One manual step is outstanding**, and until it is done `fritz.box` resolves to
-a stranger's host on the public internet (the router answers on
-`192.168.178.1`): the generated `/etc/systemd/resolved.conf.d/10-phoinix-lan.conf`
-needs root. On a fresh install stage 3 writes it itself — this is only the live
-machine catching up.
+~~**One manual step is outstanding**, and until it is done `fritz.box` resolves
+to a stranger's host on the public internet~~ — **done 2026-08-04**, three days
+late, and the prediction had held exactly: `fritz.box` was answering
+`212.42.244.122`. It now resolves to `192.168.178.1` in 646 µs instead of 9.2 ms
+over the internet, while everything else still leaves through Quad9 with
+`+DNSOverTLS` on the link. Stage 3 writes the file itself on a fresh install;
+only the live machine was behind.
 
 **Audio: the −26 dB theory is dead, and a real defect turned up next to it.**
 ulu still hears glitches in FFXIV and DayZ, so the level was never the cause

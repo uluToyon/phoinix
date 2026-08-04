@@ -4196,3 +4196,43 @@ desktop's OLD ed25519 key; its private half survives only by accident, in the
 rescue snapshot of 2026-08-01, and nothing on the machine uses it. It is what
 the new key replaces and can be deleted once SSH has proven itself — the rescue
 copy with it.
+
+## 2026-08-04, later — the housekeeping, and one drift that mattered
+
+Four open items closed, one still waiting on ulu.
+
+**The LAN DNS drop-in was finally installed**, three days after stage 3 learned
+to write it. The prediction in STATUS.md had held to the letter: `fritz.box` was
+answering `212.42.244.122`, a stranger's host on the public internet, because
+Quad9 answers for that domain and the wired link holds the DNS default route.
+After the drop-in it resolves to `192.168.178.1` in 646 µs instead of 9.2 ms —
+the latency alone shows the answer now comes from the cable rather than from
+Frankfurt. Public names still leave through Quad9 with `+DNSOverTLS` on the
+link, so the split is intact.
+
+**A drop-in the repo never received.** `system/wireplumber/50-phoinix-usb-headroom.conf`
+was committed in its first form (headroom 2048) and then changed three more
+times live — `disable-tsched`, `period-size 256` with `period-num 16`, headroom
+1024 — without ever being written back. A fresh install would have got the wrong
+audio configuration. Worth noting how it was found: NOT by `check-drift.sh`,
+which only walks the captured files under `hosts/*/home/`. A file the repo owns
+and installs is outside its reach. That is a gap in the drift check, not a
+mistake it made.
+
+**The old desktop SSH key is gone from the data disk.** `rescue/ssh/id_ed25519`
+and its public half, fingerprint `SHA256:z9vR…3tt4`, deleted; `authorized_keys`
+and `known_hosts` left alone. The fingerprint still appears in an old Claude
+transcript inside `rescue/claude/` — that is the public identifier, and the file
+was checked for private key material: none. The entry at GitHub is ulu's to
+remove.
+
+**Left open on purpose: the soundbar volume.** `check-drift.sh desktop` reports
+8 in sync, 2 drifted. One difference is real — `default-routes` has the Concept
+12 at `0.050120` in the repo and `0.032770` live, that is 37 % / −26.0 dB
+against 32 % / −29.7 dB. The documented value is 37 %, in `SETTINGS.md` and as a
+rule in `DESIGN.md`. This is precisely the case the drift check's own warning
+names ("that is how the soundbar lost 2.77 dB without anyone noticing"), so it
+is not resolved by picking a side quietly: ulu decides whether the 32 % were
+intended. The other difference, the order of preferred sinks in `default-nodes`,
+is fallout from switching outputs during yesterday's measurements and goes back
+either way — both live in the same two files, so they get touched once.
