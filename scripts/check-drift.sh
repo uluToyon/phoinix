@@ -101,6 +101,82 @@ fi
 check_pair "$REPO_DIR/dotfiles/zshrc"    "$HOME/.zshrc"    "~/.zshrc (minus the phoinix hook)" zshrc
 check_pair "$REPO_DIR/dotfiles/p10k.zsh" "$HOME/.p10k.zsh" "~/.p10k.zsh"
 
+# ---------------------------------------------------------------------------
+# Files the REPO owns and the stages install verbatim.
+#
+# Added 2026-08-04, after this script did not catch the one drift that mattered
+# that day: `system/wireplumber/50-phoinix-usb-headroom.conf` had been changed
+# three times on the live machine and never written back, and a fresh install
+# would have received the wrong audio configuration. The walk above only covers
+# the CAPTURED tree under hosts/<host>/home/ — a file the repo authors and
+# pushes out was outside its reach entirely.
+REPO_OWNED=(
+    "dotfiles/gitconfig|$HOME/.config/git/config"
+    "dotfiles/ssh_config|$HOME/.ssh/config"
+    "system/wireplumber/50-phoinix-usb-headroom.conf|$HOME/.config/wireplumber/wireplumber.conf.d/50-phoinix-usb-headroom.conf"
+    "system/user/plasma-plasmashell.service.d/phoinix-shutdown.conf|$HOME/.config/systemd/user/plasma-plasmashell.service.d/phoinix-shutdown.conf"
+    "system/user@.service.d/10-phoinix-realtime.conf|/etc/systemd/system/user@.service.d/10-phoinix-realtime.conf"
+    "system/nftables.service.d/phoinix-remain.conf|/etc/systemd/system/nftables.service.d/phoinix-remain.conf"
+    "system/NetworkManager/10-phoinix-dns.conf|/etc/NetworkManager/conf.d/10-phoinix-dns.conf"
+    "system/zram-generator.conf|/etc/systemd/zram-generator.conf"
+)
+
+# Installed through a substitution, so the live file is SUPPOSED to differ —
+# comparing bytes would report drift forever. Their presence is still checked:
+# a missing one is a stage that did not run.
+REPO_TEMPLATED=(
+    "system/nftables.conf|/etc/nftables.conf"
+    "system/applications/phoinix-monitor-switch.desktop|$HOME/.local/share/applications/phoinix-monitor-switch.desktop"
+    "system/applications/phoinix-dzgui.desktop|$HOME/.local/share/applications/phoinix-dzgui.desktop"
+    "system/user/phoinix-stage4.service|$HOME/.config/systemd/user/phoinix-stage4.service"
+    "system/user/phoinix-playlist-export.service|$HOME/.config/systemd/user/phoinix-playlist-export.service"
+    "system/user/phoinix-xlcore-backup.service|$HOME/.config/systemd/user/phoinix-xlcore-backup.service"
+    "plasma/panels.js|"
+)
+
+for entry in "${REPO_OWNED[@]}"; do
+    rel="${entry%%|*}"; dst="${entry#*|}"
+    if [[ -f "$dst" && ! -r "$dst" ]]; then
+        report volatile "$rel" "on the system but not readable without root — check by hand"
+    else
+        check_pair "$REPO_DIR/$rel" "$dst" "$rel"
+    fi
+done
+
+for entry in "${REPO_TEMPLATED[@]}"; do
+    rel="${entry%%|*}"; dst="${entry#*|}"
+    [[ -n "$dst" ]] || continue          # panels.js is fed to plasmashell, never landed
+    if [[ ! -f "$REPO_DIR/$rel" ]]; then
+        report missing "$rel" "not in the repo"
+    elif [[ ! -e "$dst" ]]; then
+        report missing "$rel" "installed nowhere: $dst is absent — did that stage run?"
+    else
+        report volatile "$rel" "templated at install — bytes cannot match by design"
+    fi
+done
+
+# Does the table still cover what the stages actually install? Without this the
+# list above rots the moment someone adds a file, which is exactly the failure
+# it was written to fix.
+uncovered=()
+while IFS= read -r rel; do
+    [[ -f "$REPO_DIR/$rel" ]] || continue
+    covered=0
+    for entry in "${REPO_OWNED[@]}" "${REPO_TEMPLATED[@]}"; do
+        [[ "${entry%%|*}" == "$rel" ]] && covered=1
+    done
+    [[ "$rel" == dotfiles/zshrc || "$rel" == dotfiles/p10k.zsh ]] && covered=1
+    [[ "$covered" == 0 ]] && uncovered+=("$rel")
+done < <(grep -rhoE '\$REPO_DIR/(system|dotfiles|plasma)/[A-Za-z0-9._@/-]+' "$REPO_DIR"/base/*.sh \
+         | sed 's|^\$REPO_DIR/||' | sort -u)
+
+if (( ${#uncovered[@]} )); then
+    drift=1
+    printf '  ! the stages install files this check does not know about:\n'
+    printf '      %s\n' "${uncovered[@]}"
+    printf '      Add them to REPO_OWNED or REPO_TEMPLATED in this script.\n'
+fi
+
 # authorized_keys, compared by KEY MATERIAL only. The repo's copy deliberately
 # carries a sanitised comment (`ulu@laptop`) where the live file has whatever
 # ssh-keygen wrote — CLAUDE.md forbids a real name or address in any repo file,

@@ -4244,3 +4244,32 @@ on exit. The sink now reads exactly −26.00 dB rather than the −25.91 that
 `pactl … 37%` produces, because the stored value is the one the repo carries.
 `check-drift.sh desktop`: **10 in sync, 0 drifted, 0 missing, 1 expected to
 differ.**
+
+## 2026-08-04, still later — the drift check learns about the repo's own files
+
+`check-drift.sh` walked the CAPTURED tree under `hosts/<host>/home/` and nothing
+else. Everything the repo authors and pushes out — both audio drop-ins, the
+dotfiles, the NetworkManager and nftables stanzas, the new realtime drop-in —
+was outside its reach. That gap cost something the same day: the USB audio
+drop-in had been changed three times live and never written back, and the check
+reported "10 in sync" while a fresh install would have received the wrong
+configuration.
+
+Now it also compares a table of repo-owned destinations, and separates the ones
+installed through a substitution — nftables.conf, the desktop files, the user
+units — where bytes cannot match by design and only presence is worth checking.
+
+**The table has a guard against itself.** A list maintained by hand rots the
+moment someone adds a file, which is precisely the failure being fixed. So the
+script greps the stages for every `$REPO_DIR/{system,dotfiles,plasma}/…` they
+reference and reports anything not in the table. Adding a file to stage 3 and
+forgetting this script now shows up as an error rather than as silence.
+
+**It found something on its first run**: 17 files instead of 10, and one drift.
+`/etc/NetworkManager/conf.d/10-phoinix-dns.conf` still carried the rationale
+from before 2026-08-01 — "while the tunnel is up it is authoritative" — the
+explanation that turned out to be the bug, the one that had the whole desktop
+resolving through Proton. The effective setting is identical on both sides,
+`dns=systemd-resolved`. Only the reasoning differs, and in a repo whose premise
+is that the reasoning is the valuable part, that is worth correcting rather than
+shrugging at.
