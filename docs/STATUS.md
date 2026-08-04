@@ -21,10 +21,14 @@ A repository with no remote, or someone else's, gets none — and git refuses th
 commit instead of inventing an author. That is the 2026-07-31 leak made
 impossible rather than defended against by hand.
 
-**Open on the GitHub side:** `anemos` still has no remote (ulu creates it), and
-the old desktop key at GitHub (`SHA256:z9vR…3tt4`) can be deleted once SSH has
-been trusted for a while — together with its accidental copy in
-`$PHOINIX_DATA/rescue/ssh/`.
+**The old desktop key is gone**, both halves: deleted from
+`$PHOINIX_DATA/rescue/ssh/` and from GitHub on 2026-08-04. Authentication was
+re-tested afterwards and still answers "Hi uluToyon!". The laptop's RSA key
+stays — it has a second job in this desktop's `authorized_keys`.
+
+**Open on the GitHub side:** `anemos` has no remote yet (ulu creates it, in
+another session), and the PAT is still on the data disk as the fallback for a
+machine whose key is missing. Revoking it is a decision, not a leftover.
 
 _Previously: 2026-08-03 (session 12 — crackling fixed, distortion measured for the first time)_
 

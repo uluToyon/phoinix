@@ -4273,3 +4273,9 @@ resolving through Proton. The effective setting is identical on both sides,
 `dns=systemd-resolved`. Only the reasoning differs, and in a repo whose premise
 is that the reasoning is the valuable part, that is worth correcting rather than
 shrugging at.
+
+**The old desktop key is fully retired (2026-08-04).** Deleted from the rescue
+directory and from GitHub, and authentication re-tested afterwards: still "Hi
+uluToyon!". Only two keys remain in the account — the laptop's RSA key, which
+also lives in this desktop's `authorized_keys` and therefore has a second job,
+and the new `phoinix-desktop` key that stage 3 can restore from the data disk.
