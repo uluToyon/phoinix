@@ -261,7 +261,7 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Panels | rebuilt from scratch: main panel, TV clone, two clock strips | dec |
 | Main panel height | `PANEL_MAIN_HEIGHT=46` | dec |
 | Side strips | `DP-2:55`, `DP-3:36` | dec |
-| Pinned launchers | Konsole, Dolphin, Brave, KeePassXC, Strawberry, Discord, qBittorrent | dec |
+| Pinned launchers | Konsole, Dolphin, Brave, KeePassXC, Strawberry, Discord, qBittorrent, Obsidian | dec |
 | Kickoff favourites | browser, System Settings, Dolphin | dec |
 | Pointer acceleration | **flat profile on every pointer that supports it** | dec |
 | Places sidebar order | `PLACES_ORDER` labels, resolved at runtime | dec |

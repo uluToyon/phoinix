@@ -54,7 +54,7 @@ MARKER="$STATE_DIR/stage4.done"
 # ------------------------------------------------- the desired Plasma state
 # Pinned launchers of the main panel, in display order. The TV panel is a
 # clone of that panel, so this list reaches both.
-PANEL_LAUNCHERS='["applications:org.kde.konsole.desktop","applications:org.kde.dolphin.desktop","applications:brave-browser.desktop","applications:org.keepassxc.KeePassXC.desktop","applications:org.strawberrymusicplayer.strawberry.desktop","applications:discord.desktop","applications:org.qbittorrent.qBittorrent.desktop"]'
+PANEL_LAUNCHERS='["applications:org.kde.konsole.desktop","applications:org.kde.dolphin.desktop","applications:brave-browser.desktop","applications:org.keepassxc.KeePassXC.desktop","applications:org.strawberrymusicplayer.strawberry.desktop","applications:discord.desktop","applications:org.qbittorrent.qBittorrent.desktop","applications:obsidian.desktop"]'
 
 # Kickoff favourites. Plasma's default list ships Discover AND Kontact,
 # neither of which is installed here — they would sit there as dead entries.
