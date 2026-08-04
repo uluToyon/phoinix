@@ -83,10 +83,14 @@ to remember.)
   rescue before, sat only in the old backup, and went when that was deleted.
 
 Made fresh on 2026-08-01 before the second reinstall, in
-`/mnt/FilesMusic/phoinix/rescue/` (`ssh/` with the private key at 0600,
-`claude/`, `claude.json`). The 2026-07-31 copy on the Downloads disk was
-deleted earlier that day once the key had been restored from it — which is
-why this list exists: after a wipe, `~/.ssh/id_ed25519` has no second home.
+`/mnt/FilesMusic/phoinix/rescue/` (`ssh/`, `claude/`, `claude.json`). The
+2026-07-31 copy on the Downloads disk was deleted earlier that day once the key
+had been restored from it — and that near-miss is why this list exists at all:
+a private key that lives in exactly one place is one wipe away from gone.
+
+Since 2026-08-04 that no longer applies to the GitHub key, which has a
+first-class home of its own and a stage that installs it. It still applies
+word for word to `~/.claude`: there is no second copy anywhere.
 
 ### Putting the key back — stage 3 does it now
 
