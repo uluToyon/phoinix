@@ -9,6 +9,13 @@ noto-fonts-cjk        # CJK glyphs — without it Japanese track titles in Straw
                       # Consumer is Strawberry today, but it fixes CJK everywhere (browser, file names).
 # mpc-qt moved to aur.txt — not in official repos (learned during stage 3)
 keepassxc             # password vault ("denk"); database lives on FilesMusic and survives reinstalls
+obsidian              # notes; official `extra` package, no AUR variant needed. The vault is a folder
+                      # inside one of ulu's own project repos, so it survives a reinstall by being on
+                      # GitHub — nothing for phoinix to carry. Settings live in `.obsidian/` INSIDE the
+                      # vault, and capturing them is deliberately deferred: as of 2026-08-04 there is no
+                      # vault and no configuration yet, so there is nothing to capture. Revisit when a
+                      # second vault exists and it becomes clear which settings should be shared.
+                      # Post-install: open Obsidian once and select the vault folder.
 # networkmanager-openvpn removed 2026-07-31 — ProtonVPN now runs on WireGuard,
 # which NetworkManager speaks natively. The plugin (and openvpn with it) bought
 # nothing except an import that could never be unattended: Proton's OpenVPN

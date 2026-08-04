@@ -4106,3 +4106,33 @@ That is not proof yet; ten events in one window could still be something else in
 the room. But the method is reproducible, it runs unattended, and it needs ulu
 only to confirm. If the next recordings put the excess in bounded windows again,
 the bar is convicted by its own output.
+
+## 2026-08-04 — Obsidian, and the settings question left open on purpose
+
+ulu wants Obsidian in the build. The package part is trivial — it is in the
+official `extra` repo (1.13.4), so `packages/apps.txt`, not `aur.txt`.
+
+The part worth recording is what was NOT built. The vault will be a folder
+inside one of ulu's own project repos and therefore reaches GitHub on its own;
+phoinix does not have to carry it, and a copy on `FilesMusic` would only add a
+second source of truth. Obsidian keeps its settings in `.obsidian/` inside each
+vault, so ulu asked about sharing one configuration across several vaults — the
+usual answer is a central directory with a **directory** symlink into each vault
+(a per-file symlink does not survive: configuration files are typically written
+to a temporary file and renamed into place, which replaces the link with a real
+file).
+
+That mechanism was designed and then dropped, because it would have been built
+for a configuration that does not exist: no vault, no plugins, no theme, no
+hotkeys as of today. Capturing that would restore an empty directory. It is
+revisited when a second vault exists — by then it is knowable which settings
+actually want to be shared, instead of guessing now.
+
+`PHOINIX_DATA` was considered and rejected as the home for those settings. That
+directory is for what must survive a reinstall and must never be in the repo —
+keys, tokens, credentials. Ordinary configuration belongs in the repo, where it
+is versioned, seen by `check-drift.sh`, and available on the laptop; the data
+disk is desktop-only. Blurring that line costs more than it saves.
+
+So: one package line, one post-install step (open Obsidian once, select the
+vault). Same pattern as Brave Sync and the pCloud login.
