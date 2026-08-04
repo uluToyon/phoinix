@@ -4236,3 +4236,11 @@ is not resolved by picking a side quietly: ulu decides whether the 32 % were
 intended. The other difference, the order of preferred sinks in `default-nodes`,
 is fallout from switching outputs during yesterday's measurements and goes back
 either way — both live in the same two files, so they get touched once.
+
+**Resolved the same evening: the volume was a test leftover, ulu's call.** Set
+back to 37 %, and the two state files restored from the repo with WirePlumber
+stopped — it owns them at runtime and would have written its own version back
+on exit. The sink now reads exactly −26.00 dB rather than the −25.91 that
+`pactl … 37%` produces, because the stored value is the one the repo carries.
+`check-drift.sh desktop`: **10 in sync, 0 drifted, 0 missing, 1 expected to
+differ.**
