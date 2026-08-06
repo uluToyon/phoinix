@@ -94,4 +94,8 @@ if [[ -n "${PHOINIX_QBT_ARGV:-}" ]]; then
         < <(printf '%s' "$PHOINIX_QBT_ARGV" | base64 -d)
 fi
 
-exec qbittorrent "${argv[@]}"
+# ABSOLUTE path, and that is not style. Since 2026-08-06 a wrapper named
+# `qbittorrent` sits in ~/.local/bin, ahead of /usr/bin in PATH, so that typing
+# the name in a terminal cannot start an unprotected client. Resolving by name
+# here would find that wrapper and call this script again, forever.
+exec /usr/bin/qbittorrent "${argv[@]}"

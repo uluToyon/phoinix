@@ -393,7 +393,38 @@ application. Rationale in `LOG.md` 2026-07-31.
 | `VPN_MARK_APP` / `VPN_MARK_WG` / `VPN_ROUTE_TABLE` | `0x51` / `0x52` / `51` — the group's mark selects the tunnel table; WireGuard's own mark exempts its encapsulation from the drop | dec |
 | qBittorrent | `Session\Interface` + `Session\InterfaceName` = `proton0` | dec |
 | Launcher | `~/.local/share/applications/org.qbittorrent.qBittorrent.desktop`, copied from the packaged file with only `Exec` rewritten to `scripts/qbittorrent-vpn.sh` | dec |
+| PATH wrapper | `~/.local/bin/qbittorrent` → the launcher. Covers execution BY NAME — a shell alias exists too but lives only in an interactive zsh, not in bash, a script or a unit | dec |
+| `VPN_DNS` | `10.2.0.1` — Proton's resolver INSIDE the tunnel. Unreachable from outside, which is what makes the whole DNS path fail closed | dec |
+| `VPN_DNS_STUB` | `127.0.0.61` — where the group's lookups are rewritten to. **Not** `127.0.0.54`: systemd-resolved already listens there | dec |
+| `dns_out` chain | `skgid vpnonly, daddr 127.0.0.53, dport 53 → dnat to 127.0.0.61`. Loopback to loopback on purpose — see below | dec |
+| `phoinix-vpn-dns.service` | dnsmasq bound to `VPN_DNS_STUB` only, `--keep-in-foreground` (never `--no-daemon`), drops to `dnsmasq:vpnonly`, `--no-resolv` | dec |
 | Port forwarding | **dropped 2026-07-31** (ulu's call). It needed qBittorrent's WebUI as its only delivery channel, and both servers in use refuse NAT-PMP anyway. Torrenting works without it; it costs peers | dec |
+
+**The names, since 2026-08-06.** The traffic went through the tunnel from the
+start; the LOOKUPS did not. qBittorrent asks the systemd-resolved stub like
+every program, and resolved — not being in the group — asked Quad9 over the
+ordinary line, so every tracker name was visible there. `dns_out` now rewrites
+that one destination to a dnsmasq that runs IN the group, and its query to the
+tunnel's resolver is marked and routed like everything else.
+
+**Why a forwarder rather than a rule pointing straight at `VPN_DNS`.** That was
+built first and cannot work: a query addressed to `127.0.0.53` has already been
+given `127.0.0.1` as its source before any rule runs, and a loopback sender may
+not be routed out of a real interface. Correcting it in postrouting is too late
+— the routing decision has happened. Netfilter cannot change a source address
+before routing, so no arrangement of rules fixes it. Rewriting one loopback
+address to another keeps the packet on `lo`, where the problem does not exist.
+
+**`--no-resolv` is load-bearing.** Without it dnsmasq reads `/etc/resolv.conf`
+and would keep answering over the ordinary line the moment the tunnel dropped —
+turning a closed failure into a silent leak.
+
+**Verified 2026-08-06**, counters and egress together: the group leaves as
+`62.169.136.42` (Proton) and everything else as the ISP address; `dns_out` fired
+on every lookup from the group; the drop rule stood at 0, i.e. nothing even
+tried to escape; resolution from the group carries tunnel latency and works only
+because `10.2.0.1` answered, which is reachable through the tunnel and nowhere
+else.
 
 **Two lines of defence, and only one of them is the guarantee.** The interface
 binding is qBittorrent promising something about itself; it does not survive a

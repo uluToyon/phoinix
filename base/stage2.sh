@@ -189,6 +189,8 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
         -e "s|@VPN_GROUP@|$VPN_GROUP|g" \
         -e "s|@VPN_MARK_APP@|$VPN_MARK_APP|g" \
         -e "s|@VPN_MARK_WG@|$VPN_MARK_WG|g" \
+        -e "s|@VPN_DNS@|$VPN_DNS|g" \
+        -e "s|@VPN_DNS_STUB@|$VPN_DNS_STUB|g" \
         "$REPO_DIR/system/nftables.conf" > /etc/nftables.conf
     chmod 644 /etc/nftables.conf
     # The drop-in is what makes the unit's state honest — without it the

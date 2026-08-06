@@ -4323,3 +4323,90 @@ rescue snapshot. It no longer holds: the GitHub key has a declared home in
 and a VM run finds nothing there and says so. Restoring a key from a hand-made
 snapshot is what must stay manual; placing a key the repo knows about is
 ordinary stage-3 work.
+
+## 2026-08-06 — "zu 100%, nicht 99,9%": the two gaps, and one wrong turn
+
+ulu asked for the split tunnel to be verified in both directions, then — after
+the answer named three gaps — for them closed. This is what was measured, what
+was built, and what was built wrong first.
+
+### The verification
+
+Both directions hold, and the evidence is the egress rather than anything the
+machine says about itself: a process in `vpnonly` leaves as `62.169.136.42`
+(Proton CH), everything else as `92.208.160.100`. The default route is the LAN;
+the tunnel's default lives only in table 51, which is unreachable without the
+mark. `mark_out` had marked 2 971 108 packets, the WireGuard exemption 2 973 368,
+and the drop rule had fired 8 times at 80 bytes each — IPv6 attempts from the
+group, which has no IPv6 route in the tunnel and therefore may not leave at all.
+
+**One false alarm, mine.** `curl` reported a connection "from 192.168.178.23"
+and I called it a leak before checking. That is the LOCAL socket address, which
+the kernel picks at `connect()` from the main table — before the output hook
+marks anything. It says nothing about the path the packet takes. The counters
+and the egress address said so; the socket did not.
+
+### Gap one: execution by name
+
+The desktop entry was covered (same file name as the packaged one, so menu,
+KRunner and magnet links all reach the launcher) and stage 3 defines a shell
+alias — but an alias exists only in an interactive zsh. bash, a script, `sh -c`
+or a unit all found `/usr/bin/qbittorrent` and started a client in ulu's
+ordinary groups, with no kernel rule matching it. Closed with a wrapper at
+`~/.local/bin/qbittorrent`, which comes first in PATH. The launcher's last line
+had to become an ABSOLUTE path in the same breath, or the two would call each
+other forever.
+
+### Gap two: the names, and the wrong turn
+
+The traffic went through the tunnel; the lookups did not. qBittorrent asks the
+systemd-resolved stub like every program, and resolved — not in the group — then
+asked Quad9 over the ordinary line, so every tracker name was visible there.
+
+**The first attempt was wrong and broke resolution for the group entirely.** A
+nat chain rewrote the group's DNS destination straight to `10.2.0.1`, the
+resolver inside the tunnel. It cannot work: a query addressed to `127.0.0.53`
+has already been given `127.0.0.1` as its SOURCE before any rule runs, and the
+kernel will not route a loopback sender out of a real interface. A `masquerade`
+in postrouting was added to correct it and is too late by construction — the
+routing decision has happened by then. **Netfilter cannot change a source
+address before routing**, so no arrangement of rules fixes this. Reverted the
+same hour.
+
+Worth keeping: it failed CLOSED. Nothing went out the wrong way; nothing went at
+all.
+
+**What works is loopback to loopback.** `dns_out` now rewrites `127.0.0.53` to
+`127.0.0.61`, where a dnsmasq listens that runs with `vpnonly` as its group. The
+packet never leaves the machine, so nothing is rerouted and nothing is martian.
+The forwarder's own query to `10.2.0.1` gets a proper source, is marked by
+`mark_out` like everything else from the group, and goes through the tunnel.
+Matching the stub address exactly also keeps the forwarder's upstream traffic
+out of the rule, which would otherwise rewrite its way back to itself.
+
+Two details that cost a round each:
+
+- `127.0.0.54` is already taken — systemd-resolved's bypass stub listens there.
+- **`--no-daemon` is dnsmasq's debug mode and disables the user and group switch
+  outright.** With it, dnsmasq stayed root, its queries were never marked, and
+  every lookup in the group timed out. `--keep-in-foreground` is the flag
+  systemd wants: foreground, but still drops privileges.
+
+`--no-resolv` is load-bearing in the unit. Without it dnsmasq reads
+`/etc/resolv.conf` and would answer over the ordinary line the moment the tunnel
+dropped — a closed failure turned into a silent leak.
+
+### Verified afterwards
+
+`dns_out` fired on every lookup from the group; `mark_out` kept counting; the
+drop rule stood at 0. Resolution from the group works and carries tunnel
+latency, and it works only because `10.2.0.1` answered — an address reachable
+through the tunnel and nowhere else. Egress unchanged in both directions.
+
+### What is still not "100 %"
+
+The guarantee is that a rule MATCHES a property of a socket, not that a path is
+absent. A network namespace with the tunnel as its only interface would replace
+the match with an absence, and that is the honest next step if the bar stays
+where ulu put it. It costs NetworkManager's management of the tunnel, a
+privileged launch, and the GUI across a namespace boundary. Not started.

@@ -1,0 +1,65 @@
+# Template — stage 3 installs this with @VPN_GROUP@, @VPN_DNS@ and
+# @VPN_DNS_STUB@ substituted from config.sh.
+#
+# The name lookups of the VPN-only group, and nothing else. qBittorrent asks the
+# systemd-resolved stub like every other program; nftables rewrites that one
+# destination to @VPN_DNS_STUB@, where this forwarder answers. It then asks the
+# resolver inside the tunnel — as a process in @VPN_GROUP@, so its query is
+# marked and routed like all the group's traffic, and the drop rule applies to
+# it as well.
+#
+# Why a daemon at all: netfilter cannot send the group's query straight to the
+# tunnel's resolver. A query addressed to 127.0.0.53 is given 127.0.0.1 as its
+# source before any rule runs, and a loopback sender may not be routed out of a
+# real interface — correcting it in postrouting is too late, the routing
+# decision has already happened. Loopback to loopback avoids that entirely, and
+# something has to be listening at the other end. See docs/LOG.md 2026-08-06.
+#
+# Deliberately NOT a general DNS server for this machine: it binds one loopback
+# address, serves no interface, and is reached only through that rewrite.
+# --no-resolv so it can never fall back to the system's resolvers, which are the
+# very ones this exists to bypass. Without it, dnsmasq reads /etc/resolv.conf
+# and would answer over the ordinary line the moment the tunnel dropped —
+# turning a closed failure into a silent leak.
+
+[Unit]
+Description=DNS forwarder for the @VPN_GROUP@ group (through the VPN only)
+Documentation=file:/home/ulutoyon/phoinix/docs/SETTINGS.md
+After=network.target nftables.service
+Wants=nftables.service
+
+[Service]
+Type=simple
+# dnsmasq drops privileges itself, to its own user and to @VPN_GROUP@ — that
+# group is what the nftables rule matches on, so the sockets it opens afterwards
+# are the ones that get marked. Doing it this way rather than through
+# systemd's User=/Group= avoids handing it CAP_SETUID/CAP_SETGID, which it
+# would need to drop from a lower privilege level than root.
+# NOT --no-daemon. That is dnsmasq's debug mode and it disables the user and
+# group switch outright — the first version had it, dnsmasq stayed root, its
+# queries were never marked, and name resolution in the group timed out at
+# every attempt. --keep-in-foreground is the one systemd wants: stay in the
+# foreground, but still drop privileges.
+ExecStart=/usr/bin/dnsmasq --keep-in-foreground \
+    --user=dnsmasq --group=@VPN_GROUP@ \
+    --no-resolv --no-hosts --no-poll \
+    --listen-address=@VPN_DNS_STUB@ --bind-interfaces --port=53 \
+    --server=@VPN_DNS@ --cache-size=1000 --log-facility=-
+Restart=on-failure
+RestartSec=2
+
+# It answers one loopback address and talks to one resolver. Nothing here needs
+# a writable filesystem, a device, or the rest of the system.
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=no
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+MemoryDenyWriteExecute=yes
+
+[Install]
+WantedBy=multi-user.target

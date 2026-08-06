@@ -25,6 +25,14 @@ obsidian              # notes; official `extra` package, no AUR variant needed. 
 # Proton's port forwarding needs a P2P server, and both servers in use refuse
 # NAT-PMP; the renewal service was the only consumer. Reviving it means adding
 # this back — and enabling qBittorrent's WebUI, which is how the port gets in.
+dnsmasq               # NOT a DNS server for this machine — it binds one loopback address and
+                      # serves nothing else. It exists so the vpnonly group's NAME LOOKUPS go
+                      # through the tunnel too: nftables rewrites the group's query from the
+                      # systemd-resolved stub to this forwarder, which runs in the group and
+                      # asks the resolver inside the tunnel. Without it the traffic was
+                      # protected while every tracker name still went to Quad9 over the
+                      # ordinary line. A rule pointing straight at the tunnel's resolver was
+                      # tried first and cannot work — see LOG.md 2026-08-06.
 nftables              # the kernel-side guarantee that qBittorrent can only ever leave through the
                       # tunnel. Explicit BECAUSE it was already installed as someone else's dependency
                       # and therefore one `pacman -Rns` away from vanishing (same lesson as socat)

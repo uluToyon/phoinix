@@ -36,6 +36,15 @@ steps are performed, never reconstructed later from memory.
 - **No clickable question prompts (AskUserQuestion).** Present choices in
   prose: each option with rationale, pros and cons, and a recommendation —
   thorough but compact. End with an open question.
+- **Commands ulu has to run go in their own fenced block, on their own, with
+  nothing else in it.** No prose in the fence, no two unrelated commands in one
+  fence, and never inline in a sentence. They are the one part of an answer he
+  copies rather than reads, and they must be visually separable from everything
+  around them at a glance. Never prefix them with `!` — that is this harness's
+  syntax, and pasted into zsh it becomes the negation operator: it inverted the
+  exit status of the first command and silently swallowed the rest of an
+  `&&` chain (2026-08-06). Chain with `;` rather than `&&` when the later parts
+  should run regardless, and say what the expected output is.
 - **Never ask whether to wrap up.** The session ends when ulu says so, or when
   the topic is genuinely finished — not when a chunk of work happens to close.
   Finish a topic, report it, take the next one.

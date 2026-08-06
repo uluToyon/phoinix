@@ -109,6 +109,43 @@ VPN_MARK_APP="0x51"       # = 81; deliberately the same number as the table
 VPN_MARK_WG="0x52"        # = 82; only WireGuard itself ever sets this
 VPN_ROUTE_TABLE=51
 
+# The resolver INSIDE the tunnel, and the reason a nat chain exists at all.
+# Until 2026-08-06 the group's traffic went through the tunnel but its NAME
+# LOOKUPS did not: qBittorrent asks the systemd-resolved stub on 127.0.0.53,
+# which the loopback rule lets through, and resolved — not being in the group —
+# then asks Quad9 over the ordinary line. The packets were protected the whole
+# time; the names were not, so the resolver saw every tracker.
+#
+# There is no per-process resolver in glibc, so this is fixed one layer down:
+# nftables rewrites the destination of the group's DNS to this address, the
+# packet is marked like everything else from the group, and it leaves through
+# the tunnel. Verified 2026-08-06 that Proton answers here.
+#
+# 10.2.0.1 is the peer address of Proton's WireGuard tunnel (the interface
+# itself is 10.2.0.2/32) and is the DNS their configs name for every server.
+# It is unreachable outside the tunnel, which makes this fail CLOSED: with the
+# tunnel down nothing resolves, rather than resolving over the wrong line.
+VPN_DNS="10.2.0.1"
+
+# Where the group's lookups are sent instead of the systemd-resolved stub, and
+# why there is a forwarder at all rather than a rule pointing straight at
+# VPN_DNS. The straight version was built on 2026-08-06 and does not work: a
+# query addressed to 127.0.0.53 has already been given 127.0.0.1 as its SOURCE
+# before any rule runs, and the kernel will not route a loopback sender out of a
+# real interface. Correcting the source in postrouting is too late — the routing
+# decision has happened by then. Netfilter cannot change a source address before
+# routing, so no arrangement of rules fixes it.
+#
+# Rewriting one loopback address to another does work: the packet never leaves
+# the machine, so nothing is rerouted and nothing is martian. dnsmasq listens
+# here, runs with VPN_GROUP as its group, and asks VPN_DNS — and ITS packets get
+# a proper source, are marked like everything else from the group, and go
+# through the tunnel.
+#
+# 127.0.0.54 is deliberately NOT used: systemd-resolved already listens there
+# (its bypass stub), which cost a rebuild to notice.
+VPN_DNS_STUB="127.0.0.61"
+
 # --- DNS (stage 3) ---------------------------------------------------------
 # Who resolves ulu's names, and the reason it is a decision rather than a
 # default. The tunnel carries qBittorrent's packets but NOT its lookups (see

@@ -1,6 +1,33 @@
 # STATUS
 
-_Last updated: 2026-08-04 (session 13 — Obsidian, and GitHub over SSH)_
+_Last updated: 2026-08-06 (session 14 — the split tunnel, verified and tightened)_
+
+## Session 14 — torrent and internet, separated for real
+
+ulu asked for the separation to be verified in both directions, and then for
+"100 %, nicht 99,9 %". Verified: the group leaves as Proton, everything else as
+the ISP, the drop rule had fired only on IPv6 attempts that have no tunnel route,
+and the default route never touches the tunnel. Evidence is the egress address,
+not what the machine says about itself — a `curl` reporting a LAN socket address
+briefly looked like a leak and is not one.
+
+**Two gaps were named and both are closed.** Execution BY NAME now goes through
+the launcher as well (`~/.local/bin/qbittorrent`, ahead of `/usr/bin`; the shell
+alias only ever worked in an interactive zsh). And the group's NAME LOOKUPS go
+through the tunnel: `dns_out` rewrites the resolved stub to a dnsmasq running in
+the group, which asks the resolver inside the tunnel.
+
+**One wrong turn, recorded because it is instructive.** Pointing the rewrite
+straight at the tunnel's resolver cannot work — a query to `127.0.0.53` already
+carries `127.0.0.1` as its source before any rule runs, and netfilter cannot
+change a source address before routing. It broke resolution for the group for
+about an hour, and it broke CLOSED. Loopback to loopback is what works.
+
+**What is still not literally 100 %:** the guarantee is a rule matching a
+socket's group, not the absence of a path. A network namespace would make it the
+latter. Costed and not started — see `LOG.md`.
+
+_Previously: 2026-08-04 (session 13 — Obsidian, and GitHub over SSH)_
 
 ## Session 13 — Obsidian and the GitHub situation
 

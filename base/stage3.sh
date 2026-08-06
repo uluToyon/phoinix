@@ -833,6 +833,40 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
         echo "WARNING: $pkg_desktop missing — qBittorrent launcher NOT wrapped"
     fi
 
+    # Execution by NAME, which neither the desktop entry above nor the alias in
+    # section 8 covers. That alias lives in an interactive zsh and nowhere else:
+    # bash, a script, `sh -c`, a systemd unit all found /usr/bin/qbittorrent and
+    # started a client in ulu's ordinary groups, with no kernel rule matching it
+    # — only the application's own "bind to proton0" setting in the way, which
+    # is the sort of promise this repo does not accept anywhere else.
+    # ~/.local/bin comes
+    # before /usr/bin in PATH, so this shadows the real binary; the launcher
+    # calls that binary by ABSOLUTE path, or the two would call each other
+    # forever.
+    sed -e "s|@HOST@|$HOST|g" "$REPO_DIR/scripts/qbittorrent-wrapper.sh" \
+        > "$HOME/.local/bin/qbittorrent"
+    chmod 755 "$HOME/.local/bin/qbittorrent"
+    echo "qbittorrent: PATH wrapper installed (~/.local/bin/qbittorrent)"
+
+    # The forwarder that carries the group's NAME LOOKUPS through the tunnel.
+    # In stage 3 rather than stage 2 because dnsmasq arrives with the package
+    # set — the nftables rule that points at it is written in stage 2 and is
+    # harmless until then: it rewrites the group's DNS to an address where
+    # nothing listens, and the only program in the group is not running yet.
+    if [[ -n "${VPN_DNS_STUB:-}" ]] && command -v dnsmasq >/dev/null; then
+        sed -e "s|@VPN_GROUP@|$VPN_GROUP|g" \
+            -e "s|@VPN_DNS@|$VPN_DNS|g" \
+            -e "s|@VPN_DNS_STUB@|$VPN_DNS_STUB|g" \
+            "$REPO_DIR/system/phoinix-vpn-dns.service" \
+            | sudo tee /etc/systemd/system/phoinix-vpn-dns.service >/dev/null
+        sudo systemctl daemon-reload
+        sudo systemctl enable --now phoinix-vpn-dns.service
+        echo "vpn: DNS forwarder on $VPN_DNS_STUB -> $VPN_DNS (group $VPN_GROUP)"
+    else
+        echo "WARNING: dnsmasq missing — the group's DNS has nowhere to go and"
+        echo "         name resolution inside $VPN_GROUP will fail (closed, not leaking)."
+    fi
+
     # Clean up the port-forwarding service if an earlier run installed it.
     # Removed 2026-07-31 — see the WebUI note above. A stage that drops a
     # feature has to take its leftovers with it, or a re-run leaves a unit
