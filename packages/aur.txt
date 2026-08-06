@@ -20,7 +20,16 @@ mpc-qt-bin            # video player; mpv engine in the beloved MPC-HC shape.
                       # with settings.json present but geometry_v2.json missing it segfaults
                       # in QScreen::availableGeometry() straight out of main — and the crashing
                       # run leaves exactly that state behind, so it never starts again.
-                      # Cure: remove ~/.config/mpc-qt/settings.json once and let a clean run
-                      # write all six profile files. See docs/LOG.md 2026-07-31.
+                      # Cure, CORRECTED 2026-08-06 — the old one does not work on Wayland:
+                      # removing settings.json is not enough, because the clean run crashes
+                      # too, before it can write geometry_v2.json. It cannot bootstrap its own
+                      # profile under Wayland at all. One run over XWayland can:
+                      #     rm -f ~/.config/mpc-qt/settings.json ~/.config/mpc-qt/mpc-qt.lock
+                      #     QT_QPA_PLATFORM=xcb mpc-qt
+                      # That writes geometry_v2.json, keys_v2.json, favorites.json,
+                      # playlists.json and recent.json; afterwards the normal Wayland start
+                      # works again and settings.json can be put back from a copy. Verified
+                      # 2026-08-06 on the live desktop, both platforms tested before and after.
+                      # See docs/LOG.md 2026-07-31 and 2026-08-06.
 splix                 # Samsung printer driver (SCX-4300); dropped from official repos
 claude-code           # the co-author of this repo; updates via paru like everything else

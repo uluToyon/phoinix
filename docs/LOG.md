@@ -4509,3 +4509,34 @@ sync and 0 drifted.
 **The lesson worth keeping** is not about namespaces. A change that removes a
 control the user relies on has to be presented as removing it, in the sentence
 that asks for permission — not discovered afterwards.
+
+## 2026-08-06, night — mpc-qt: the documented cure does not work on Wayland
+
+ulu: "mpc-qt startet nicht." The state matched `aur.txt` exactly —
+`settings.json` present, `geometry_v2.json` missing, plus a stale lock from the
+crashed run. Reproduced: exit 139, and `coredumpctl` put the crash in
+`QScreen::availableGeometry()` straight out of `main`, as documented.
+
+**But the cure in that note is wrong for this machine.** It says to remove
+`settings.json` and let a clean run write the profile. The clean run crashes as
+well: mpc-qt 26.07 cannot bootstrap its own profile under Wayland at all, dying
+before it writes `geometry_v2.json` and leaving exactly the broken state behind.
+Tested with the config directory completely empty — same crash.
+
+**What works is one run over XWayland.** `QT_QPA_PLATFORM=xcb` starts, and that
+run writes all five missing files. Afterwards the ordinary Wayland start works
+again, verified by running both platforms before and after:
+
+| | empty profile | complete profile |
+|---|---|---|
+| Wayland | crash (139) | runs |
+| XCB | runs | runs |
+
+So the fault is not Wayland as such — it is that the bootstrap needs a screen
+query that only succeeds under XCB, and once `geometry_v2.json` exists nothing
+asks it again.
+
+**A misstep of mine worth recording**: I deleted `settings.json` on the strength
+of the old note before establishing that the note applied. It was backed up
+first and restored byte-identical, so nothing was lost — but the backup was the
+only reason. Copy before deleting, then diagnose.
