@@ -23,9 +23,18 @@ carries `127.0.0.1` as its source before any rule runs, and netfilter cannot
 change a source address before routing. It broke resolution for the group for
 about an hour, and it broke CLOSED. Loopback to loopback is what works.
 
-**What is still not literally 100 %:** the guarantee is a rule matching a
-socket's group, not the absence of a path. A network namespace would make it the
-latter. Costed and not started — see `LOG.md`.
+~~**What is still not literally 100 %:** … a network namespace would make it the
+latter.~~ **Built the same day.** The tunnel now lives in namespace `vpn`, whose
+only interfaces are `lo` and `proton0` — the ordinary line is absent rather than
+forbidden. qBittorrent is put in there by a root helper that immediately drops
+back to `ulutoyon:vpnonly`; verified by `ip netns identify`, a differing
+namespace inode, and an established connection with local address `10.2.0.2`.
+NetworkManager gave up the tunnel (it cannot follow one into a namespace);
+country switching is now `scripts/vpn-switch.sh desktop ch|nl`. The group and
+the nftables table stay as the backstop for a client started outside.
+
+**Still not a proof against a kernel bug or a process with `CAP_SYS_ADMIN`** —
+what it removes is the whole class of "a rule failed to match".
 
 _Previously: 2026-08-04 (session 13 — Obsidian, and GitHub over SSH)_
 

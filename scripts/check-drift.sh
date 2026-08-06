@@ -134,6 +134,9 @@ REPO_TEMPLATED=(
     "plasma/panels.js|"
     "system/phoinix-vpn-dns.service|/etc/systemd/system/phoinix-vpn-dns.service"
     "scripts/qbittorrent-wrapper.sh|$HOME/.local/bin/qbittorrent"
+    "system/phoinix-vpn-netns.service|/etc/systemd/system/phoinix-vpn-netns.service"
+    "system/phoinix-qbt-netns.sh|/usr/local/sbin/phoinix-qbt-netns"
+    "system/sudoers.d/phoinix-vpn|/etc/sudoers.d/phoinix-vpn"
 )
 
 for entry in "${REPO_OWNED[@]}"; do
@@ -150,6 +153,12 @@ for entry in "${REPO_TEMPLATED[@]}"; do
     [[ -n "$dst" ]] || continue          # panels.js is fed to plasmashell, never landed
     if [[ ! -f "$REPO_DIR/$rel" ]]; then
         report missing "$rel" "not in the repo"
+    elif [[ ! -x "$(dirname "$dst")" ]]; then
+        # /etc/sudoers.d is 0750 root:root — a normal user cannot even stat what
+        # is inside it, and `! -e` would call a present file missing. Said out
+        # loud rather than skipped: an unverifiable check must not look like a
+        # passing one.
+        report volatile "$rel" "$(dirname "$dst") is not readable without root — check by hand"
     elif [[ ! -e "$dst" ]]; then
         report missing "$rel" "installed nowhere: $dst is absent — did that stage run?"
     else

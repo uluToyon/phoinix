@@ -4410,3 +4410,57 @@ absent. A network namespace with the tunnel as its only interface would replace
 the match with an absence, and that is the honest next step if the bar stays
 where ulu put it. It costs NetworkManager's management of the tunnel, a
 privileged launch, and the GUI across a namespace boundary. Not started.
+
+## 2026-08-06, later — the namespace: from "the rule catches it" to "there is no way out"
+
+ulu read the honest limit of the previous section — the guarantee is a rule
+matching a socket's group, not the absence of a path — and said: then build the
+namespace. This is that.
+
+**The construction.** A network namespace `vpn` whose only interfaces are `lo`
+and `proton0`. The ordinary line is not forbidden in there; it does not exist.
+The one thing that makes it possible: a WireGuard device keeps its encrypted
+socket in the namespace it was CREATED in, and keeps it when moved. So the
+interface is created in the root namespace — where the normal line is, and where
+the ciphertext has to go out — and then moved inside. Plaintext lives in the
+namespace, ciphertext leaves over enp8s0. Built the other way round the tunnel
+could not reach its own endpoint, which is the trap this design is named for.
+
+**DNS solved itself.** `ip netns exec` bind-mounts everything in
+`/etc/netns/<ns>/` over its counterpart in `/etc`, so a `resolv.conf` in there
+naming only `10.2.0.1` is the only resolver anything inside can see. The dnsmasq
+forwarder built two hours earlier is redundant on this path — and is kept as the
+backstop for a qBittorrent that is not in the namespace.
+
+**Entering costs root, and that is the only privileged part.**
+`/usr/local/sbin/phoinix-qbt-netns` does three things: check the namespace is
+there, enter it, `setpriv` straight back to `ulutoyon:vpnonly`, exec qBittorrent.
+`setpriv` rather than `runuser` or `su` because it changes credentials and
+nothing else — no PAM session, no shell, no environment rewriting, which is what
+a GUI needs. The sudo rule is passwordless for that one command; a launcher that
+stops to ask is a launcher that gets bypassed. `env_keep` is scoped to that
+command and lists only display and bus variables — nothing that could steer the
+root half.
+
+**NetworkManager had to give up the tunnel**, because it cannot follow an
+interface into a namespace. Nothing was lost functionally: the tunnel served
+only qBittorrent anyway. What was lost is the applet click for switching
+country, replaced by `scripts/vpn-switch.sh <host> ch|nl` — a symlink at
+`$VPN_CONFIG_DIR/active.conf` and a restart. The profiles stay with
+`autoconnect no`, as a record and as a way back.
+
+**Verified end to end on the live machine.** Inside the namespace: egress
+`62.169.136.42` (Proton), exactly one route (`default dev proton0`), and name
+resolution working through `10.2.0.1`. qBittorrent afterwards:
+`ip netns identify` says `vpn`, its net namespace inode differs from the
+session's, it runs as `ulutoyon:vpnonly`, and `ss` inside the namespace shows an
+established connection with local address `10.2.0.2` — the tunnel address.
+
+**One thing the drift check had to learn.** `/etc/sudoers.d` is `0750 root:root`,
+so a normal user cannot stat what is inside it and `! -e` called a present file
+missing. It now reports "not readable without root" instead — an unverifiable
+check must not look like a passing one.
+
+**What is left, honestly.** A namespace is not a proof against a kernel bug or a
+process with CAP_SYS_ADMIN. It removes the entire class of "a rule failed to
+match", which is what was asked for, and that is the accurate claim.

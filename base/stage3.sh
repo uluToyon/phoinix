@@ -738,15 +738,52 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
 
         rm -rf "$vpn_tmp"
 
-        # Exactly one connection autoconnects, otherwise both would race for
-        # the same interface name at boot. The first file alphabetically is an
-        # arbitrary but STABLE choice; switching country is one click in the
-        # applet and does not need the repo's permission.
-        if (( ${#vpn_configs[@]} )); then
-            first="$(basename "${vpn_configs[0]}" .conf)"
-            sudo nmcli connection modify "$first" connection.autoconnect yes
-            echo "vpn: $first autoconnects"
+        # NONE of them autoconnects any more (2026-08-06). The tunnel moved into
+        # a network namespace, and NetworkManager cannot follow it there — an
+        # autoconnecting profile would only take the interface name the namespace
+        # unit needs, and that unit refuses rather than fighting over it. The
+        # profiles are kept as a readable record of what Proton handed out and as
+        # a way back if the namespace ever has to be abandoned.
+        for cfg in "${vpn_configs[@]}"; do
+            sudo nmcli connection modify "$(basename "$cfg" .conf)" \
+                connection.autoconnect no 2>/dev/null || true
+        done
+        echo "vpn: NetworkManager profiles kept but disarmed — the namespace owns the tunnel"
+
+        # Which server the namespace uses. A symlink rather than a variable, so
+        # switching is one command at runtime instead of an edit and a re-run.
+        if [[ ! -e "$VPN_CONFIG_DIR/active.conf" ]] && (( ${#vpn_configs[@]} )); then
+            ln -sfn "${vpn_configs[0]}" "$VPN_CONFIG_DIR/active.conf"
+            echo "vpn: active.conf -> $(basename "${vpn_configs[0]}") (change with scripts/vpn-switch.sh)"
         fi
+
+        # The namespace itself: helper, sudo rule, unit. The sudo rule is
+        # validated BEFORE it is installed — a broken file in /etc/sudoers.d
+        # locks the machine out of sudo entirely, and this script runs with it.
+        sed -e "s|@USERNAME@|$USERNAME|g" -e "s|@VPN_GROUP@|$VPN_GROUP|g" \
+            -e "s|@VPN_NETNS@|$VPN_NETNS|g" -e "s|@VPN_INTERFACE@|$VPN_INTERFACE|g" \
+            "$REPO_DIR/system/phoinix-qbt-netns.sh" \
+            | sudo tee /usr/local/sbin/phoinix-qbt-netns >/dev/null
+        sudo chmod 755 /usr/local/sbin/phoinix-qbt-netns
+
+        sudoers_tmp="$(mktemp)"
+        sed -e "s|@USERNAME@|$USERNAME|g" "$REPO_DIR/system/sudoers.d/phoinix-vpn" > "$sudoers_tmp"
+        if sudo visudo -cf "$sudoers_tmp" >/dev/null; then
+            sudo install -m440 -o root -g root "$sudoers_tmp" /etc/sudoers.d/phoinix-vpn
+            echo "vpn: sudo rule for the namespace helper installed"
+        else
+            echo "WARNING: the generated sudoers file did not parse — NOT installed."
+            echo "         qBittorrent will refuse to start until this is fixed."
+        fi
+        rm -f "$sudoers_tmp"
+
+        sed -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@HOST@|$HOST|g" \
+            "$REPO_DIR/system/phoinix-vpn-netns.service" \
+            | sudo tee /etc/systemd/system/phoinix-vpn-netns.service >/dev/null
+        sudo systemctl daemon-reload
+        sudo systemctl enable --now "$VPN_NETNS_UNIT" \
+            && echo "vpn: $VPN_NETNS_UNIT up — the tunnel lives in namespace '$VPN_NETNS'" \
+            || echo "WARNING: $VPN_NETNS_UNIT did not start; qBittorrent will refuse to launch."
     fi
 
     # --- qBittorrent -------------------------------------------------------

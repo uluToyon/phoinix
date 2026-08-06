@@ -1,0 +1,24 @@
+# Template — stage 3 installs this as /etc/sudoers.d/phoinix-vpn, 0440, after
+# `visudo -c` has accepted it. @USERNAME@ substituted from config.sh.
+#
+# Two rules, both as narrow as they can be made.
+#
+# The first is the only passwordless one on this machine. It exists because
+# entering a network namespace needs root and starting qBittorrent must not stop
+# to ask — a launcher that prompts is a launcher that gets bypassed, and being
+# bypassed is precisely how the client ends up on the open line. The command it
+# grants drops back to @USERNAME@ before it execs anything, so it hands out no
+# privilege that survives the call.
+#
+# env_keep is the reason this works at all: sudo clears the environment by
+# default, and a GUI without the display and bus variables starts into nothing.
+# Only those variables are let through, and only for this command — nothing that
+# influences how the root part behaves (no LD_*, no BASH_ENV, no PATH) is on the
+# list.
+Defaults!/usr/local/sbin/phoinix-qbt-netns env_keep += "XDG_RUNTIME_DIR WAYLAND_DISPLAY DISPLAY XDG_SESSION_TYPE XDG_CURRENT_DESKTOP DBUS_SESSION_BUS_ADDRESS LANG LC_ALL QT_QPA_PLATFORM QT_SCALE_FACTOR XCURSOR_SIZE XCURSOR_THEME"
+@USERNAME@ ALL=(root) NOPASSWD: /usr/local/sbin/phoinix-qbt-netns
+
+# The second still asks for a password. Switching country is rare, deliberate,
+# and nothing about it is time-critical — there is no reason to spend a
+# passwordless rule on it.
+@USERNAME@ ALL=(root) /usr/bin/systemctl restart phoinix-vpn-netns.service

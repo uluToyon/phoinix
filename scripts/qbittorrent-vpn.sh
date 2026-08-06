@@ -15,10 +15,19 @@
 # machinery to express one bit. ulu is a member of the group (stage 2), so the
 # switch needs no password.
 #
-# Fails CLOSED on purpose: if the group is missing, this refuses to start
-# rather than launching an unprotected qBittorrent. A torrent client that
+# Fails CLOSED on purpose: if anything it depends on is missing, this refuses to
+# start rather than launching an unprotected qBittorrent. A torrent client that
 # quietly runs outside the tunnel is the exact outcome this whole setup exists
 # to prevent, and "it started, so it must be fine" is how that would happen.
+#
+# REWRITTEN 2026-08-06. It used to enter VPN_GROUP with newgrp and start
+# qBittorrent there, relying on the nftables rule to catch anything that tried
+# to leave elsewhere. That is a rule matching a property. ulu asked for the
+# stronger form, so the client now runs inside a network namespace whose only
+# interface is the tunnel — the ordinary line is not forbidden in there, it does
+# not exist. The group and the rule stay: the helper still sets VPN_GROUP as the
+# effective group, so if qBittorrent ever runs outside the namespace the old
+# guarantee applies instead of none.
 
 set -euo pipefail
 
@@ -44,58 +53,23 @@ getent group "$VPN_GROUP" >/dev/null \
     || die "group '$VPN_GROUP' does not exist — re-run stage 2."
 systemctl is-active --quiet nftables.service \
     || die "nftables.service is not active, so nothing enforces the tunnel."
+systemctl is-active --quiet "$VPN_NETNS_UNIT" \
+    || die "$VPN_NETNS_UNIT is not active — the tunnel namespace does not exist."
+ip netns list 2>/dev/null | grep -qw "$VPN_NETNS" \
+    || die "network namespace '$VPN_NETNS' is missing, even though its unit claims to be up."
 
-# --- entering the group ----------------------------------------------------
-# This used to be `sg "$VPN_GROUP" -c …`, and `sg` is GONE from Arch: shadow no
-# longer ships it and util-linux, which took `newgrp` over, never did. The line
-# had worked for months and failed the first time it ran on a fresh install —
-# "exec: sg: not found". It failed CLOSED, which is the only reason this was an
-# annoyance rather than an incident, and the reason the guards above are worth
-# their lines.
+# --- into the namespace ----------------------------------------------------
+# Entering a namespace needs root, so this hands over to a helper that is
+# allowed through sudo without a password — the smallest possible thing: setns,
+# drop back to ulu, exec. See system/phoinix-qbt-netns.sh.
 #
-# `newgrp` is the replacement: setuid root, part of util-linux, present on any
-# system that can log a user in. Unlike `sg` it takes no command argument — it
-# execs the login shell — so the command reaches it on stdin.
-#
-# What deliberately does NOT cross that boundary are the file arguments the
-# desktop entry passes through (%U). They would have to be quoted for whatever
-# the login shell happens to be (zsh here, not sh), and a torrent path
-# containing a quote is precisely how such a string turns into two arguments or
-# into an executed command. They travel in the ENVIRONMENT instead — measured
-# to survive `newgrp` byte for byte — NUL-separated and base64'd, so nothing in
-# them can be special. Only this script's own path and the host name are
-# interpolated into the shell line, and both are %q-quoted.
-VPN_GID="$(getent group "$VPN_GROUP" | cut -d: -f3)"
+# The newgrp machinery that used to live here is gone with it, and so is the
+# base64 argument smuggling it needed: sudo passes arguments as arguments, so a
+# torrent path containing a quote is just a path again.
+# `sudo -l` asks whether the rule exists, without running anything. Probing by
+# actually invoking the helper would start a qBittorrent just to check that a
+# qBittorrent can be started.
+sudo -n -l /usr/local/sbin/phoinix-qbt-netns >/dev/null 2>&1 \
+    || die "sudo will not run the namespace helper without a password — is /etc/sudoers.d/phoinix-vpn installed?"
 
-if [[ -z "${PHOINIX_QBT_INNER:-}" ]]; then
-    command -v newgrp >/dev/null \
-        || die "newgrp is missing — no way to enter group '$VPN_GROUP'."
-    if (($#)); then
-        PHOINIX_QBT_ARGV="$(printf '%s\0' "$@" | base64 -w0)"
-    else
-        PHOINIX_QBT_ARGV=""
-    fi
-    export PHOINIX_QBT_ARGV PHOINIX_QBT_INNER=1
-    exec newgrp "$VPN_GROUP" <<< "exec $(printf '%q' "$0") $(printf '%q' "$HOST")"
-fi
-
-# --- inside the group ------------------------------------------------------
-# VERIFY the switch instead of trusting it. Everything above this line is a
-# check that the machinery is *present*; this is the only one that establishes
-# it actually WORKED, and it is the one that matters. A half-working switch is
-# the fail-OPEN case — qBittorrent running, looking configured, and talking to
-# the internet directly past a rule that matches nothing.
-[[ "$(id -g)" == "$VPN_GID" ]] \
-    || die "effective group is $(id -gn), not '$VPN_GROUP' — the switch did not take."
-
-argv=()
-if [[ -n "${PHOINIX_QBT_ARGV:-}" ]]; then
-    while IFS= read -r -d '' a; do argv+=("$a"); done \
-        < <(printf '%s' "$PHOINIX_QBT_ARGV" | base64 -d)
-fi
-
-# ABSOLUTE path, and that is not style. Since 2026-08-06 a wrapper named
-# `qbittorrent` sits in ~/.local/bin, ahead of /usr/bin in PATH, so that typing
-# the name in a terminal cannot start an unprotected client. Resolving by name
-# here would find that wrapper and call this script again, forever.
-exec /usr/bin/qbittorrent "${argv[@]}"
+exec sudo -n /usr/local/sbin/phoinix-qbt-netns "$@"

@@ -36,8 +36,10 @@ steps are performed, never reconstructed later from memory.
 - **No clickable question prompts (AskUserQuestion).** Present choices in
   prose: each option with rationale, pros and cons, and a recommendation —
   thorough but compact. End with an open question.
-- **Commands ulu has to run go in their own fenced block, on their own, with
-  nothing else in it.** No prose in the fence, no two unrelated commands in one
+- **Commands ulu has to run go in their own ```bash fenced block, on their own,
+  with nothing else in it.** The language tag is not cosmetic — without it the
+  terminal renders the block unhighlighted and it stops standing out, which was
+  the whole point (ulu, 2026-08-06, after it was done wrong once). No prose in the fence, no two unrelated commands in one
   fence, and never inline in a sentence. They are the one part of an answer he
   copies rather than reads, and they must be visually separable from everything
   around them at a glance. Never prefix them with `!` — that is this harness's

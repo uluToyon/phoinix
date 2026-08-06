@@ -146,6 +146,24 @@ VPN_DNS="10.2.0.1"
 # (its bypass stub), which cost a rebuild to notice.
 VPN_DNS_STUB="127.0.0.61"
 
+# --- the namespace (2026-08-06) --------------------------------------------
+# ulu's bar: not "the rule catches it" but "there is no way out". Inside this
+# namespace the tunnel is the ONLY interface — the ordinary line is not
+# forbidden, it is absent, and an absent path cannot be matched wrongly.
+#
+# The group and the nftables table stay in place. They stop being the guarantee
+# and become the backstop for the one case the namespace cannot cover: a
+# qBittorrent started outside it. Then the old rule still applies instead of
+# nothing.
+#
+# The WireGuard interface is created in the ROOT namespace and moved in, because
+# a wireguard device keeps its encrypted socket in the namespace it was created
+# in. Ciphertext therefore leaves over the ordinary line, plaintext lives in
+# here. Created inside, the tunnel could not reach its own endpoint.
+VPN_NETNS="vpn"
+VPN_NETNS_UNIT="phoinix-vpn-netns.service"
+VPN_MTU=1420             # what NetworkManager used for the same tunnel
+
 # --- DNS (stage 3) ---------------------------------------------------------
 # Who resolves ulu's names, and the reason it is a decision rather than a
 # default. The tunnel carries qBittorrent's packets but NOT its lookups (see
