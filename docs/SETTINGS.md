@@ -398,30 +398,17 @@ application. Rationale in `LOG.md` 2026-07-31.
 | `VPN_DNS_STUB` | `127.0.0.61` — where the group's lookups are rewritten to. **Not** `127.0.0.54`: systemd-resolved already listens there | dec |
 | `dns_out` chain | `skgid vpnonly, daddr 127.0.0.53, dport 53 → dnat to 127.0.0.61`. Loopback to loopback on purpose — see below | dec |
 | `phoinix-vpn-dns.service` | dnsmasq bound to `VPN_DNS_STUB` only, `--keep-in-foreground` (never `--no-daemon`), drops to `dnsmasq:vpnonly`, `--no-resolv` | dec |
-| `VPN_NETNS` | `vpn` — the namespace the tunnel lives in since 2026-08-06. Inside it the only interfaces are `lo` and `proton0` | dec |
-| `phoinix-vpn-netns.service` | oneshot + `RemainAfterExit`, runs `scripts/vpn-netns.sh <host> up`; the interface is created in the ROOT namespace and moved in | dec |
-| `$VPN_CONFIG_DIR/active.conf` | symlink to the chosen server's `.conf`; `scripts/vpn-switch.sh <host> ch\|nl` moves it and restarts the unit | dec |
-| `/etc/netns/vpn/resolv.conf` | `nameserver 10.2.0.1` — bind-mounted over `/etc/resolv.conf` for anything inside the namespace | dec |
-| `/usr/local/sbin/phoinix-qbt-netns` | root helper: enter the namespace, `setpriv` back to `ulutoyon:vpnonly`, exec qBittorrent | dec |
-| `/etc/sudoers.d/phoinix-vpn` | that helper passwordless, with a per-command `env_keep` for the display and bus variables only; the country switch still asks | dec |
-| NetworkManager profiles | kept, all with `autoconnect no` — they cannot follow the tunnel into a namespace and would only take the interface name | dec |
+| NM dispatcher | `50-phoinix-vpn-dns` restarts that forwarder whenever `proton0` changes state — its upstream socket does not survive a rebuilt tunnel | dec |
 | Port forwarding | **dropped 2026-07-31** (ulu's call). It needed qBittorrent's WebUI as its only delivery channel, and both servers in use refuse NAT-PMP anyway. Torrenting works without it; it costs peers | dec |
 
-**Since 2026-08-06 the guarantee is a namespace, not a rule.** ulu asked for
-"100 %, nicht 99,9 %", and the nftables table can only ever be a rule MATCHING a
-property of a socket. Inside `VPN_NETNS` the ordinary line is not forbidden, it
-is absent — there is nothing to match and nothing to get wrong. A WireGuard
-device keeps its encrypted socket in the namespace it was CREATED in, so the
-interface is built in the root namespace, where the ordinary line lives, and
-then moved inside: ciphertext leaves normally, plaintext exists only in there.
-Built the other way round, the tunnel could not reach its own endpoint.
-
-**The group and the table stay, demoted to a backstop.** The helper still sets
-`VPN_GROUP` as the effective group, so a qBittorrent that somehow runs outside
-the namespace meets the old guarantee rather than none. The same goes for the
-dnsmasq forwarder below: inside the namespace `/etc/netns/vpn/resolv.conf`
-already makes the tunnel's resolver the only one reachable, so the rewrite is
-now redundant — and kept for exactly the case where the namespace is not there.
+**A namespace was built and removed on 2026-08-06.** It worked — qBittorrent
+ran with the tunnel as its only interface — and it cost NetworkManager's applet:
+the icon that says whether the tunnel is up, the click that toggles it, the
+click that changes country, and `proton0` being visible to ordinary network
+tools at all. ulu's call to revert, and the right one: the trade was the last
+sliver of the guarantee against all of the operability, and that price was not
+in the estimate when it was proposed. The construction is written up in
+`LOG.md` if the bar ever moves back.
 
 **The names, since 2026-08-06.** The traffic went through the tunnel from the
 start; the LOOKUPS did not. qBittorrent asks the systemd-resolved stub like

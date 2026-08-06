@@ -132,11 +132,9 @@ REPO_TEMPLATED=(
     "system/user/phoinix-playlist-export.service|$HOME/.config/systemd/user/phoinix-playlist-export.service"
     "system/user/phoinix-xlcore-backup.service|$HOME/.config/systemd/user/phoinix-xlcore-backup.service"
     "plasma/panels.js|"
+    "system/NetworkManager/dispatcher.d/50-phoinix-vpn-dns|/etc/NetworkManager/dispatcher.d/50-phoinix-vpn-dns"
     "system/phoinix-vpn-dns.service|/etc/systemd/system/phoinix-vpn-dns.service"
     "scripts/qbittorrent-wrapper.sh|$HOME/.local/bin/qbittorrent"
-    "system/phoinix-vpn-netns.service|/etc/systemd/system/phoinix-vpn-netns.service"
-    "system/phoinix-qbt-netns.sh|/usr/local/sbin/phoinix-qbt-netns"
-    "system/sudoers.d/phoinix-vpn|/etc/sudoers.d/phoinix-vpn"
 )
 
 for entry in "${REPO_OWNED[@]}"; do

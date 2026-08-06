@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Template — stage 3 installs this as
+# /etc/NetworkManager/dispatcher.d/50-phoinix-vpn-dns, root-owned and 0755, with
+# @VPN_INTERFACE@ substituted.
+#
+# The forwarder that carries the group's name lookups through the tunnel does
+# not survive the tunnel being rebuilt. Found 2026-08-06 the moment the tunnel
+# went back to NetworkManager: three of four lookups timed out until dnsmasq was
+# restarted by hand. Its upstream socket is bound while the tunnel is up and is
+# stale afterwards; nothing in dnsmasq notices, because from its point of view
+# nothing changed.
+#
+# That matters more here than it looks. NetworkManager's applet is the whole
+# reason this arrangement was chosen over a namespace — ulu is SUPPOSED to
+# toggle the tunnel and switch country from there. A construction that quietly
+# breaks name resolution every time he uses the control it was built around is
+# not a construction, it is a trap.
+#
+# It fails closed either way: with a stale socket nothing resolves, rather than
+# resolving over the ordinary line. This turns a closed failure into no failure.
+
+IFACE="$1"
+ACTION="$2"
+
+[[ "$IFACE" == "@VPN_INTERFACE@" ]] || exit 0
+
+case "$ACTION" in
+    up|down|vpn-up|vpn-down)
+        systemctl restart phoinix-vpn-dns.service || true
+        ;;
+esac
+exit 0

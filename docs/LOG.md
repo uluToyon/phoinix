@@ -4464,3 +4464,48 @@ check must not look like a passing one.
 **What is left, honestly.** A namespace is not a proof against a kernel bug or a
 process with CAP_SYS_ADMIN. It removes the entire class of "a rule failed to
 match", which is what was asked for, and that is the accurate claim.
+
+## 2026-08-06, evening — the namespace removed, and what it cost to learn that
+
+ulu: "mir gefällt die gesamte implementierung des split tunnels nicht. keine gui
+funktionen, kein feedback, keine steuerung." He was right, and the fault is in
+how the change was proposed, not only in the change.
+
+**The estimate was wrong.** When the namespace was offered, its price was
+described as "one click for switching country". It was in fact the tray icon
+that says whether the tunnel is up, the toggle, the country switch, and
+`proton0` being visible to ordinary network tools at all — which is why the only
+thing ulu could see while torrenting was traffic on the wired connection. That
+traffic was the tunnel's own ciphertext and entirely correct, but there was no
+way for him to see that without typing a command. A guarantee he has to be told
+about is worth less than one he can watch.
+
+**The trade, stated properly:** the namespace buys the last sliver — removing
+the class "a rule failed to match" — and costs all of the operability. That is
+not a technical call, it is ulu's, and he should have been given it in those
+terms. Reverted.
+
+**What was kept**, because it closed real gaps and is independent of the
+namespace: the dnsmasq forwarder that carries the group's name lookups through
+the tunnel, the PATH wrapper that catches execution by name, and the launcher's
+preconditions.
+
+**One defect surfaced during the revert and is now fixed.** The forwarder does
+not survive the tunnel being rebuilt: its upstream socket is bound while the
+tunnel is up and stale afterwards, and dnsmasq does not notice. Measured — three
+of four lookups timed out after the reconnect until the service was restarted by
+hand. That matters far more here than it looks: the applet is the whole reason
+this arrangement was chosen, so a construction that breaks name resolution every
+time ulu uses it is a trap rather than a design. A NetworkManager dispatcher now
+restarts the forwarder whenever `proton0` changes state, verified by toggling the
+connection and watching the service's start timestamp move.
+
+**Verified after the revert**, all of it: group egress `62.169.136.42` (Proton),
+ordinary egress `92.208.160.100`, name resolution from the group at tunnel
+latency and working immediately after a reconnect, nftables loaded, forwarder
+running as `dnsmasq:vpnonly`, PATH wrapper in place, `check-drift.sh` at 18 in
+sync and 0 drifted.
+
+**The lesson worth keeping** is not about namespaces. A change that removes a
+control the user relies on has to be presented as removing it, in the sentence
+that asks for permission — not discovered afterwards.

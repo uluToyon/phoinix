@@ -146,23 +146,19 @@ VPN_DNS="10.2.0.1"
 # (its bypass stub), which cost a rebuild to notice.
 VPN_DNS_STUB="127.0.0.61"
 
-# --- the namespace (2026-08-06) --------------------------------------------
-# ulu's bar: not "the rule catches it" but "there is no way out". Inside this
-# namespace the tunnel is the ONLY interface — the ordinary line is not
-# forbidden, it is absent, and an absent path cannot be matched wrongly.
+# The namespace was built on 2026-08-06 and removed the same day, on ulu's call.
+# It did work — qBittorrent ran inside it with the tunnel as its only interface,
+# verified by `ip netns identify`, a differing namespace inode and an established
+# connection from the tunnel address. What it cost was everything NetworkManager
+# gives for free: the tray icon that says whether the tunnel is up, the click
+# that toggles it, the click that changes country, and `proton0` being visible
+# to ordinary network tools at all. That price was not in the estimate when it
+# was proposed, which is the actual mistake — the trade was "the last 0.1 % of
+# the guarantee against all of the operability", and it was ulu's to make.
 #
-# The group and the nftables table stay in place. They stop being the guarantee
-# and become the backstop for the one case the namespace cannot cover: a
-# qBittorrent started outside it. Then the old rule still applies instead of
-# nothing.
-#
-# The WireGuard interface is created in the ROOT namespace and moved in, because
-# a wireguard device keeps its encrypted socket in the namespace it was created
-# in. Ciphertext therefore leaves over the ordinary line, plaintext lives in
-# here. Created inside, the tunnel could not reach its own endpoint.
-VPN_NETNS="vpn"
-VPN_NETNS_UNIT="phoinix-vpn-netns.service"
-VPN_MTU=1420             # what NetworkManager used for the same tunnel
+# The full construction is written up in docs/LOG.md 2026-08-06 and can be
+# rebuilt from there if the bar ever moves back.
+
 
 # --- DNS (stage 3) ---------------------------------------------------------
 # Who resolves ulu's names, and the reason it is a decision rather than a

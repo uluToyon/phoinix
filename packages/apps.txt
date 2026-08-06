@@ -25,11 +25,6 @@ obsidian              # notes; official `extra` package, no AUR variant needed. 
 # Proton's port forwarding needs a P2P server, and both servers in use refuse
 # NAT-PMP; the renewal service was the only consumer. Reviving it means adding
 # this back — and enabling qBittorrent's WebUI, which is how the port gets in.
-wireguard-tools       # `wg` and `wg-quick`. NetworkManager speaks WireGuard without them, but
-                      # the namespace tunnel is built by hand: `wg setconf` loads the keys and
-                      # `wg-quick strip` reduces Proton's file to what the kernel accepts.
-                      # Missing on the live desktop until 2026-08-06 for exactly that reason —
-                      # nothing had ever needed to touch a tunnel outside NM.
 dnsmasq               # NOT a DNS server for this machine — it binds one loopback address and
                       # serves nothing else. It exists so the vpnonly group's NAME LOOKUPS go
                       # through the tunnel too: nftables rewrites the group's query from the
