@@ -161,50 +161,49 @@ fi
 # 2 rebuilds the containments from scratch, so anything written into that file
 # beforehand belongs to containments that no longer exist. This runs after them.
 #
-# Matched by RESOLUTION, not by connector. A containment knows its screen INDEX
-# and the interface hands out `screenGeometry(index)` — the connector name is
-# not exposed at all. Resolution is the only key both sides can see, and since
-# the files are named for the screen they belong to it is also readable. It
-# would break if two screens had the same resolution; they do not, and a
-# mismatch is reported below rather than passing silently.
+# Matched on full GEOMETRY — the same bridge the panels use. A containment knows
+# only its screen INDEX, and the interface offers screenGeometry(index) with no
+# way back to a connector name; connector_geometry() supplies the other half.
+# Resolution alone was the first attempt and is not enough: the television and
+# the 4K monitor are both 3840x2160 and want different fill modes, so position
+# is what tells them apart.
 #
-# A screen with no entry keeps whatever Plasma chose. That is the TV: it is a
-# television, it shows a picture when something is playing, and a wallpaper on
-# it is nobody's decision.
+# A connector that is not attached resolves to -1,-1,-1,-1, which no containment
+# reports — so an unplugged screen is skipped without a second code path.
 if (( ${#WALLPAPERS[@]} )); then
     wp_js=""
     for entry in "${WALLPAPERS[@]}"; do
-        res="${entry%%:*}"; rest="${entry#*:}"
+        conn="${entry%%:*}"; rest="${entry#*:}"
         file="${rest%:*}"; fill="${rest##*:}"
         if [[ ! -f "$file" ]]; then
-            echo "WARNING: wallpaper for $res is missing: $file"
-            echo "         That screen keeps Plasma's default."
+            echo "WARNING: wallpaper for $conn is missing: $file"
+            echo "         That screen keeps whatever Plasma chose."
             continue
         fi
-        wp_js+="  map[\"$res\"] = { file: \"$file\", fill: $fill };"$'\n'
+        wp_js+="  map[\"$(connector_geometry "$conn")\"] = { file: \"$file\", fill: $fill, conn: \"$conn\" };"$'\n'
     done
 
     wp_report="$(plasma_script "
 var map = {};
 $wp_js
-var done = [], missed = [], orphans = 0;
+var done = [], missed = [], detached = 0;
 desktops().forEach(function (d) {
-    // A containment for a screen that is not attached reports screen == -1,
-    // and screenGeometry() then answers with the FIRST screen's size rather
-    // than failing. Without this guard the disconnected television is handed
-    // the ultrawide's wallpaper because their geometries happen to match --
-    // measured, not theorised.
-    if (d.screen < 0 || d.screen >= screenCount) { orphans++; return; }
+    // A containment for a screen that is not attached reports screen == -1, and
+    // screenGeometry() then answers with the FIRST screen's size rather than
+    // failing. Without this guard the unplugged television was handed the
+    // ultrawide's wallpaper because their sizes happened to match — measured,
+    // not theorised.
+    if (d.screen < 0 || d.screen >= screenCount) { detached++; return; }
     var g = screenGeometry(d.screen);
-    var key = g.width + 'x' + g.height;
+    var key = g.x + ',' + g.y + ',' + g.width + ',' + g.height;
     if (!(key in map)) { missed.push(key); return; }
     d.wallpaperPlugin = 'org.kde.image';
     d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
     d.writeConfig('Image', 'file://' + map[key].file);
     d.writeConfig('FillMode', map[key].fill);
-    done.push(key);
+    done.push(map[key].conn);
 });
-print('set=' + done.join(',') + ' unmatched=' + missed.join(',') + ' detached=' + orphans);")"
+print('set=' + done.join(',') + ' unmatched=' + missed.join(' ') + ' detached=' + detached);")"
     echo "wallpapers: $wp_report"
 else
     echo "wallpapers: none declared — left as Plasma found them"

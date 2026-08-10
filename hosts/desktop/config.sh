@@ -129,25 +129,34 @@ KDE_THEME_DIR="$PHOINIX_DATA/kde-theme"
 KDE_THEME_NAME="Nothing"        # only for the log line; nothing keys off it
 
 # --- Wallpapers (stage 4) --------------------------------------------------
-# "<width>x<height>:<file>:<fill mode>", one per screen. Keyed by RESOLUTION
-# rather than by connector because that is what stage 4 can actually ask for: a
-# Plasma containment knows its screen INDEX, and the scripting interface gives
-# the geometry of that index — it does not give the connector name. The files
-# are named for the screen they belong to, so the key is also readable.
+# "<connector>:<file>:<fill mode>", one per screen.
+#
+# Keyed by CONNECTOR and resolved to full geometry at runtime — the same bridge
+# panels.js uses, and for the same reason. It was keyed by RESOLUTION first and
+# that broke the moment the television was plugged back in: HDMI-A-1 is
+# 3840x2160, exactly like DP-2, and the two want different fill modes. Position
+# is what distinguishes two identical screens; resolution is not.
+#
+# A connector that is not attached resolves to -1,-1,-1,-1 and matches no
+# containment, so an unplugged screen costs its entry and nothing else.
 #
 # The images live in PHOINIX_DATA, not in the repo: third-party artwork, same
 # rule as the DZGUI icon (see the note above PHOINIX_DATA).
 #
-# Fill modes are Plasma's own numbering, and they are not cosmetic here — each
-# was chosen for one screen: 2 crops to fill (the ultrawide, where the image
-# matches), 0 stretches (the 4K, where it does not quite), 6 pads (the portrait
-# screen, where cropping would cut the subject).
+# Fill modes are Plasma's own numbering. Three of the four crop; the portrait
+# screen pads, because cropping a 1440x2560 frame out of this image cuts the
+# subject. DP-2 briefly stretched and ulu put it back to crop on 2026-08-10 —
+# written here as an explicit 2 rather than the empty value Plasma leaves behind,
+# so the setting is reproducible instead of merely absent.
 #   0 stretch · 1 fit · 2 crop · 3 tile · 4 tile-v · 5 tile-h · 6 pad
+_WP="$PHOINIX_DATA/Wallpapers/nier-automata-steel-beneath-the-smile-bn"
 WALLPAPERS=(
-    "3440x1440:$PHOINIX_DATA/Wallpapers/nier-automata-steel-beneath-the-smile-bn-3440x1440.jpg:2"
-    "3840x2160:$PHOINIX_DATA/Wallpapers/nier-automata-steel-beneath-the-smile-bn-3840x2160.jpg:0"
-    "1440x2560:$PHOINIX_DATA/Wallpapers/nier-automata-steel-beneath-the-smile-bn-1440x2560.jpg:6"
+    "DP-1:$_WP-3440x1440.jpg:2"      # TCL 34R83Q ultrawide
+    "DP-2:$_WP-3840x2160.jpg:2"      # TCL 27R83U 4K
+    "DP-3:$_WP-1440x2560.jpg:6"      # Acer XZ322QU, portrait
+    "HDMI-A-1:$_WP-3840x2160.jpg:2"  # Hisense TV — same image as DP-2, cropped not stretched
 )
+unset _WP
 
 
 # --- Claude Code's local settings for this checkout (stage 3) ---------------

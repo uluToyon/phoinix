@@ -4579,3 +4579,18 @@ Checked: `kwinrc` is byte-identical to the repo's copy, so nothing there needed
 re-capturing. The theme install runs BEFORE that file is written, because a
 kdeglobals naming a package that is not on disk produces a half-applied desktop
 at the first login — which is the login nobody watches.
+
+**Same day, corrected twice.** The wallpapers were keyed by RESOLUTION and that
+held for about an hour — until ulu plugged the television back in. HDMI-A-1 is
+3840x2160, exactly like DP-2, and the two wanted different fill modes: one key,
+two answers. Rekeyed by CONNECTOR and resolved to full geometry at runtime,
+which is the bridge `panels.js` has used all along and should have been the
+first choice. Position is what separates two identical screens; size is not.
+
+ulu also put DP-2's fill mode back from stretch to crop. Plasma records that by
+DELETING the key rather than writing the default, so the live value read empty;
+the repo writes an explicit `2`. A setting that exists only as an absence is not
+reproducible — the next Plasma default would silently change it.
+
+Verified against the running session: `set=DP-1,DP-2,DP-3,HDMI-A-1`, nothing
+unmatched, nothing detached.

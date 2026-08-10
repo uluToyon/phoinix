@@ -56,7 +56,7 @@ KERNEL_PARAMS=""          # extra kernel command line for the boot entry
 PANEL_TV_CONNECTOR=""     # second screen that mirrors the main panel
 PANEL_SIDE=()             # clock-only strips: "<connector>:<thickness>"
 PLACES_ORDER=()           # Dolphin Places device order, by filesystem label
-WALLPAPERS=()             # "<WxH>:<file>:<fillmode>" per screen; empty = leave Plasma's default
+WALLPAPERS=()             # "<connector>:<file>:<fillmode>" per screen; empty = leave Plasma's default
 KDE_THEME_DIR=""          # tree mirroring ~/.local/share with a downloaded theme; empty = none
 KDE_THEME_NAME=""
 QBT_CONNECTOR=""          # qBittorrent window rule; empty = no rule for it
