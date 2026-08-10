@@ -4594,3 +4594,36 @@ reproducible — the next Plasma default would silently change it.
 
 Verified against the running session: `set=DP-1,DP-2,DP-3,HDMI-A-1`, nothing
 unmatched, nothing detached.
+
+## 2026-08-10 — the soundbar volume was never a setting drifting
+
+Three drifts were outstanding. Two were decided in a sentence; the third turned
+out to be a misunderstanding the repo had carried since July.
+
+**The volume.** Repo 37 % (−26.00 dB), live 31 %, and this was the third
+occurrence in ten days — it had already been "corrected" on 2026-08-04. ulu's
+call: the repo sets an INITIAL value, running changes are ignored.
+
+Checking why it kept moving produced the actual explanation. The sink carries
+`HW_VOLUME_CTRL`: **the volume belongs to the bar, not to the software.**
+WirePlumber merely records what the device reports, so every turn of the
+physical knob rewrites the captured state. The repo was never fighting a setting
+that drifted; it was fighting ulu's volume knob, and re-asserting a number after
+each session would have been an argument it could not win and should not have
+started.
+
+`check-drift.sh` now treats that file as seeded: it normalises each line's JSON
+with sorted keys, drops `channelVolumes`, and compares what is left — the
+channel map and the mute state, which are settings. The key sorting is not
+cosmetic either: wireplumber rewrites the same content with the keys in a
+different order, which is why byte comparison reported drift where none existed.
+
+**The sink preference order** (HDMI ahead of the bar) went back to the repo's.
+The current default sink was the bar either way, so nothing sounded different —
+but with HDMI first, the next re-evaluation could have moved it, and that is
+precisely the silent shift this check exists to catch.
+
+**The monitor configuration** was captured from the machine. Not one field
+differed: the 25 extra lines are an additional REMEMBERED arrangement, learned
+when the television was unplugged and plugged back in. That is knowledge, not
+divergence.

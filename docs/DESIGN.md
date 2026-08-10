@@ -267,6 +267,14 @@ are not preferences — each one is the residue of a specific failure:
    hard-clipped at 0 dBFS mid-game once.
 3. **Lower the sink first, raise the stream second** when re-staging gain, so
    there is never a moment where both are up.
+4. **The exact level is a SEED, not a maintained setting** (ulu, 2026-08-10).
+   The sink carries `HW_VOLUME_CTRL`: the volume belongs to the bar, and
+   WirePlumber only records what the device reports. Every turn of the physical
+   knob therefore rewrites the captured state, and it did — three times in ten
+   days. The repo decides what a fresh machine starts at; after that the knob
+   wins. `check-drift.sh` compares the channel map and the mute state of that
+   file and ignores the volume. Rules 1 to 3 still hold: they are about where
+   gain is applied, not about a number.
 4. **Resolve the card by id, never by index** — it has already drifted
    `hw:5` → `hw:3`. (The general rule below, with a scar to show for it.)
 

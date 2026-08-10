@@ -37,6 +37,20 @@ CFG="$REPO_DIR/hosts/$HOST/home"
 #   the settings it carries, not as a fingerprint of a moment.
 VOLATILE=(".local/state/wireplumber/stream-properties")
 
+# Files that are SEEDED rather than maintained: the repo decides what a fresh
+# machine starts with, and ulu is free to change it afterwards without that
+# counting as drift. Only the seeded part is exempt — everything else in the
+# file is still compared.
+#
+#   default-routes — the soundbar's volume. It drifted three times in ten days
+#   (2026-08-04, twice more by 2026-08-10) for the simplest possible reason: ulu
+#   turns the volume knob. A repo that re-asserts a fixed level is fighting the
+#   person using the machine, and a check that reports it every time trains
+#   everyone to skim past the one line that might matter. His call, 2026-08-10:
+#   the repo sets the initial value, running changes are ignored. What is still
+#   compared here is the channel map and the mute state, which are settings.
+SEEDED_ROUTES=".local/state/wireplumber/default-routes"
+
 drift=0; same=0; volatile=0; missing=0; drifted=0
 
 # stage 3 appends its alias hook to .zshrc (guarded, idempotent — see stage 3
@@ -47,6 +61,30 @@ strip_phoinix_hook() {
     sed -e '/^# phoinix aliases (the file is generated/d' \
         -e '\|^\[\[ -f .*/phoinix/aliases\.zsh \]\] && source |d' "$1" \
     | awk 'NF { last = NR } { line[NR] = $0 } END { for (i = 1; i <= last; i++) print line[i] }'
+}
+
+# default-routes is "<route>={<json>}" per line, and wireplumber rewrites that
+# JSON with the keys in whatever order it feels like — the same content produced
+# a different file three times in one afternoon. Comparing bytes therefore
+# reports drift that is not there. This re-serialises each line with sorted keys
+# and drops the volume, so what is left to compare is the channel map and the
+# mute state: the parts that are settings rather than a knob ulu turned.
+normalise_routes() {
+    python3 - "$1" <<'PYEOF'
+import json, sys
+for line in open(sys.argv[1]):
+    line = line.rstrip("\n")
+    head, sep, tail = line.partition("=")
+    if sep and tail.startswith("{"):
+        try:
+            obj = json.loads(tail)
+            obj.pop("channelVolumes", None)
+            print(head + "=" + json.dumps(obj, sort_keys=True))
+            continue
+        except ValueError:
+            pass
+    print(line)
+PYEOF
 }
 
 report() {   # <state> <path> [detail]
@@ -65,7 +103,10 @@ check_pair() {   # <repo file> <live file> <label> <mode>
     [[ -f "$dst" ]] || { report missing "$label" "not on the system: $dst"; return; }
 
     local a b
-    if [[ "$mode" == "zshrc" ]]; then
+    if [[ "$mode" == "routes" ]]; then
+        a="$(normalise_routes "$src" | sha256sum | cut -d' ' -f1)"
+        b="$(normalise_routes "$dst" | sha256sum | cut -d' ' -f1)"
+    elif [[ "$mode" == "zshrc" ]]; then
         a="$(sha256sum < "$src" | cut -d' ' -f1)"
         b="$(strip_phoinix_hook "$dst" | sha256sum | cut -d' ' -f1)"
     else
@@ -92,6 +133,8 @@ if [[ "${CAPTURED_CONFIGS:-0}" == 1 && -d "$CFG" ]]; then
         for v in "${VOLATILE[@]}"; do [[ "$rel" == "$v" ]] && is_volatile=1; done
         if [[ "$is_volatile" == 1 ]]; then
             report volatile "~/$rel" "expected to differ — per-application state, not a setting"
+        elif [[ "$rel" == "$SEEDED_ROUTES" ]]; then
+            check_pair "$src" "$HOME/$rel" "~/$rel (volume seeded, not maintained)" routes
         else
             check_pair "$src" "$HOME/$rel" "~/$rel"
         fi

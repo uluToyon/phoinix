@@ -127,7 +127,7 @@ Packages, `paru` (built from source), DZGUI, then:
 | `.config/kwinrc` | see table below | old |
 | `.config/kdeglobals` | see table below | old |
 | `.config/pipewire/pipewire.conf.d/10-clock.conf` | graph pinned to 48 kHz | old |
-| `.local/state/wireplumber/*` | 5.1 profile pin, the −26 dB route volume. **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
+| `.local/state/wireplumber/*` | 5.1 profile pin, the route volume as a **seed only** (2026-08-10 — it is the bar's own hardware volume, so the knob rewrites it; the drift check ignores it and compares the channel map and mute state instead). **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
 | `.zshrc`, `.p10k.zsh` | zinit bootstrap, 9 plugins, tuned prompt | old |
 
 The greeter gets its own copy of `kwinoutputconfig.json` — without it the first
