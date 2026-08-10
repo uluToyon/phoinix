@@ -4540,3 +4540,42 @@ asks it again.
 of the old note before establishing that the note applied. It was backed up
 first and restored byte-identical, so nothing was lost — but the backup was the
 only reason. Copy before deleting, then diagnose.
+
+## 2026-08-10 — wallpapers and a downloaded theme, both into the scripts
+
+ulu changed the wallpapers per monitor and applied a theme from the KDE Store,
+and asked for both to be reproducible.
+
+**Wallpapers are keyed by resolution, not by connector**, and that is forced
+rather than chosen. Everything else in stage 4 addresses a screen by its
+connector, because Plasma's numbering is not stable — but a wallpaper is set on
+a *containment*, and a containment knows only its screen INDEX. The scripting
+interface offers `screenGeometry(index)` and no way back to a connector name. So
+resolution is the only key both halves can see. It happens to read well, because
+the files are already named for the screen they belong to.
+
+**One thing had to be measured before it could be written.** A containment for a
+screen that is not attached reports `screen == -1`, and `screenGeometry()` then
+answers with the FIRST screen's size instead of failing. The disconnected
+television therefore matched the ultrawide's entry and was handed its wallpaper.
+Guarded with `screen < 0 || screen >= screenCount`; the run now reports
+`detached=1` instead of silently setting four wallpapers for three screens.
+
+Fill modes are per screen and not decoration: crop on the ultrawide where the
+image fits, stretch on the 4K where it does not quite, pad on the portrait
+screen where cropping would cut the subject.
+
+**The theme is "Nothing" by jomada, GPL-3+ 1.8**, four components totalling
+1.9 MB. The files went to `PHOINIX_DATA`, not the repo — third-party artwork,
+the same rule as the wallpapers and the DZGUI icon. The licence would allow
+carrying them; the rule is not about what a licence allows.
+
+The directory mirrors `~/.local/share`, so stage 3 copies it across without
+knowing which component belongs where, and the next theme is dropped in the same
+shape. **What activates it is not the files but the captured `kdeglobals`** —
+it carries `LookAndFeelPackage` and the colour block, and Plasma reads the Plasma
+style and the window decoration as defaults out of the look-and-feel package.
+Checked: `kwinrc` is byte-identical to the repo's copy, so nothing there needed
+re-capturing. The theme install runs BEFORE that file is written, because a
+kdeglobals naming a package that is not on disk produces a half-applied desktop
+at the first login — which is the login nobody watches.

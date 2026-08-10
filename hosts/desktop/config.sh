@@ -107,6 +107,49 @@ CAPTURED_CONFIGS=1
 # loud warning in stage 3, never a silent skip.
 PHOINIX_DATA="/mnt/FilesMusic/phoinix"
 
+# --- KDE theme (stage 3) ---------------------------------------------------
+# "Nothing" by jomada, GPL-3+, version 1.8 — downloaded from the KDE Store and
+# applied by ulu on 2026-08-10. Four components: global theme, Plasma style,
+# window decoration, colour scheme.
+#
+# The FILES live here rather than in the repo for the same reason as the
+# wallpapers and the DZGUI icon: third-party artwork. 1.9 MB, and the licence
+# would permit carrying it — but the rule above PHOINIX_DATA does not turn on
+# what a licence permits.
+#
+# The directory mirrors the layout under ~/.local/share, so stage 3 copies it
+# across without knowing anything about which component goes where, and a
+# future theme is dropped in the same way.
+#
+# What ACTIVATES it is not here but in the captured kdeglobals: that file
+# carries `LookAndFeelPackage` and the colour block. Plasma reads the rest —
+# Plasma style, decoration — as defaults out of the look-and-feel package, so
+# nothing has to write them.
+KDE_THEME_DIR="$PHOINIX_DATA/kde-theme"
+KDE_THEME_NAME="Nothing"        # only for the log line; nothing keys off it
+
+# --- Wallpapers (stage 4) --------------------------------------------------
+# "<width>x<height>:<file>:<fill mode>", one per screen. Keyed by RESOLUTION
+# rather than by connector because that is what stage 4 can actually ask for: a
+# Plasma containment knows its screen INDEX, and the scripting interface gives
+# the geometry of that index — it does not give the connector name. The files
+# are named for the screen they belong to, so the key is also readable.
+#
+# The images live in PHOINIX_DATA, not in the repo: third-party artwork, same
+# rule as the DZGUI icon (see the note above PHOINIX_DATA).
+#
+# Fill modes are Plasma's own numbering, and they are not cosmetic here — each
+# was chosen for one screen: 2 crops to fill (the ultrawide, where the image
+# matches), 0 stretches (the 4K, where it does not quite), 6 pads (the portrait
+# screen, where cropping would cut the subject).
+#   0 stretch · 1 fit · 2 crop · 3 tile · 4 tile-v · 5 tile-h · 6 pad
+WALLPAPERS=(
+    "3440x1440:$PHOINIX_DATA/Wallpapers/nier-automata-steel-beneath-the-smile-bn-3440x1440.jpg:2"
+    "3840x2160:$PHOINIX_DATA/Wallpapers/nier-automata-steel-beneath-the-smile-bn-3840x2160.jpg:0"
+    "1440x2560:$PHOINIX_DATA/Wallpapers/nier-automata-steel-beneath-the-smile-bn-1440x2560.jpg:6"
+)
+
+
 # --- Claude Code's local settings for this checkout (stage 3) ---------------
 # `.claude/settings.local.json` in the repo working copy: permission rules and
 # the permission MODE ulu has granted for this directory. Gitignored since

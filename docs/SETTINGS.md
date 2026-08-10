@@ -262,6 +262,11 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Main panel height | `PANEL_MAIN_HEIGHT=46` | dec |
 | Side strips | `DP-2:55`, `DP-3:36` | dec |
 | Pinned launchers | Konsole, Dolphin, Brave, KeePassXC, Strawberry, Discord, qBittorrent, Obsidian | dec |
+| Wallpapers | `WALLPAPERS`, one per screen, keyed by RESOLUTION — a containment knows its screen index, not its connector. Files in `PHOINIX_DATA`, never the repo | dec |
+| Fill modes | DP-1 `2` crop · DP-2 `0` stretch · DP-3 `6` pad — chosen per screen, not a default | dec |
+| Detached screens | containments reporting `screen == -1` are skipped; `screenGeometry()` answers with the FIRST screen for them, which handed the unplugged TV the ultrawide's image | dec |
+| KDE theme | "Nothing" by jomada, GPL-3+ 1.8 — files in `$PHOINIX_DATA/kde-theme` mirroring `~/.local/share`, installed by stage 3 | dec |
+| Theme activation | the captured `kdeglobals` (`LookAndFeelPackage=Nothing` + colours). Plasma style and decoration follow as package defaults — nothing writes them | dec |
 | Kickoff favourites | browser, System Settings, Dolphin | dec |
 | Pointer acceleration | **flat profile on every pointer that supports it** | dec |
 | Places sidebar order | `PLACES_ORDER` labels, resolved at runtime | dec |

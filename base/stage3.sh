@@ -292,6 +292,25 @@ case "${CAPTURED_CONFIGS:-}" in
     install -Dm644 "$CFG/.config/pipewire/pipewire.conf.d/10-clock.conf" \
                    "$HOME/.config/pipewire/pipewire.conf.d/10-clock.conf"
 
+    # The downloaded KDE theme. Copied BEFORE the captured kdeglobals below is
+    # installed, because that file is what selects it — a kdeglobals naming a
+    # look-and-feel package that is not on disk gives a half-applied desktop at
+    # first login, and the first login is exactly where nobody is watching.
+    #
+    # The source tree mirrors ~/.local/share, so this needs to know nothing
+    # about which component belongs where. Existing files are overwritten: these
+    # are packaged artwork, not something ulu edits in place.
+    if [[ -n "${KDE_THEME_DIR:-}" ]]; then
+        if [[ -d "$KDE_THEME_DIR" ]]; then
+            install -d "$HOME/.local/share"
+            cp -a "$KDE_THEME_DIR/." "$HOME/.local/share/"
+            echo "theme: ${KDE_THEME_NAME:-theme} installed from $KDE_THEME_DIR"
+        else
+            echo "WARNING: $KDE_THEME_DIR is missing — the desktop will come up with"
+            echo "         the captured kdeglobals naming a theme that is not there."
+        fi
+    fi
+
     # wireplumber state: the analog-surround-51 pin and the -26dB route fix.
     for f in default-profile default-routes default-nodes stream-properties; do
         install -Dm644 "$CFG/.local/state/wireplumber/$f" "$HOME/.local/state/wireplumber/$f"

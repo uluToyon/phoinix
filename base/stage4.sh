@@ -156,6 +156,60 @@ else
     echo "WARNING: no kickoff applet found — favourites left untouched"
 fi
 
+# ------------------------------------------------- 3b. wallpapers
+# Set through the scripting interface rather than by writing appletsrc: section
+# 2 rebuilds the containments from scratch, so anything written into that file
+# beforehand belongs to containments that no longer exist. This runs after them.
+#
+# Matched by RESOLUTION, not by connector. A containment knows its screen INDEX
+# and the interface hands out `screenGeometry(index)` — the connector name is
+# not exposed at all. Resolution is the only key both sides can see, and since
+# the files are named for the screen they belong to it is also readable. It
+# would break if two screens had the same resolution; they do not, and a
+# mismatch is reported below rather than passing silently.
+#
+# A screen with no entry keeps whatever Plasma chose. That is the TV: it is a
+# television, it shows a picture when something is playing, and a wallpaper on
+# it is nobody's decision.
+if (( ${#WALLPAPERS[@]} )); then
+    wp_js=""
+    for entry in "${WALLPAPERS[@]}"; do
+        res="${entry%%:*}"; rest="${entry#*:}"
+        file="${rest%:*}"; fill="${rest##*:}"
+        if [[ ! -f "$file" ]]; then
+            echo "WARNING: wallpaper for $res is missing: $file"
+            echo "         That screen keeps Plasma's default."
+            continue
+        fi
+        wp_js+="  map[\"$res\"] = { file: \"$file\", fill: $fill };"$'\n'
+    done
+
+    wp_report="$(plasma_script "
+var map = {};
+$wp_js
+var done = [], missed = [], orphans = 0;
+desktops().forEach(function (d) {
+    // A containment for a screen that is not attached reports screen == -1,
+    // and screenGeometry() then answers with the FIRST screen's size rather
+    // than failing. Without this guard the disconnected television is handed
+    // the ultrawide's wallpaper because their geometries happen to match --
+    // measured, not theorised.
+    if (d.screen < 0 || d.screen >= screenCount) { orphans++; return; }
+    var g = screenGeometry(d.screen);
+    var key = g.width + 'x' + g.height;
+    if (!(key in map)) { missed.push(key); return; }
+    d.wallpaperPlugin = 'org.kde.image';
+    d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
+    d.writeConfig('Image', 'file://' + map[key].file);
+    d.writeConfig('FillMode', map[key].fill);
+    done.push(key);
+});
+print('set=' + done.join(',') + ' unmatched=' + missed.join(',') + ' detached=' + orphans);")"
+    echo "wallpapers: $wp_report"
+else
+    echo "wallpapers: none declared — left as Plasma found them"
+fi
+
 # ------------------------------------------------- 4. flat pointer profile
 # This is a gaming PC: NO mouse gets pointer acceleration. Deliberately a rule
 # about every pointer rather than a setting on one device.
