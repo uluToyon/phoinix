@@ -51,6 +51,17 @@ VOLATILE=(".local/state/wireplumber/stream-properties")
 #   compared here is the channel map and the mute state, which are settings.
 SEEDED_ROUTES=".local/state/wireplumber/default-routes"
 
+#   kwinoutputconfig.json — KWin remembers every screen COMBINATION it has ever
+#   seen, and re-writes all of them at logout. Some are learned during boots
+#   where the outputs were not all up yet, so they accumulate on their own and
+#   cannot be pruned for good (tried 2026-08-11: the pruned file was back to
+#   seven arrangements after one reboot). What matters is the LAYOUT ulu chose,
+#   which is the arrangements whose primary is PANEL_MAIN_CONNECTOR; the rest is
+#   noise the compare has to ignore, or it reports drift after every session.
+#   The greeter gets a filtered copy from scripts/greeter-screens.sh, and that
+#   one does stay filtered, because its KWin only ever reads the file.
+SEEDED_SCREENS=".config/kwinoutputconfig.json"
+
 drift=0; same=0; volatile=0; missing=0; drifted=0
 
 # stage 3 appends its alias hook to .zshrc (guarded, idempotent — see stage 3
@@ -87,6 +98,30 @@ for line in open(sys.argv[1]):
 PYEOF
 }
 
+# Reduce kwinoutputconfig.json to the arrangements that put PANEL_MAIN_CONNECTOR
+# first, with the keys sorted. Everything else in the file — modes, EDID hashes,
+# HDR, the output list — is still compared; only the accumulating partial
+# arrangements are dropped.
+normalise_screens() {
+    python3 - "$1" "${PANEL_MAIN_CONNECTOR:-}" <<'PYEOF'
+import json, sys
+try:
+    doc = json.load(open(sys.argv[1]))
+except ValueError:
+    sys.exit("unparseable")
+main = sys.argv[2]
+outs = next((e["data"] for e in doc
+             if isinstance(e, dict) and e.get("name") == "outputs"), [])
+name = {i: o.get("connectorName") for i, o in enumerate(outs) if isinstance(o, dict)}
+for e in doc:
+    if isinstance(e, dict) and e.get("name") == "setups":
+        e["data"] = [s for s in e["data"]
+                     if [name.get(o.get("outputIndex")) for o in s.get("outputs", [])
+                         if o.get("priority") == 1] == [main]]
+print(json.dumps(doc, sort_keys=True, indent=1))
+PYEOF
+}
+
 report() {   # <state> <path> [detail]
     case "$1" in
         same)     same=$((same + 1)) ;;
@@ -103,7 +138,10 @@ check_pair() {   # <repo file> <live file> <label> <mode>
     [[ -f "$dst" ]] || { report missing "$label" "not on the system: $dst"; return; }
 
     local a b
-    if [[ "$mode" == "routes" ]]; then
+    if [[ "$mode" == "screens" ]]; then
+        a="$(normalise_screens "$src" | sha256sum | cut -d' ' -f1)"
+        b="$(normalise_screens "$dst" | sha256sum | cut -d' ' -f1)"
+    elif [[ "$mode" == "routes" ]]; then
         a="$(normalise_routes "$src" | sha256sum | cut -d' ' -f1)"
         b="$(normalise_routes "$dst" | sha256sum | cut -d' ' -f1)"
     elif [[ "$mode" == "zshrc" ]]; then
@@ -135,6 +173,8 @@ if [[ "${CAPTURED_CONFIGS:-0}" == 1 && -d "$CFG" ]]; then
             report volatile "~/$rel" "expected to differ — per-application state, not a setting"
         elif [[ "$rel" == "$SEEDED_ROUTES" ]]; then
             check_pair "$src" "$HOME/$rel" "~/$rel (volume seeded, not maintained)" routes
+        elif [[ "$rel" == "$SEEDED_SCREENS" ]]; then
+            check_pair "$src" "$HOME/$rel" "~/$rel (only the chosen arrangements)" screens
         else
             check_pair "$src" "$HOME/$rel" "~/$rel"
         fi
@@ -176,6 +216,7 @@ REPO_TEMPLATED=(
     "system/user/phoinix-xlcore-backup.service|$HOME/.config/systemd/user/phoinix-xlcore-backup.service"
     "plasma/panels.js|"
     "system/NetworkManager/dispatcher.d/50-phoinix-vpn-dns|/etc/NetworkManager/dispatcher.d/50-phoinix-vpn-dns"
+    "hosts/desktop/home/.config/kwinoutputconfig.json|/var/lib/plasmalogin/.config/kwinoutputconfig.json"
     "system/phoinix-vpn-dns.service|/etc/systemd/system/phoinix-vpn-dns.service"
     "scripts/qbittorrent-wrapper.sh|$HOME/.local/bin/qbittorrent"
 )

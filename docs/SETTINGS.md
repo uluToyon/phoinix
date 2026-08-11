@@ -130,9 +130,24 @@ Packages, `paru` (built from source), DZGUI, then:
 | `.local/state/wireplumber/*` | 5.1 profile pin, the route volume as a **seed only** (2026-08-10 — it is the bar's own hardware volume, so the knob rewrites it; the drift check ignores it and compares the channel map and mute state instead). **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
 | `.zshrc`, `.p10k.zsh` | zinit bootstrap, 9 plugins, tuned prompt | old |
 
+**Onboard audio is disabled in UEFI** (ulu, 2026-08-11). Worth stating because
+nothing in this repo can set it and the audio inventory depends on it: on X870
+the onboard codec is itself a USB device, so disabling it removes a USB audio
+device — and with it an isochronous endpoint from the controller that also
+carries Bluetooth and the input devices. What remains is the two GPU HDMI
+devices and the Concept 12. The captured wireplumber state still names the
+vanished devices; that is deliberate, WirePlumber keeps state for absent
+hardware and restores it if the device returns.
+
 The greeter gets its own copy of `kwinoutputconfig.json` — without it the first
 login screen goes black, and the per-output `priority` in that file is also what
 puts the password field on the main monitor instead of the TV.
+
+**Refreshed by `scripts/greeter-screens.sh <host>`, not by stage 3 alone.**
+Stage 3 calls it at install time; nothing else refreshes that copy, so it must
+be run by hand after any change to the screen layout. It FILTERS while copying —
+see below — and refuses rather than installing an empty layout, which would be a
+black login screen.
 
 **And the file must contain only arrangements that are real** (2026-08-11). KWin
 remembers every screen combination it has seen; seven had accumulated here and

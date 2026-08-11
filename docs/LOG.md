@@ -4663,3 +4663,30 @@ at `0,0` are the tell — it was there to be seen and was not looked at.
 **Still open, and it is the actual repair:** stage 3 hands the greeter its copy
 ONLY during installation. Every change to the screen layout leaves it behind
 again. That wants a step ulu can trigger on its own rather than a whole stage.
+
+**The repair, same evening.** Pruning the user's own file does not last: KWin
+holds the arrangements in memory and wrote all seven back at the next logout —
+measured, not assumed. The greeter's copy is different, because that KWin only
+ever READS the file, and the login screen was correct after the reboot.
+
+So the fix lives where it works: `scripts/greeter-screens.sh <host>` filters the
+user's live file down to the arrangements whose primary is
+`PANEL_MAIN_CONNECTOR` and installs that to every greeter user it finds. Stage 3
+calls it instead of copying verbatim; after any later rearrangement it is run by
+hand, which is the point of it being a script.
+
+It refuses to install an empty layout. If no arrangement has the declared main
+connector as primary — a plausible mistake when editing `config.sh` — handing
+the greeter an empty list is a black login screen, so it stops instead.
+
+`check-drift.sh` gained the matching normalisation: for this file it compares
+only the arrangements ulu chose, because the partial ones re-accumulate after
+every session and would otherwise report drift forever. Same shape as the
+soundbar volume — the noisy part is excluded by name, everything else in the
+file is still compared. The greeter's copy is now watched too; it sits under
+`/var/lib/plasmalogin`, which a normal user cannot stat, and the check says so
+rather than calling it missing.
+
+One `set -e` trap was caught before it could bite: `sudo test -f … && sudo cp …`
+returns non-zero when there is no previous file, which under `set -e` aborts the
+script — on a fresh machine, i.e. exactly the first run.

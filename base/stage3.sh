@@ -367,11 +367,12 @@ for greeter_user in plasmalogin sddm; do
     sudo install -d -o "$greeter_user" -g "$greeter_user" -m 700 \
         "$greeter_home/.config"
 
-    if [[ -f "$HOME/.config/kwinoutputconfig.json" ]]; then
-        sudo install -Dm644 -o "$greeter_user" -g "$greeter_user" \
-            "$HOME/.config/kwinoutputconfig.json" \
-            "$greeter_home/.config/kwinoutputconfig.json"
-    fi
+    # The screen layout is NOT copied here — scripts/greeter-screens.sh does it
+    # for every greeter user at once, after this loop, and it FILTERS. A verbatim
+    # copy is wrong: KWin remembers every screen combination it has ever seen,
+    # including ones learned while outputs were still coming up, and at the login
+    # screen the outputs are not all up either, so it matches exactly those. That
+    # is how the password field moved to the portrait monitor on 2026-08-11.
 
     # NumLock on at the LOGIN SCREEN as well — the session setting in section 6
     # writes ulu's own kcminputrc, which the greeter never reads.
