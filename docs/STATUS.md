@@ -1,6 +1,26 @@
 # STATUS
 
-_Last updated: 2026-08-06 (session 14 — the split tunnel, verified and tightened)_
+_Last updated: 2026-08-11 (session 16 — the audio glitching is solved: a USB controller)_
+
+## Session 16 — the audio glitching is solved
+
+**It was hardware placement, and never software.** The Concept 12 sat on one of
+the USB-C ports, which on this board are the ASMedia ASM4242 that X870 branding
+requires — a controller the previous X670E board did not have, with documented
+USB-audio failures on this chipset generation. On a CPU-direct port: an hour and
+a half of gaming without a single glitch, zero xHCI errors, zero xruns. Plugged
+back into USB-C the glitching returned; back again it was gone. The full account,
+including how a fortnight of complete negatives should have been read, is in
+`LOG.md`.
+
+Everything built during the search stays — realtime priority, headroom,
+`disable-tsched`, the buffer size. Each closed a measured gap of its own; none
+was the cause.
+
+**Deliberately absent: any check, warning or checklist entry about which port to
+use.** ulu's explicit call, in any form.
+
+_Previously: 2026-08-06 (session 14 — the split tunnel, verified and tightened)_
 
 ## Session 14 — torrent and internet, separated for real
 

@@ -4690,3 +4690,43 @@ rather than calling it missing.
 One `set -e` trap was caught before it could bite: `sudo test -f … && sudo cp …`
 returns non-zero when there is no previous file, which under `set -e` aborts the
 script — on a fresh machine, i.e. exactly the first run.
+
+## 2026-08-11 — the audio glitching: solved, and it was never software
+
+Closed, with a counter-test.
+
+**The finding came from reading rather than measuring.** Two weeks of instrumenting
+this machine produced one negative after another: the digital stream was clean,
+the xruns did not line up with what ulu heard, the speakers reproduced a sine at
+0.12 % distortion, silence under load was silent. Every observable the computer
+offers said "not me". What finally moved it was ulu's own instruction to search
+the web instead — and the constellation turned out to be documented.
+
+**The chain.** AMD 800-series boards must carry USB4 to be branded X870, and that
+USB4 comes from a third-party controller rather than the chipset — here an
+ASMedia ASM4242. Reports on X870/X870E describe exactly this: crackling and
+dropouts on every USB audio device, unaffected under Windows, every software
+workaround failing. ulu had moved from an X670E board, which has no such
+controller, and plugged the soundbar into the most modern-looking socket on the
+new one. The USB-C ports ARE the ASM4242. That is the change he could not place
+in time: not an update, a motherboard.
+
+**Verified both ways on 2026-08-11.** Moved to a CPU-direct port: one hour
+thirty-seven minutes including several games, zero xHCI scheduling errors, zero
+xruns, and ulu reporting "nicht ein einziger Glitch" — after weeks of hearing it
+several times an hour. Then his own idea, and the right one: plug it back into
+the USB-C port. The glitching returned. Back to CPU-direct, gone again.
+
+**What this retires.** The realtime priority, the headroom, `disable-tsched`, the
+buffer size, the dnsmasq-adjacent theories about levels and quantum — none of
+them was the cause. They stay because each closed a real, measured gap of its
+own, but the glitching was a USB controller all along.
+
+**No check, no reminder, no line in the checklist** — ulu's explicit call, in any
+form. This entry is the record of why, not a mechanism to enforce it.
+
+**And a note on method, because it is the transferable part.** The measurements
+were not wrong; they were complete and they were all negative, and a fortnight of
+complete negatives should have been read as "the fault is outside what I can
+observe" far sooner than it was. The step that solved it — asking whether anyone
+else has this hardware — was available on day one.
