@@ -134,6 +134,13 @@ The greeter gets its own copy of `kwinoutputconfig.json` — without it the firs
 login screen goes black, and the per-output `priority` in that file is also what
 puts the password field on the main monitor instead of the TV.
 
+**And the file must contain only arrangements that are real** (2026-08-11). KWin
+remembers every screen combination it has seen; seven had accumulated here and
+five were learned during boots where not all outputs were up yet. They are
+recognisable by having every position at `0,0` and a primary that is not DP-1.
+At the login screen the outputs are not all initialised, so KWin matches one of
+those — which is how the password field ended up on the portrait monitor.
+
 Its config directory holds a second file, `kcminputrc`, written key by key in
 the same loop (see the NumLock rows below). Anything the greeter needs lands in
 `/var/lib/plasmalogin/.config/`, owned by the greeter user — stage 3 creates

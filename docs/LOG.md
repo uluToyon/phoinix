@@ -4627,3 +4627,39 @@ precisely the silent shift this check exists to catch.
 differed: the 25 extra lines are an additional REMEMBERED arrangement, learned
 when the television was unplugged and plugged back in. That is knowledge, not
 divergence.
+
+## 2026-08-11 — the login screen moved, and KWin's remembered arrangements were why
+
+ulu, after a BIOS update: the password field appeared on the portrait monitor
+instead of the 34" ultrawide.
+
+**Not the greeter's copy.** Stage 3 gives `plasmalogin` its own
+`kwinoutputconfig.json`, and the obvious suspicion was that it had gone stale.
+It had not: it differed from the live file by exactly the one extra arrangement
+captured on 2026-08-10, and the four-screen layout was identical on both sides.
+
+**It was the file's contents on both sides.** KWin remembers every screen
+COMBINATION it has ever seen, and seven had accumulated. Only two were real —
+the three-screen layout without the television and the four-screen one, both
+with DP-1 as primary and with ulu's actual positions. The other five were learned
+during boots where not every output was up in time, and they give themselves
+away: every position sits at `0,0` in a neat row rather than in the real layout,
+and the primary is DP-3, DP-2 or the television.
+
+At the login screen not all outputs are initialised yet, so KWin matches one of
+those partial arrangements — and lands on the portrait monitor. The BIOS update
+did not cause it; it shifted the initialisation timing enough to match a
+different wrong entry than before.
+
+Pruned to the two real arrangements, in the repo, the session and the greeter.
+KWin relearns an arrangement the moment it genuinely occurs, so nothing is lost
+except the mistakes.
+
+**A correction to 2026-08-10.** The extra arrangement captured that day was
+called "knowledge, not divergence". Half of that was wrong: it was one of these
+degenerate entries, and it went into the repo with that reasoning. Positions all
+at `0,0` are the tell — it was there to be seen and was not looked at.
+
+**Still open, and it is the actual repair:** stage 3 hands the greeter its copy
+ONLY during installation. Every change to the screen layout leaves it behind
+again. That wants a step ulu can trigger on its own rather than a whole stage.

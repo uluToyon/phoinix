@@ -24,8 +24,7 @@
                 "colorPowerTradeoff": "PreferEfficiency",
                 "colorProfileSource": "sRGB",
                 "connectorName": "DP-1",
-                "customModes": [
-                ],
+                "customModes": [],
                 "detectedDdcCi": true,
                 "edidHash": "9fe5968abb63b09b01a92d36b78f398c",
                 "edidIdentifier": "TCL 13313 0 2 2024 0",
@@ -75,8 +74,7 @@
                 "colorPowerTradeoff": "PreferEfficiency",
                 "colorProfileSource": "sRGB",
                 "connectorName": "DP-2",
-                "customModes": [
-                ],
+                "customModes": [],
                 "detectedDdcCi": true,
                 "edidHash": "e1dbc74d04273d50dc6dc86a0b8ab875",
                 "edidIdentifier": "TCL 9985 0 3 2024 0",
@@ -126,8 +124,7 @@
                 "colorPowerTradeoff": "PreferEfficiency",
                 "colorProfileSource": "sRGB",
                 "connectorName": "DP-3",
-                "customModes": [
-                ],
+                "customModes": [],
                 "detectedDdcCi": true,
                 "edidHash": "57f051342f2c915a4dd6e0b89967b835",
                 "edidIdentifier": "ACR 3357 1091610033 11 2024 0",
@@ -177,8 +174,7 @@
                 "colorPowerTradeoff": "PreferEfficiency",
                 "colorProfileSource": "sRGB",
                 "connectorName": "HDMI-A-1",
-                "customModes": [
-                ],
+                "customModes": [],
                 "detectedDdcCi": false,
                 "edidHash": "dac28a1b43d6ac7be6d1cfb1ddb6f2f7",
                 "edidIdentifier": "HEC 39538 1735156332 1 2024 0",
@@ -286,161 +282,6 @@
                             "y": 400
                         },
                         "priority": 4,
-                        "replicationSource": ""
-                    }
-                ]
-            },
-            {
-                "lidClosed": false,
-                "outputs": [
-                    {
-                        "enabled": true,
-                        "outputIndex": 0,
-                        "position": {
-                            "x": 0,
-                            "y": 0
-                        },
-                        "priority": 0,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 2,
-                        "position": {
-                            "x": 3440,
-                            "y": 0
-                        },
-                        "priority": 1,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 3,
-                        "position": {
-                            "x": 4880,
-                            "y": 0
-                        },
-                        "priority": 2,
-                        "replicationSource": ""
-                    }
-                ]
-            },
-            {
-                "lidClosed": false,
-                "outputs": [
-                    {
-                        "enabled": true,
-                        "outputIndex": 0,
-                        "position": {
-                            "x": 0,
-                            "y": 0
-                        },
-                        "priority": 0,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 3,
-                        "position": {
-                            "x": 3440,
-                            "y": 0
-                        },
-                        "priority": 1,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 1,
-                        "position": {
-                            "x": 7280,
-                            "y": 0
-                        },
-                        "priority": 2,
-                        "replicationSource": ""
-                    }
-                ]
-            },
-            {
-                "lidClosed": false,
-                "outputs": [
-                    {
-                        "enabled": true,
-                        "outputIndex": 1,
-                        "position": {
-                            "x": 0,
-                            "y": 0
-                        },
-                        "priority": 0,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 2,
-                        "position": {
-                            "x": 3840,
-                            "y": 0
-                        },
-                        "priority": 1,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 3,
-                        "position": {
-                            "x": 5280,
-                            "y": 0
-                        },
-                        "priority": 2,
-                        "replicationSource": ""
-                    }
-                ]
-            },
-            {
-                "lidClosed": false,
-                "outputs": [
-                    {
-                        "enabled": true,
-                        "outputIndex": 0,
-                        "position": {
-                            "x": 0,
-                            "y": 0
-                        },
-                        "priority": 0,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 2,
-                        "position": {
-                            "x": 3440,
-                            "y": 0
-                        },
-                        "priority": 1,
-                        "replicationSource": ""
-                    }
-                ]
-            },
-            {
-                "lidClosed": false,
-                "outputs": [
-                    {
-                        "enabled": true,
-                        "outputIndex": 0,
-                        "position": {
-                            "x": 0,
-                            "y": 0
-                        },
-                        "priority": 0,
-                        "replicationSource": ""
-                    },
-                    {
-                        "enabled": true,
-                        "outputIndex": 1,
-                        "position": {
-                            "x": 3440,
-                            "y": 0
-                        },
-                        "priority": 1,
                         "replicationSource": ""
                     }
                 ]
