@@ -1293,7 +1293,11 @@ EOF
 # ------------------------------------------------- 10. defaults & services
 xdg-mime default brave-browser.desktop application/pdf || true
 
-sudo systemctl enable bluetooth cups power-profiles-daemon
+# lactd is in this list rather than left to the package because LACT is useless
+# without it: the GUI is a client, the daemon is what may touch the GPU. Its
+# default `admin_group: wheel` is what lets ulu change anything without root,
+# and he is in wheel from stage 2.
+sudo systemctl enable bluetooth cups power-profiles-daemon lactd
 
 # ------------------------------------------------- 11. arm stage 4 (post-login)
 # Plasma settings that can only be made while its shell runs — see stage4.sh.

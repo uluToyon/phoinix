@@ -4730,3 +4730,23 @@ were not wrong; they were complete and they were all negative, and a fortnight o
 complete negatives should have been read as "the fault is outside what I can
 observe" far sooner than it was. The step that solved it — asking whether anyone
 else has this hardware — was available on day one.
+
+## 2026-08-13 — LACT
+
+ulu asked for LACT in the build. It was already installed and running here, which
+made the interesting part not the package but what to do with its configuration.
+
+`lact` comes from the official `extra` repository, so `packages/apps.txt`. The
+service is the half that matters: the GUI is a client and the daemon is the only
+thing permitted to write to the GPU, so `lactd` joins the enable line in stage 3
+section 10. Its default `admin_group: wheel` is what lets ulu change anything
+without root, and stage 2 already puts him in that group.
+
+**The configuration is deliberately not captured**, and the reason is the same
+one Obsidian got on 2026-08-04: there is nothing in it. `/etc/lact/config.yaml`
+holds `current_profile: null` and no `gpus` section at all; `~/.config/lact/ui.yaml`
+is window size and which tab was open. Capturing that would restore an empty
+profile list and a window geometry. If a fan curve, a power limit or an
+undervolt is ever set, that is worth carrying and this decision is reopened —
+those are exactly the settings a rebuilt machine would otherwise lose silently,
+and the loss would show up as a hotter or slower card rather than as an error.

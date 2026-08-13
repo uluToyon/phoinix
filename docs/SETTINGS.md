@@ -267,7 +267,8 @@ rule and must grow when another one is added.
 | `plasma-localerc` | the same, so the KCM shows the truth | dec |
 | Deliberately **not** set | `LC_MESSAGES` (would translate the UI), `LC_COLLATE` (would change shell globs and `sort`) | dec |
 | Default PDF handler | `brave-browser.desktop` | dec |
-| Services | `bluetooth`, `cups`, `power-profiles-daemon` | dec |
+| Services | `bluetooth`, `cups`, `power-profiles-daemon`, `lactd` | dec |
+| `lactd` | LACT's GUI is only a client — the daemon is what may write to the GPU, so the package alone does nothing. Default `admin_group: wheel` means no root is needed to change anything. Its config is **not** captured: nothing is configured as of 2026-08-13 (`current_profile: null`, `gpus: {}`) | dec |
 | Stage-4 unit | rendered + symlinked into `plasma-workspace.target.wants` | dec |
 | Playlist export unit | rendered + symlinked into `graphical-session.target.wants`; exports on session exit | dec |
 | xlcore backup unit | same mechanism; backs up XIVLauncher settings + plugins on session exit | dec |

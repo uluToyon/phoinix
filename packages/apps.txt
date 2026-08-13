@@ -9,6 +9,13 @@ noto-fonts-cjk        # CJK glyphs — without it Japanese track titles in Straw
                       # Consumer is Strawberry today, but it fixes CJK everywhere (browser, file names).
 # mpc-qt moved to aur.txt — not in official repos (learned during stage 3)
 keepassxc             # password vault ("denk"); database lives on FilesMusic and survives reinstalls
+lact                  # GPU control for the Radeon (fan curve, power limit, undervolt).
+                      # Official `extra` package, not the AUR. Needs `lactd` enabled — the
+                      # GUI is only a client, the daemon is what may write to the GPU; see
+                      # stage 3 section 10. Its config is deliberately NOT captured: as of
+                      # 2026-08-13 nothing is configured (`current_profile: null`, `gpus: {}`),
+                      # so a capture would restore an empty profile list. Revisit if a fan
+                      # curve or a power limit is ever set — that IS worth carrying.
 obsidian              # notes; official `extra` package, no AUR variant needed. The vault is a folder
                       # inside one of ulu's own project repos, so it survives a reinstall by being on
                       # GitHub — nothing for phoinix to carry. Settings live in `.obsidian/` INSIDE the
