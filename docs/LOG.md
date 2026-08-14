@@ -4796,3 +4796,25 @@ it, because the device that suffers is the other one.
 Nothing goes into the build from this. Per ulu's standing call on 2026-08-11,
 the repo carries no check, warning or checklist entry about which port anything
 belongs in; this entry is the record, not a reminder.
+
+## 2026-08-14 — no sudo from the session
+
+ulu's sudo password stopped working. It had not changed: `pam_faillock` had locked
+the account, and two of the three strikes came from this session. Chasing the LACT
+daemon meant reading `/proc/<pid>/exe` and a root-owned config, so two `sudo` calls
+went out at 15:51:33 and 15:51:34. The harness cannot answer a password prompt, so
+PAM logged `conversation failed` twice — and faillock counts a failed conversation
+exactly like a wrong password. His own first attempt at 15:58:50 was the third, the
+default `deny=3` tripped, and for the next ten minutes his correct password was
+refused.
+
+The lock is temporary (`unlock_time=600`, counted from the last *recorded* failure;
+attempts made while locked are not recorded, so the clock does not restart), and
+`/etc/security/faillock.conf` is untouched here — these are the Arch defaults, not
+something phoinix set.
+
+**New working agreement, on ulu's go-ahead: the session never calls `sudo`.**
+Anything needing root goes to him as a command block. `sudo -n` is not the fix,
+it only fails differently. The part worth remembering is that *reading* caused
+this — the usual instinct that read-only commands are safe to run unasked is
+wrong when the authentication itself is the side effect.

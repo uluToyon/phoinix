@@ -47,6 +47,17 @@ steps are performed, never reconstructed later from memory.
   exit status of the first command and silently swallowed the rest of an
   `&&` chain (2026-08-06). Chain with `;` rather than `&&` when the later parts
   should run regardless, and say what the expected output is.
+- **Never run `sudo` from the session — hand the command to ulu instead.** This
+  harness cannot answer a password prompt, so every `sudo` call ends as
+  `pam_unix(sudo:auth): conversation failed`, and **`pam_faillock` counts each one
+  as a failed login against ulu's account**. Two such calls on 2026-08-14 (reading
+  `/proc/<pid>/exe` and a root-owned config) put two of the three strikes on his
+  counter; his first real attempt seven minutes later tripped the lock, and his
+  correct password was refused for ten minutes. `sudo -n` is no safer as a habit —
+  it merely fails differently. Anything needing root goes into a ```bash block for
+  him to run, like every other command. Reading is not an exception: it was
+  reading, not writing, that caused this. This is about the session only — the
+  stage scripts call `sudo` freely, because ulu runs them.
 - **Never ask whether to wrap up.** The session ends when ulu says so, or when
   the topic is genuinely finished — not when a chunk of work happens to close.
   Finish a topic, report it, take the next one.
