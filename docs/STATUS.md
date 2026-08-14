@@ -1,8 +1,23 @@
 # STATUS
 
-_Last updated: 2026-08-14 (session 17 — the mouse skips, and LACT back out)_
+_Last updated: 2026-08-14 (session 17 — mouse skips, LACT out, AV1 decode broken)_
 
 ## Session 17 — the tail of the audio move
+
+**ACTIVE WORKAROUND, remove when mesa is fixed.** `~/.config/brave-flags.conf`
+holds one line, `--disable-accelerated-video-decode`. AV1 hardware decoding is
+broken in **mesa 26.1.7** on this card — YouTube corrupts in one half of the
+picture, because AV1 decodes in vertical tile columns and one of them comes out
+wrong. Proven by test: with the flag, clean; without it, corrupt. `LOG.md` has
+the full account, including why testing repos and `mesa-git` were both rejected.
+
+- **Remove the file when `mesa` reaches 26.1.8 or 26.2.x**, then confirm on the
+  same kind of video. The fix is in the 26.2 cycle (Rosca, AV1 reference count);
+  Arch was still building the 26.1 branch on 2026-08-13.
+- **Deliberately not in the build.** A reinstall meets the bug again, and that is
+  the lesser evil — carried into `dotfiles/`, this line would outlive the bug and
+  quietly cripple hardware video decode on every machine phoinix builds.
+- Checking is one command: `pacman -Q mesa`.
 
 **The mouse skips came from the fix, not from the fault.** Putting the Concept 12
 on a CPU-direct port landed it on the same two-port root hub as the 8000 Hz M6.

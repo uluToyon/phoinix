@@ -4818,3 +4818,48 @@ Anything needing root goes to him as a command block. `sudo -n` is not the fix,
 it only fails differently. The part worth remembering is that *reading* caused
 this — the usual instinct that read-only commands are safe to run unasked is
 wrong when the authentication itself is the side effect.
+
+## 2026-08-14 — AV1 hardware decode is broken in mesa 26.1.7
+
+Colour corruption on YouTube, always in one half of the picture, never in games,
+never on the desktop. It looked like it started with LACT; it did not — LACT was
+removed down to the last file and the corruption stayed.
+
+The real change was the update of 2026-08-13 23:26, which first took effect at the
+reboot the next morning: `mesa` 26.1.6 → **26.1.7**, plus the new amdgpu firmware,
+kwin and ffmpeg. The codec line settled it: `av01.0.12M.08` — AV1 Main, 8 bit,
+level 5.0. With hardware decoding on, Brave does not decode AV1 itself; it hands
+the stream to VA-API and mesa drives the card's VCN unit. AV1 splits each frame
+into **tile columns** that decode independently — vertical strips, exactly the
+edges the picture was breaking along.
+
+**Confirmed by test, not by reasoning**: `--disable-accelerated-video-decode` in
+`~/.config/brave-flags.conf`, Brave restarted, same video — clean. That single
+cheap test is what separates "the decoder" from "everything else in Brave", and
+it was worth insisting on before touching a package.
+
+Upstream fits: mesa 26.1 merged the AMD video decode paths of radeonsi and RADV
+into one implementation, a large rewrite inside a stable series, and the 26.2
+cycle carries Rosca's fix for an AV1 reference-count bug that degraded hardware
+decode quality. Arch stayed on the 26.1 branch and built 26.1.7 on 2026-08-13.
+
+### Why the flags file and not a fix to the driver
+
+ulu rejected a downgrade on principle and asked about testing repos instead. The
+query settles that: `extra-testing`, `core-testing` and `extra-staging` carry no
+mesa at all — switching would move the whole system to testing packages and land
+on the same 26.1.7. He then chose `mesa-git`, and reversed it once the AUR data
+came in: `mesa-git` is at `26.3.0_devel`, but **`lib32-mesa-git` sits at
+`26.0.0_devel` and was last touched in October 2025**, while depending on
+`mesa-git`. On a machine built around Steam and Proton, the 32-bit half is not
+the half to gamble with.
+
+So the workaround stays where it is: one line in `~/.config/brave-flags.conf`.
+The CPU decodes AV1 instead of the VCN unit, which a 7800X3D does without
+dropping frames. It costs power, not playback.
+
+**Deliberately NOT carried into the build.** A reinstall tomorrow would meet the
+bug again, and that is the lesser evil: captured into the build, this line would
+outlive the bug and quietly cripple hardware video decoding on every machine
+phoinix ever produces. It is a workaround with an expiry date, so it lives in
+`STATUS.md` with the condition for removing it, not in `dotfiles/`.
