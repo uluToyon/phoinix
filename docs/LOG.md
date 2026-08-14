@@ -4750,3 +4750,16 @@ profile list and a window geometry. If a fan curve, a power limit or an
 undervolt is ever set, that is worth carrying and this decision is reopened —
 those are exactly the settings a rebuilt machine would otherwise lose silently,
 and the loss would show up as a hotter or slower card rather than as an error.
+
+## 2026-08-14 — LACT removed again
+
+ulu uninstalled LACT the day after it went in, so it comes back out of the build:
+the package line in `packages/apps.txt`, `lactd` from the enable line in stage 3
+section 10, and the two rows in `SETTINGS.md`. The entry above stays — the log is
+append-only, and the decision was correct for as long as the tool was installed.
+
+Nothing depended on it. The card ran on its defaults before and does again; no
+fan curve, power limit or undervolt was ever set, which is exactly why
+yesterday's decision not to capture LACT's configuration cost nothing today.
+A pointer stays in `apps.txt` so a future round knows what adding it back means
+rather than rediscovering that the GUI alone does nothing.
