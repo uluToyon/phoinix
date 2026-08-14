@@ -1,6 +1,24 @@
 # STATUS
 
-_Last updated: 2026-08-11 (session 16 — the audio glitching is solved: a USB controller)_
+_Last updated: 2026-08-14 (session 17 — the mouse skips, and LACT back out)_
+
+## Session 17 — the tail of the audio move
+
+**The mouse skips came from the fix, not from the fault.** Putting the Concept 12
+on a CPU-direct port landed it on the same two-port root hub as the 8000 Hz M6.
+A high-polling HID device and an isochronous audio stream sharing one USB
+controller is a scheduling conflict, not a bandwidth one, and the device that
+loses is the input one. ulu moved the input devices to the chipset controller
+instead — the better half to move; the soundbar now has `0000:72:00.4` to itself.
+**Skips gone, audio clean, confirmed 2026-08-14.** Detail in `LOG.md`; nothing
+enters the build, per the standing call below.
+
+**LACT is out again.** Added 2026-08-13, uninstalled by ulu the next day, removed
+from `apps.txt`, from the enable line in stage 3 and from `SETTINGS.md`. Free to
+undo because its configuration was never captured — there was no fan curve or
+power limit to lose. A pointer in `apps.txt` says what adding it back costs.
+
+_Previously: 2026-08-11 (session 16 — the audio glitching is solved: a USB controller)_
 
 ## Session 16 — the audio glitching is solved
 

@@ -4763,3 +4763,36 @@ fan curve, power limit or undervolt was ever set, which is exactly why
 yesterday's decision not to capture LACT's configuration cost nothing today.
 A pointer stays in `apps.txt` so a future round knows what adding it back means
 rather than rediscovering that the GUI alone does nothing.
+
+## 2026-08-14 — the mouse skips, and what shares a controller with what
+
+ulu reported pointer skips: the cursor stalls for a fraction of a second and
+resumes at a new position. **The cause was a change made here.** Moving the
+Concept 12 to a CPU-direct port put it on bus 7, and the M6 8K sat on bus 8 —
+the same `xhci_hcd 0000:72:00.4`, a two-port root hub. An 8000 Hz mouse asks the
+host controller for a transfer eight thousand times a second; a 48 kHz audio
+stream holds a reserved isochronous slot in every frame. On one controller they
+compete for the same scheduler, and the one that yields is the one that can:
+a HID report missed by a frame arrives late, which is exactly what a skip looks
+like.
+
+ulu's rearrangement is better than the one proposed here. Now:
+
+- `0000:72:00.4` (CPU) — the Teufel CONCEPT 12, alone on the controller
+- `0000:0c:00.0` (chipset) — keyboard, both Keychrons, receivers, printer, stick
+- `0000:73:00.0` (CPU) — the ASRock LED controller
+
+The proposal had been to move the audio away; moving the *input* devices away
+is the right half to move. An input device tolerates a missed slot — one late
+report in eight thousand is invisible in a way one late audio period is not.
+**Confirmed by ulu 2026-08-14: skips gone, audio clean.**
+
+The general form, worth keeping: a high-polling-rate HID device and an
+isochronous audio stream should not share a USB controller. It is not a bandwidth
+problem — bus 7 was carrying a rounding error of its capacity — it is a
+scheduling problem, and no amount of headroom or buffer on the audio side fixes
+it, because the device that suffers is the other one.
+
+Nothing goes into the build from this. Per ulu's standing call on 2026-08-11,
+the repo carries no check, warning or checklist entry about which port anything
+belongs in; this entry is the record, not a reminder.
