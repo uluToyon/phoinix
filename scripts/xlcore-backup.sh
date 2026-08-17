@@ -5,20 +5,38 @@
 #
 # XIVLauncher's directory is ~2.7 GB, of which almost everything rebuilds
 # itself: the Proton prefix, Dalamud, the .NET runtime, Dalamud's assets, and
-# Browsingway's embedded browser. That last one is 623 MB under
-# pluginConfigs/Browsingway/ — `cef-cache` really is cache, but `dependencies`
-# is the CEF runtime Browsingway downloads and RUNS FROM (its helper processes
-# were seen executing out of there). It is excluded because it re-downloads,
-# not because it is disposable; the distinction matters if that download ever
-# stops working. Browsingway's actual settings are the 2.8 KB
-# Browsingway.json beside the directory, and that one IS carried. What does NOT
-# come back on its own is roughly 80 MB:
+# Browsingway's embedded browser. That last one is 797 MB under
+# pluginConfigs/Browsingway/ — `dependencies` (363 MB) is the CEF runtime
+# Browsingway downloads and RUNS FROM (its helper processes were seen executing
+# out of there), and `cef-cache` (434 MB) is the browser profile. Both are
+# excluded because they re-download, not because they are disposable; the
+# distinction matters if that download ever stops working.
+#
+# ONE EXCEPTION inside cef-cache, and it is not an optimisation but a
+# correction. This header used to claim "cef-cache really is cache". It is not.
+# Browsingway gives every overlay its own Chromium profile, named after the
+# overlay, and each profile's `Local Storage` holds THAT OVERLAY'S SETTINGS —
+# MopiMopi's configuration, cactbot's UI options, Horizoverlay's layout. Found
+# on 2026-08-17 while reading MopiMopi's stored language out of that very
+# database. Excluding it would have cost every overlay setting at the next
+# reinstall, silently, with the browser looking freshly installed rather than
+# broken. Carrying it costs 316 KB against 797 MB, so the ratio never made the
+# old decision worth defending.
+#
+# Caveat on those files: they are LevelDB databases, and this script runs at
+# session exit, normally with the game already closed. If FFXIV is somehow
+# still running, a database can be copied mid-write. The overlay then falls
+# back to its defaults on restore — the same outcome as not carrying it at all,
+# so the risk is worth taking rather than guarding against.
+#
+# What does NOT come back on its own is roughly 80 MB:
 #
 #   launcher.ini        launcher settings — Proton/DXVK/Dalamud, and the paths
 #   accounts.json       account identity — SECRET, hence 0600 and never the repo
 #   dalamudConfig.json  the plugin PROFILE and the third-party repo list
 #   dalamudUI.ini       Dalamud window layout
-#   pluginConfigs/      per-plugin settings, minus Browsingway's cache directory
+#   pluginConfigs/      per-plugin settings, minus Browsingway's bulk
+#   .../Browsingway/cef-cache/*/Local Storage/   the overlays' own settings
 #   installedPlugins/   the plugin binaries themselves
 #
 # The binaries are carried deliberately (ulu's call): the profile alone would
@@ -66,6 +84,24 @@ done
 # rid of.
 rsync -a --delete --exclude='Browsingway/' \
       "$XL/pluginConfigs/" "$XLCORE_BACKUP_DIR/pluginConfigs/"
+
+# The exclude above protects the backup's own Browsingway tree from --delete,
+# which is what lets this second pass fill it in. Only `Local Storage` is
+# carried — the overlays' settings, see the header. --prune-empty-dirs is not
+# cosmetic: without it the backup would mirror every one of the ~40 profile
+# and cache directories just to reach the handful that hold anything.
+CEF="$XL/pluginConfigs/Browsingway/cef-cache"
+if [[ -d "$CEF" ]]; then
+    # rsync creates only the LAST component of a destination path. The
+    # Browsingway level above it never exists on the first run — the pass above
+    # excludes exactly that directory — so rsync would abort with ENOENT
+    # instead of creating it. Measured, not guessed.
+    install -d "$XLCORE_BACKUP_DIR/pluginConfigs/Browsingway/cef-cache"
+    rsync -a --delete --prune-empty-dirs \
+          --include='*/' --include='Local Storage/***' --exclude='*' \
+          "$CEF/" "$XLCORE_BACKUP_DIR/pluginConfigs/Browsingway/cef-cache/"
+fi
+
 rsync -a --delete "$XL/installedPlugins/" "$XLCORE_BACKUP_DIR/installedPlugins/"
 
 echo "xlcore backup -> $XLCORE_BACKUP_DIR ($(du -sh "$XLCORE_BACKUP_DIR" | cut -f1))"

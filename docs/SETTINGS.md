@@ -795,13 +795,14 @@ took ulu's `GameModeEnabled=true` with it on the day the unit was written.
 | `accounts.json` | **credential** — account name and last OTP; 0600, never the repo |
 | `dalamudConfig.json` | the plugin **profile** (10 plugins with enabled state) and the **third-party repo list** |
 | `dalamudUI.ini` | Dalamud window layout |
-| `pluginConfigs/` | per-plugin settings, **minus** `Browsingway/` |
+| `pluginConfigs/` | per-plugin settings, **minus** Browsingway's bulk |
+| `pluginConfigs/Browsingway/cef-cache/*/Local Storage/` | 232 KB — **each overlay's own settings**: MopiMopi, cactbot, Horizoverlay. Browsingway gives every overlay a Chromium profile named after it, and the settings live in that profile's localStorage, not in `Browsingway.json`. Added 2026-08-17 after the old "cef-cache is just cache" assumption was disproved — see `LOG.md` |
 | `installedPlugins/` | the plugin binaries, ~79 MB |
 
 | Not carried | Size | Why |
 |---|---|---|
 | `protonprefix` | 954 MB | rebuilt on demand |
-| `pluginConfigs/Browsingway/` | 623 MB | `dependencies` + `cef-cache`; its settings are the 2.8 KB `Browsingway.json` beside it |
+| `pluginConfigs/Browsingway/` | 797 MB | `dependencies` (363 MB, the CEF runtime it runs from) + `cef-cache` (434 MB); both re-download. The exception is each profile's `Local Storage`, which is settings and IS carried — row above |
 | `dalamud`, `runtime`, `dalamudAssets` | 680 MB | downloaded by Dalamud itself |
 | `ffxivConfig` | — | **already lives on the games disk**; `GameConfigPath` points there, so it survives by construction |
 

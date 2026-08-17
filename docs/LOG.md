@@ -4878,3 +4878,54 @@ double-clicking a config file, and editing with a mouse.
 there is nothing in it. Kate is not installed at the time of writing, so
 `~/.config/katerc` does not exist. Revisit if sessions, a colour scheme or plugins
 are ever set up — those are worth carrying, an empty file is not.
+
+## 2026-08-17 — cef-cache is not just cache
+
+The xlcore backup excluded `pluginConfigs/Browsingway/` whole, and this header
+line was the reason: "`cef-cache` really is cache". It is not, and the correction
+came out of an unrelated question.
+
+ulu could not get MopiMopi to keep its language — set to English, Korean again
+after the next start. Finding out why meant reading the stored value, and it sits
+in `cef-cache/mopi/Local Storage/leveldb`, under the key `Mopi2_HAERU`. That is
+where **every** overlay keeps its settings: Browsingway gives each overlay its own
+Chromium profile, named after the overlay, and the settings live in that profile's
+localStorage rather than in `Browsingway.json`. cactbot's UI options and
+Horizoverlay's layout are in there the same way.
+
+So a reinstall would have come up with every overlay reset to defaults, and it
+would have looked like a fresh browser rather than like data loss — nothing would
+have pointed at the backup.
+
+**Fixed by a second, narrow pass** rather than by loosening the exclude. The first
+`rsync` still excludes `Browsingway/` whole, which is also what protects the
+backup's own copy from its `--delete`; the second carries only `Local Storage`
+out of the cache tree. `--prune-empty-dirs` keeps it from mirroring ~40 profile
+and cache directories to reach the six that hold anything. 232 KB against 797 MB
+— the ratio is such that the old decision was never worth defending, it was just
+never questioned.
+
+Two things learned in the doing, both recorded in the script:
+
+- **`rsync` creates only the last component of a destination path.** The
+  `Browsingway/` level never exists in the backup, precisely because the first
+  pass excludes it, so the second aborted with ENOENT until an `install -d` went
+  in front of it. Found by running it, not by reading it.
+- **The restore needed no change.** Stage 3 copies `pluginConfigs` as a whole when
+  it is absent, so the new files ride along. Verified before writing anything.
+
+The files are LevelDB databases and the backup runs at session exit, normally with
+the game closed. A copy taken mid-write would leave that overlay on its defaults —
+the same outcome as not carrying it at all, which is why this is a noted caveat and
+not a guard.
+
+Unrelated, same session, recorded because the answer is "no": the Dalamud plugin
+**Discord Rich Presence** cannot load here. Its constructor builds its services
+only when `CheckBinaries()` passes — true off Wine, or when Wine supports AF_UNIX
+— and then calls `SetDefaultPresence()` unconditionally, which dereferences those
+services. Under GE-Proton10-34 via umu the check fails and the plugin dies on a
+NullReferenceException, identically on every attempt. There is no newer build: the
+testing version (2.0.9.5) is OLDER than the stable one (2.0.9.7). A bridge in the
+prefix was rejected as too much machinery for an uncertain result, ulu dropped the
+topic, and Discord's built-in "registered games" remains the way to get the game
+name shown.
