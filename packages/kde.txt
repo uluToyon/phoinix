@@ -34,6 +34,12 @@ isoimagewriter        # ISO → USB stick; distro-hopper essential, Qt-native
 kcalc                 # calculator, Qt-native. Was ALREADY installed here explicitly and required by
                       # nothing, yet stood in no package list — a reinstall would have lost it in
                       # silence. Found 2026-07-31 while adding it on request.
+kate                  # GUI text editor, Qt-native. The counterpart to micro (pacstrap.txt), which
+                      # stays the terminal editor — this is the one for "double-click a config file"
+                      # and for editing with a mouse. Pulls only KDE Frameworks that Plasma already
+                      # brings, so 35 MB installed and no new stack. Its config lives in
+                      # ~/.config/katerc and is NOT captured yet: nothing is configured as of
+                      # 2026-08-14. Revisit if sessions, a colour scheme or plugins get set up.
 kdeconnect            # phone integration: notifications, clipboard, file transfer, remote input.
                       # ulu asked for it as "kconnect"; no such package exists, the name is kdeconnect.
                       # Nothing to open in nftables: our table has NO input chain at all (only the

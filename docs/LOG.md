@@ -4863,3 +4863,18 @@ bug again, and that is the lesser evil: captured into the build, this line would
 outlive the bug and quietly cripple hardware video decoding on every machine
 phoinix ever produces. It is a workaround with an expiry date, so it lives in
 `STATUS.md` with the condition for removing it, not in `dotfiles/`.
+
+## 2026-08-14 — Kate
+
+ulu asked for Kate in the build. It goes in `packages/kde.txt` under the KDE apps,
+next to dolphin and konsole: it is a Plasma application and pulls only Frameworks
+the desktop already has, so 35 MB installed and no new stack.
+
+It does not replace anything. `micro` stays in `pacstrap.txt` as the terminal
+editor — that one has to exist before a desktop does. Kate is the other half:
+double-clicking a config file, and editing with a mouse.
+
+**Configuration deliberately not captured**, same reason Obsidian and LACT got:
+there is nothing in it. Kate is not installed at the time of writing, so
+`~/.config/katerc` does not exist. Revisit if sessions, a colour scheme or plugins
+are ever set up — those are worth carrying, an empty file is not.
