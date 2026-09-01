@@ -1,6 +1,47 @@
 # STATUS
 
-_Last updated: 2026-08-14 (session 17 — mouse skips, LACT out, AV1 decode broken)_
+_Last updated: 2026-09-01 (session 18 — the split tunnel's DNS reached no application)_
+
+## Session 18 — the names were leaking the whole time
+
+**The split tunnel's DNS half never covered a single application, from
+2026-08-06 until today.** `dns_out` rewrites DNS packets addressed to the
+resolved stub; on stock Arch no application sends one, because `resolve`
+(nss-resolve) in `/etc/nsswitch.conf` hands every `getaddrinfo()` to
+systemd-resolved over a varlink socket. resolved is not in `vpnonly`, so it
+asked the ISP. qBittorrent's traffic went through Switzerland while every
+tracker name it looked up went to Vodafone.
+
+Nothing about it looked wrong: the rules loaded, the counters counted, egress was
+Proton, the drop counter was 0. The `dns_out` counter told the truth — **1
+packet** since boot, and that one was the test query that found this.
+
+**Fixed in stage 2**: `resolve` removed from the `hosts:` line, edited in place
+(pacman backup file — a repo copy would freeze upstream out forever). Verified
+with DNS isolated from connectivity: in `vpnonly` the resolver is now
+`62.169.136.26` and egress `62.169.136.48`, both Proton/Zurich; outside, both
+Vodafone. `check-drift.sh` watches the line and flags a `.pacnew`, because that
+is how the leak comes back — silently, with everything else still looking right.
+
+**The 2026-08-06 entry claiming this was closed stands corrected in `LOG.md`.**
+It verified against the rule instead of against an application, and everything
+that speaks straight to `127.0.0.53` takes the path that already worked.
+
+**Also recorded, because it cost the session an hour:** the reliability numbers
+measured mid-way — 19 % lost replies, 20-second lookups — were self-inflicted.
+Several hundred random test names meant several hundred cache misses forwarded
+to Proton, which rate-limited. After seven idle minutes: ten real names, 0.04 s
+average, no failures. A synthetic DNS test with unique names is a harsher load
+than real traffic, not a smaller one.
+
+**A summary from another session was wrong in its core claim** and is worth
+knowing about: it read the positive `fwmark 0x51` rule, could not read the
+ruleset without root, and concluded that nothing sets the mark and the tunnel
+carries nothing. `mark_out` sets it. Its proposed fixes — negate the rule,
+install Proton's app, delete the connections — would each have destroyed a
+working split tunnel.
+
+_Previously: 2026-08-14 (session 17 — mouse skips, LACT out, AV1 decode broken)_
 
 ## Session 17 — the tail of the audio move
 

@@ -270,6 +270,35 @@ if (( ${#uncovered[@]} )); then
     printf '      Add them to REPO_OWNED or REPO_TEMPLATED in this script.\n'
 fi
 
+# nss-resolve must stay OUT of the hosts line on a VPN host.
+#
+# A check rather than a file comparison, because the repo does not own
+# /etc/nsswitch.conf: stage 2 edits the packaged file in place, since it is a
+# pacman backup file and a repo copy would freeze upstream's other lines out
+# forever.
+#
+# It is checked at all because the coupling is invisible. With `resolve` back in
+# that line every nftables rule still loads, every counter still looks healthy,
+# egress is still Proton — and the group's NAME lookups leave past the tunnel
+# again with nothing to show for it. That was the true state from 2026-08-06
+# until it was measured on 2026-09-01. A `.pacnew` from a `filesystem` update is
+# how it comes back, so that is checked too.
+if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
+    if [[ ! -r /etc/nsswitch.conf ]]; then
+        report volatile "/etc/nsswitch.conf (hosts: no nss-resolve)" \
+            "not readable here — check by hand"
+    elif grep -qE '^[[:space:]]*hosts:.*\bresolve\b' /etc/nsswitch.conf; then
+        report drift "/etc/nsswitch.conf (hosts: no nss-resolve)" \
+            "nss-resolve is back: the group's DNS never reaches dns_out and leaves past the tunnel — remove 'resolve' from the hosts line"
+    else
+        report same "/etc/nsswitch.conf (hosts: no nss-resolve)"
+    fi
+    if [[ -e /etc/nsswitch.conf.pacnew ]]; then
+        report drift "/etc/nsswitch.conf.pacnew" \
+            "a package update left a .pacnew — merge it, and keep 'resolve' out of the hosts line"
+    fi
+fi
+
 # authorized_keys, compared by KEY MATERIAL only. The repo's copy deliberately
 # carries a sanitised comment (`ulu@laptop`) where the live file has whatever
 # ssh-keygen wrote — CLAUDE.md forbids a real name or address in any repo file,

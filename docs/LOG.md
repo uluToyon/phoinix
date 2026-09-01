@@ -4929,3 +4929,111 @@ testing version (2.0.9.5) is OLDER than the stable one (2.0.9.7). A bridge in th
 prefix was rejected as too much machinery for an uncertain result, ulu dropped the
 topic, and Discord's built-in "registered games" remains the way to get the game
 name shown.
+
+## 2026-09-01 — the split tunnel's DNS never covered a single application
+
+The session started from a summary written elsewhere, which reported `proton0`
+as configured but dead: the policy rule matches `fwmark 0x51` POSITIVELY, and
+"nobody sets `0x51`, so not one byte of payload goes through the tunnel".
+
+**That finding was wrong, and the way it was reached is the instructive part.**
+The mark is set — by `mark_out` in `/etc/nftables.conf`, `meta skgid "vpnonly"`.
+The positive rule is the design, documented since 2026-07-31. What the other
+session could not do was read the ruleset without root, and it turned "I cannot
+see anything setting this" into "nothing sets this". It then proposed negating
+the rule, installing Proton's app, or deleting the connections — any of which
+would have destroyed a working split tunnel. Low tunnel counters are what an
+idle qBittorrent looks like, not what a broken tunnel looks like.
+
+Measured instead, in one shell: ordinary traffic leaves as `92.208.166.174`
+(Vodafone), traffic in `vpnonly` as `62.169.136.48` (Proton, Zurich). The
+packet half was never broken.
+
+### The real defect, and it had stood since 2026-08-06
+
+The group's NAMES did not go through the tunnel, and the entry of 2026-08-06
+that says they do was verified along a path no application takes.
+
+`dns_out` rewrites DNS *packets* addressed to `127.0.0.53`. On stock Arch nothing
+sends one. `/etc/nsswitch.conf` ships as
+
+    hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
+
+and `resolve` is nss-resolve, which hands every `getaddrinfo()` to
+systemd-resolved over a VARLINK SOCKET. No packet, therefore no match, therefore
+no rewrite — and resolved, not being in `vpnonly`, asked the ISP over the
+ordinary line. Every tracker qBittorrent looked up was visible to Vodafone,
+while its traffic went through Switzerland.
+
+Three measurements, from one shell inside the group:
+
+- raw UDP query to `127.0.0.53` — answered by `62.169.136.24`, Proton. The path
+  `dns_out` was built for works, and always did.
+- `curl`, i.e. `getaddrinfo()` — answered by `139.7.81.13`, Vodafone.
+- `nft list table inet phoinix_vpnonly`: the `dns_out` counter stood at
+  **1 packet, 69 bytes** — the single raw query above, and nothing else since
+  the ruleset was loaded.
+
+**Why the 2026-08-06 verification missed it.** It measured the counters and
+queried the stub directly. Everything that speaks straight to `127.0.0.53` — a
+DNS test tool, a hand-built query — takes the path that works. `bind-tools` is
+not even installed on this machine, which makes it likelier still that the check
+was made against the rule rather than against an application. A verification has
+to travel the path the real thing travels, or it verifies the wrong sentence.
+
+### The fix
+
+`resolve` removed from the `hosts:` line by stage 2. glibc falls back to the
+`dns` module, reads `resolv.conf`, sends the packet — and the machinery built on
+2026-08-06 applies to applications for the first time. resolved still answers on
+`127.0.0.53`, still per link, still serving LLMNR and mDNS through that stub;
+only the transport from glibc to it changes.
+
+Edited IN PLACE rather than shipped as a repo copy. `/etc/nsswitch.conf` is a
+pacman backup file owned by `filesystem`, so the edit survives updates and an
+upstream change to the rest of the file arrives as a `.pacnew` instead of being
+frozen out by a copy the repo would then own forever. The `sed` is idempotent,
+was tested on a copy first, and touches exactly one line; stage 2 hard-fails if
+`resolve` is still there afterwards, because this fails silently and in the
+leaking direction.
+
+`check-drift.sh` now checks the `hosts:` line and flags an
+`/etc/nsswitch.conf.pacnew`. The coupling is invisible otherwise: with `resolve`
+back, every rule still loads, every counter still reads healthy, egress is still
+Proton — and the names leak again with nothing to show for it. The same note is
+in `nftables.conf` above `dns_out`, where someone reading the rule will meet it.
+
+### Verified afterwards
+
+DNS isolated from connectivity — every HTTP hop pinned to a fixed address, only
+the token name resolved:
+
+| | resolver | egress |
+|---|---|---|
+| ordinary | `139.7.81.12` Vodafone, DE | `92.208.166.174` Vodafone |
+| in `vpnonly` | `62.169.136.26` **Proton, CH** | `62.169.136.48` **Proton, CH** |
+
+Both halves now leave through the tunnel. Ten real names resolve in 0.00–0.14 s
+from inside the group, no timeouts.
+
+### One measurement was ruined, and by me
+
+Between those two states the reliability figures were worthless. Testing the
+resolver with several hundred RANDOM names meant several hundred cache misses
+forwarded straight to Proton, which rate-limited the source. Under that load the
+group showed 19 % lost replies, 5-second retries and 20-second lookups; after
+seven idle minutes the same ten names came back in 0.04 s average with no
+failures. The load was the cause, not the change.
+
+Worth keeping for the next time: a synthetic DNS test with unique names is not a
+smaller version of real traffic, it is a different and much harsher one — real
+lookups repeat and cache. And a measurement that gets worse the longer it runs
+is measuring the measurement.
+
+One real observation survives, unproven in impact: glibc sends the A and AAAA
+queries in parallel over one socket, and that pattern lost replies noticeably
+more often than a serial one. `RES_OPTIONS=single-request-reopen` in the
+launcher was prepared as the counter-measure and NOT applied — after the
+rate limit expired the parallel pattern was clean, so it would have been a fix
+for a symptom that no longer exists. Recorded here so the next person who sees
+5-second lookups in the group has somewhere to start.

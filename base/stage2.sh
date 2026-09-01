@@ -216,6 +216,49 @@ if [[ -n "${VPN_CONFIG_DIR:-}" ]]; then
         umount /etc/resolv.conf
     fi
     ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+    # The half without which the DNS rewrite reaches nothing.
+    #
+    # `dns_out` in nftables.conf rewrites DNS that is addressed to the
+    # systemd-resolved stub. On stock Arch, nothing addresses it. The packaged
+    # /etc/nsswitch.conf reads
+    #
+    #     hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
+    #
+    # and `resolve` is nss-resolve, which hands every getaddrinfo() to
+    # systemd-resolved over a VARLINK SOCKET. No DNS packet is ever sent, so no
+    # rule can match one, and resolved — which is not in VPN_GROUP — then asks
+    # the ISP's resolver over the ordinary line. The tunnel still carries the
+    # group's PACKETS; its NAMES went out in the clear.
+    #
+    # This is not a regression. It was true from the day the forwarder was
+    # built (2026-08-06) and the verification that day missed it, because
+    # everything that speaks straight to `127.0.0.53` — which is what a DNS
+    # test tool does — takes the path that works. Measured on 2026-09-01 from
+    # one shell inside the group: a raw query to 127.0.0.53 was answered by
+    # Proton, `curl` in the same shell was answered by Vodafone, and the
+    # dns_out counter stood at exactly the one packet the raw test had sent.
+    #
+    # Removing `resolve` puts glibc back on the `dns` module, which reads
+    # resolv.conf and sends the packet — so the mechanism built on 2026-08-06
+    # applies to applications for the first time. Nothing else changes:
+    # resolved is still what answers on 127.0.0.53, still per-link, and still
+    # serves LLMNR and mDNS through that stub.
+    #
+    # Edited in place rather than replaced by a repo copy. /etc/nsswitch.conf is
+    # a pacman BACKUP file owned by `filesystem`, so the edit survives package
+    # updates and an upstream change to the rest of the file arrives as a
+    # .pacnew instead of being frozen out by a copy the repo would then own
+    # forever. Idempotent: a second run finds nothing left to remove.
+    sed -i -E '/^[[:space:]]*hosts:/ s/[[:space:]]+resolve\b([[:space:]]*\[[^]]*\])?//g' \
+        /etc/nsswitch.conf
+    # Verified, not assumed — this one fails SILENTLY and in the leaking
+    # direction, which is the combination that earns a hard stop.
+    if grep -qE '^[[:space:]]*hosts:.*\bresolve\b' /etc/nsswitch.conf; then
+        echo "ERROR: nsswitch.conf still resolves hosts through nss-resolve."
+        echo "       The group's name lookups would bypass the tunnel."
+        exit 1
+    fi
 fi
 
 # ----------------------------------------------------------------- services

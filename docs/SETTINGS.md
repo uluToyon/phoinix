@@ -425,9 +425,20 @@ application. Rationale in `LOG.md` 2026-07-31.
 | `VPN_DNS` | `10.2.0.1` — Proton's resolver INSIDE the tunnel. Unreachable from outside, which is what makes the whole DNS path fail closed | dec |
 | `VPN_DNS_STUB` | `127.0.0.61` — where the group's lookups are rewritten to. **Not** `127.0.0.54`: systemd-resolved already listens there | dec |
 | `dns_out` chain | `skgid vpnonly, daddr 127.0.0.53, dport 53 → dnat to 127.0.0.61`. Loopback to loopback on purpose — see below | dec |
+| `/etc/nsswitch.conf` | `resolve` **removed** from the `hosts:` line (2026-09-01, stage 2, edited in place). Without it `dns_out` matches nothing: nss-resolve hands every `getaddrinfo()` to systemd-resolved over a varlink socket, so no DNS packet is ever sent and resolved — not in `VPN_GROUP` — asks the ISP. `LOG.md` 2026-09-01 | dec |
 | `phoinix-vpn-dns.service` | dnsmasq bound to `VPN_DNS_STUB` only, `--keep-in-foreground` (never `--no-daemon`), drops to `dnsmasq:vpnonly`, `--no-resolv` | dec |
 | NM dispatcher | `50-phoinix-vpn-dns` restarts that forwarder whenever `proton0` changes state — its upstream socket does not survive a rebuilt tunnel | dec |
 | Port forwarding | **dropped 2026-07-31** (ulu's call). It needed qBittorrent's WebUI as its only delivery channel, and both servers in use refuse NAT-PMP anyway. Torrenting works without it; it costs peers | dec |
+
+**The DNS half needs both pieces, and only one of them is a rule.** `dns_out`
+rewrites DNS *packets* addressed to the resolved stub; on stock Arch no
+application sends one, because `resolve` in the `hosts:` line routes
+`getaddrinfo()` through a varlink socket instead. Both must be right, and only
+the first is visible in the ruleset — with `resolve` present the counters, the
+egress address and the drop counter all read healthy while every tracker name
+goes to the ISP. `check-drift.sh` therefore checks the `hosts:` line explicitly,
+and flags an `/etc/nsswitch.conf.pacnew` as drift, because a `filesystem` update
+is how the leak comes back.
 
 **A namespace was built and removed on 2026-08-06.** It worked — qBittorrent
 ran with the tunnel as its only interface — and it cost NetworkManager's applet:
