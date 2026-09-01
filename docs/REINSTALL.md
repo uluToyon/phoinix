@@ -38,8 +38,15 @@ ls -lR /mnt/FilesMusic/phoinix
 
 Expect `ssh/github_ed25519` (0600) with its `.pub`, `dzgui-private.json`
 (0600), `dzgui-icon.png`, `claude-settings.local.json`, `vpn/` with both
-`.conf` files at 0600 (CH and NL), `xlcore-backup/` at ~80 MB, and `rescue/`
-(see below). No `git-credentials` — the token was retired 2026-08-04.
+`.conf` files at 0600 (CH and NL), `xlcore-backup/` at ~80 MB, `kde-theme/`
+(~1.9 MB, `KDE_THEME_DIR`), `Wallpapers/` (~6.3 MB, read by stage 4's
+`WALLPAPERS`) and `rescue/` (see below). No `git-credentials` — the token was
+retired 2026-08-04.
+
+`kde-theme/` and `Wallpapers/` were **missing from this list until 2026-09-01**
+although both stages have read them from here for weeks. They were on the disk,
+so nothing broke; the point of the list is that a missing one is noticed *here*
+rather than as a warning halfway through stage 3.
 
 Two of those go stale unless refreshed by hand, because both are snapshots of
 something that keeps changing — `xlcore-backup/` (run
@@ -58,10 +65,27 @@ data disk first — both are tiny:
 
 ```
 install -d $PHOINIX_DATA/rescue
-cp -a ~/.ssh         $PHOINIX_DATA/rescue/ssh
-cp -a ~/.claude      $PHOINIX_DATA/rescue/claude
-cp -a ~/.claude.json $PHOINIX_DATA/rescue/claude.json
+rsync -a --delete ~/.ssh/    $PHOINIX_DATA/rescue/ssh/
+rsync -a --delete ~/.claude/ $PHOINIX_DATA/rescue/claude/
+cp -a ~/.claude.json         $PHOINIX_DATA/rescue/claude.json
 ```
+
+Check it landed, rather than trusting a silent success:
+
+```
+find $PHOINIX_DATA/rescue -name '*.jsonl' -newermt "$(date -d '2 weeks ago' +%F)" | wc -l
+```
+
+**`rsync -a --delete`, not `cp -a` — corrected 2026-09-01.** The `cp -a` that
+stood here is right exactly once. On the SECOND run the destination already
+exists, so `cp` copies *into* it and leaves `rescue/claude/.claude` next to the
+untouched old copy. It exits 0 and the directory looks populated, which is how
+this went unnoticed for a month: on 2026-09-01 the rescue copy was still the one
+made on 08-01, and every transcript from sessions 13-18 existed only on the disk
+stage 1 formats. `rsync` with a trailing slash on both sides replaces the
+contents instead of nesting, and `--delete` keeps a deleted file from living on
+in the copy forever. The count above is the proof — a rescue that is a month
+stale returns 0.
 
 (`PHOINIX_DATA` is `/mnt/FilesMusic/phoinix` — see `hosts/desktop/config.sh`.
 The rescue copy lives there with everything else the repo cannot carry, ulu's
@@ -73,8 +97,11 @@ to remember.)
   reached with `$PHOINIX_DATA/ssh/github_ed25519`, which stage 3 installs by
   itself — it is not a rescue item but a first-class one, like the VPN configs,
   and it is still NOT in the repo and never may be (DESIGN.md "Never in the
-  repo"). What the `cp -a ~/.ssh` above now saves is `authorized_keys` and
-  `known_hosts`, neither of which is irreplaceable.
+  repo"). What the `~/.ssh` copy above saves is `authorized_keys` and
+  `known_hosts`, neither of which is irreplaceable. It does sweep up
+  `github_ed25519` as well, because stage 3 installs the key there — that is a
+  second copy on the same disk as the first-class one, not a second home for it.
+  Restore the key from `$PHOINIX_DATA/ssh/`, which is where the scripts look.
 - `~/.claude` — the session transcripts. There is no other copy: every
   transcript older than 2026-08-01 was deleted that day. They had already
   proved their worth once — the soundbar's `−26 dB` and its reason were
@@ -83,11 +110,15 @@ to remember.)
 - `~/.claude.json` — on the list since 2026-08-01. It was never part of the
   rescue before, sat only in the old backup, and went when that was deleted.
 
-Made fresh on 2026-08-01 before the second reinstall, in
-`/mnt/FilesMusic/phoinix/rescue/` (`ssh/`, `claude/`, `claude.json`). The
-2026-07-31 copy on the Downloads disk was deleted earlier that day once the key
-had been restored from it — and that near-miss is why this list exists at all:
-a private key that lives in exactly one place is one wipe away from gone.
+Made fresh on 2026-09-01 before the third reinstall, in
+`/mnt/FilesMusic/phoinix/rescue/` (`ssh/`, `claude/`, `claude.json`) — 53 MB,
+transcripts up to that day. The copy before it was made on 2026-08-01 and had
+not moved since; that is the `cp -a` trap above.
+
+The oldest copy of all, on the Downloads disk, was deleted on 2026-07-31 once
+the key had been restored from it — and that near-miss is why this list exists
+at all: a private key that lives in exactly one place is one wipe away from
+gone.
 
 Since 2026-08-04 that no longer applies to the GitHub key, which has a
 first-class home of its own and a stage that installs it. It still applies

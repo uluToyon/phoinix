@@ -51,6 +51,16 @@ VOLATILE=(".local/state/wireplumber/stream-properties")
 #   compared here is the channel map and the mute state, which are settings.
 SEEDED_ROUTES=".local/state/wireplumber/default-routes"
 
+#   kwinoutputconfig.json — TWO exemptions live on this file. The second one,
+#   added 2026-09-01: the REFRESH RATES are seeded, not maintained. ulu runs
+#   DP-1 and DP-3 at 144 Hz on this machine and wants a fresh install to come up
+#   at 170 and 180 instead, so the repo copy differs from the live file BY
+#   DESIGN and a byte compare would report it forever. The rates are therefore
+#   dropped from the structural compare — and printed underneath it instead, per
+#   connector, so a change on either side is still visible. Hiding them outright
+#   would hide DP-2's 144, which is not a preference but the fix that keeps a
+#   fresh install from booting to a black screen.
+#
 #   kwinoutputconfig.json — KWin remembers every screen COMBINATION it has ever
 #   seen, and re-writes all of them at logout. Some are learned during boots
 #   where the outputs were not all up yet, so they accumulate on their own and
@@ -74,18 +84,58 @@ strip_phoinix_hook() {
     | awk 'NF { last = NR } { line[NR] = $0 } END { for (i = 1; i <= last; i++) print line[i] }'
 }
 
-# default-routes is "<route>={<json>}" per line, and wireplumber rewrites that
-# JSON with the keys in whatever order it feels like — the same content produced
-# a different file three times in one afternoon. Comparing bytes therefore
-# reports drift that is not there. This re-serialises each line with sorted keys
-# and drops the volume, so what is left to compare is the channel map and the
-# mute state: the parts that are settings rather than a knob ulu turned.
-normalise_routes() {
-    python3 - "$1" <<'PYEOF'
-import json, sys
+# WirePlumber's three state files need the same treatment for three reasons,
+# so they share one normaliser: normalise_wp <file> <reference>.
+#
+#   1. default-routes is "<route>={<json>}" per line, and wireplumber rewrites
+#      that JSON with the keys in whatever order it feels like — the same
+#      content produced a different file three times in one afternoon.
+#      Comparing bytes therefore reports drift that is not there. Each line is
+#      re-serialised with sorted keys and the volume dropped, so what is left to
+#      compare is the channel map and the mute state: the parts that are
+#      settings rather than a knob ulu turned.
+#
+#   2. default-nodes carries a HISTORY beside the setting. The real default sink
+#      is the unnumbered `default.configured.audio.sink`; the numbered
+#      `…sink.0`, `…sink.1`, … are nodes that were configured at some point and
+#      never expire. That list only grows, so it is dropped.
+#
+#   3. All three accumulate entries for DEVICES THAT ARE NOT IN THE CAPTURE.
+#      A key whose name does not appear in the repo copy is a device that
+#      turned up afterwards, and a machine growing a sound device is not this
+#      repo drifting. What IS still compared is every key the capture knows —
+#      including one that has gone missing on the live side, which is worth
+#      hearing about.
+#
+# Added 2026-09-01, after all three reported drift at once and not one of them
+# had a changed setting in it: the card's HDMI audio had moved from PCI
+# 0000:0b:00.1 to 0000:03:00.1 and each file had simply grown the new path.
+# Three files of noise around zero findings is how a check stops being read.
+normalise_wp() {
+    python3 - "$1" "$2" <<'PYEOF'
+import json, re, sys
+
+HISTORY = re.compile(r"^default\.configured\.audio\.(sink|source)\.\d+=")
+
+def keyset(path):
+    ks = set()
+    for line in open(path):
+        t = line.strip()
+        if not t or t.startswith("[") or HISTORY.match(t) or "=" not in t:
+            continue
+        ks.add(t.split("=", 1)[0])
+    return ks
+
+known = keyset(sys.argv[2])
+
 for line in open(sys.argv[1]):
     line = line.rstrip("\n")
+    t = line.strip()
+    if not t or HISTORY.match(t):
+        continue
     head, sep, tail = line.partition("=")
+    if sep and not t.startswith("[") and head.strip() not in known:
+        continue
     if sep and tail.startswith("{"):
         try:
             obj = json.loads(tail)
@@ -113,6 +163,9 @@ main = sys.argv[2]
 outs = next((e["data"] for e in doc
              if isinstance(e, dict) and e.get("name") == "outputs"), [])
 name = {i: o.get("connectorName") for i, o in enumerate(outs) if isinstance(o, dict)}
+for o in outs:
+    if isinstance(o, dict) and isinstance(o.get("mode"), dict):
+        o["mode"].pop("refreshRate", None)
 for e in doc:
     if isinstance(e, dict) and e.get("name") == "setups":
         e["data"] = [s for s in e["data"]
@@ -120,6 +173,42 @@ for e in doc:
                          if o.get("priority") == 1] == [main]]
 print(json.dumps(doc, sort_keys=True, indent=1))
 PYEOF
+}
+
+# The rates the structural compare above drops, said out loud. Seeded values are
+# not secret ones: the repo decides what a fresh machine starts at, ulu is free
+# to run something else, and both numbers belong on screen so neither can change
+# unnoticed.
+report_screen_rates() {   # <repo file> <live file> <label>
+    local out
+    out="$(python3 - "$1" "$2" <<'PYEOF'
+import json, sys
+
+def rates(path):
+    try:
+        doc = json.load(open(path))
+    except (OSError, ValueError):
+        return None
+    outs = next((e["data"] for e in doc
+                 if isinstance(e, dict) and e.get("name") == "outputs"), [])
+    return {o.get("connectorName"): (o.get("mode") or {}).get("refreshRate")
+            for o in outs if isinstance(o, dict)}
+
+def hz(v):
+    return "-" if v is None else "%g Hz" % (v / 1000)
+
+a, b = rates(sys.argv[1]), rates(sys.argv[2])
+if a is None or b is None:
+    sys.exit(0)
+for conn in sorted(set(a) | set(b)):
+    if a.get(conn) != b.get(conn):
+        print("%s: repo seeds %s, live runs %s" % (conn, hz(a.get(conn)), hz(b.get(conn))))
+PYEOF
+)"
+    [[ -z "$out" ]] && return
+    while IFS= read -r line; do
+        report volatile "$3 — $line" "refresh rate is seeded, not maintained"
+    done <<< "$out"
 }
 
 report() {   # <state> <path> [detail]
@@ -141,9 +230,9 @@ check_pair() {   # <repo file> <live file> <label> <mode>
     if [[ "$mode" == "screens" ]]; then
         a="$(normalise_screens "$src" | sha256sum | cut -d' ' -f1)"
         b="$(normalise_screens "$dst" | sha256sum | cut -d' ' -f1)"
-    elif [[ "$mode" == "routes" ]]; then
-        a="$(normalise_routes "$src" | sha256sum | cut -d' ' -f1)"
-        b="$(normalise_routes "$dst" | sha256sum | cut -d' ' -f1)"
+    elif [[ "$mode" == "wpstate" ]]; then
+        a="$(normalise_wp "$src" "$src" | sha256sum | cut -d' ' -f1)"
+        b="$(normalise_wp "$dst" "$src" | sha256sum | cut -d' ' -f1)"
     elif [[ "$mode" == "zshrc" ]]; then
         a="$(sha256sum < "$src" | cut -d' ' -f1)"
         b="$(strip_phoinix_hook "$dst" | sha256sum | cut -d' ' -f1)"
@@ -172,9 +261,12 @@ if [[ "${CAPTURED_CONFIGS:-0}" == 1 && -d "$CFG" ]]; then
         if [[ "$is_volatile" == 1 ]]; then
             report volatile "~/$rel" "expected to differ — per-application state, not a setting"
         elif [[ "$rel" == "$SEEDED_ROUTES" ]]; then
-            check_pair "$src" "$HOME/$rel" "~/$rel (volume seeded, not maintained)" routes
+            check_pair "$src" "$HOME/$rel" "~/$rel (volume seeded, not maintained)" wpstate
         elif [[ "$rel" == "$SEEDED_SCREENS" ]]; then
             check_pair "$src" "$HOME/$rel" "~/$rel (only the chosen arrangements)" screens
+            report_screen_rates "$src" "$HOME/$rel" "~/$rel"
+        elif [[ "$rel" == .local/state/wireplumber/* ]]; then
+            check_pair "$src" "$HOME/$rel" "~/$rel (settings, not the device history)" wpstate
         else
             check_pair "$src" "$HOME/$rel" "~/$rel"
         fi
@@ -201,6 +293,7 @@ REPO_OWNED=(
     "system/user@.service.d/10-phoinix-realtime.conf|/etc/systemd/system/user@.service.d/10-phoinix-realtime.conf"
     "system/nftables.service.d/phoinix-remain.conf|/etc/systemd/system/nftables.service.d/phoinix-remain.conf"
     "system/NetworkManager/10-phoinix-dns.conf|/etc/NetworkManager/conf.d/10-phoinix-dns.conf"
+    "system/applications/gpu-screen-recorder-ui.desktop|$HOME/.config/autostart/gpu-screen-recorder-ui.desktop"
     "system/zram-generator.conf|/etc/systemd/zram-generator.conf"
 )
 

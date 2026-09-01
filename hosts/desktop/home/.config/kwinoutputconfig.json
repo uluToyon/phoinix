@@ -37,7 +37,7 @@
                 "mode": {
                     "flags": 0,
                     "height": 1440,
-                    "refreshRate": 144000,
+                    "refreshRate": 170000,
                     "width": 3440
                 },
                 "overscan": 0,
@@ -137,7 +137,7 @@
                 "mode": {
                     "flags": 0,
                     "height": 1440,
-                    "refreshRate": 144000,
+                    "refreshRate": 179999,
                     "width": 2560
                 },
                 "overscan": 0,
@@ -176,7 +176,7 @@
                 "connectorName": "HDMI-A-1",
                 "customModes": [],
                 "detectedDdcCi": false,
-                "edidHash": "dac28a1b43d6ac7be6d1cfb1ddb6f2f7",
+                "edidHash": "df94c8eb6759a8a710e22c66bd6d8bda",
                 "edidIdentifier": "HEC 39538 1735156332 1 2024 0",
                 "edrPolicy": "always",
                 "hdrColorProfileSource": "EDID",

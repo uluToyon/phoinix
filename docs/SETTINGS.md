@@ -79,8 +79,10 @@ dropped all three SATA disks on first boot.
 | nftables drop-in | `RemainAfterExit=yes` — without it the unit reports inactive while its rules are loaded, and the qBittorrent launcher refuses forever | dec |
 | DNS | `systemd-resolved`, NM set to `dns=systemd-resolved`, `/etc/resolv.conf` → stub | dec |
 | Bootloader | systemd-boot, `default arch-zen.conf`, `timeout 3` | dec |
-| Kernel arg | `video=DP-2:3840x2160@144` — monitor bug | dec |
-| Kernel arg | `video=DP-1:3440x1440@144` — link stability, **PROVISIONAL** | dec |
+| Kernel arg | `video=DP-2:3840x2160@144` — **the monitor-bug fix**: the TCL 27" 4K must not init at its native rate or the login manager comes up black with all four displays up. The one rate here that is not a preference | dec |
+| Kernel arg | `video=DP-1:3440x1440@170` — the ultrawide's native rate. It ran at 144 from 2026-07-31 as a test of the bandwidth theory for the sporadic black flash; **the test answered negatively** (the flash kept happening) so the cap was withdrawn 2026-09-01. The flash stays open — next step is DRM debug logging | dec |
+| Kernel arg | `video=DP-3:2560x1440@180` — the Acer's maximum. Sat at 144 with no reason recorded anywhere; ulu set it to 180 on 2026-09-01 | dec |
+| Kernel arg | `video=HDMI-A-1:3840x2160@120` — the television's maximum, unchanged. Stated rather than omitted: an output missing from this line cannot be told apart from one that was forgotten | dec |
 | etckeeper | `/etc` under git, persistent identity `etckeeper` | dec |
 
 **The variant belongs in both places.** The login greeter has no user `kxkbrc`
@@ -127,8 +129,9 @@ Packages, `paru` (built from source), DZGUI, then:
 | `.config/kwinrc` | see table below | old |
 | `.config/kdeglobals` | see table below | old |
 | `.config/pipewire/pipewire.conf.d/10-clock.conf` | graph pinned to 48 kHz | old |
-| `.local/state/wireplumber/*` | 5.1 profile pin, the route volume as a **seed only** (2026-08-10 — it is the bar's own hardware volume, so the knob rewrites it; the drift check ignores it and compares the channel map and mute state instead). **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
+| `.local/state/wireplumber/*` | 5.1 profile pin, the route volume as a **seed only** (2026-08-10 — it is the bar's own hardware volume, so the knob rewrites it; the drift check ignores it and compares the channel map and mute state instead; **extended 2026-09-01** to the whole `wireplumber/` state — the numbered `default.configured.audio.sink.N` history and any device the capture does not know are dropped too, after the card's HDMI audio moved from PCI `0b:00.1` to `03:00.1` and made all three files report drift without one changed setting between them). **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
 | `.zshrc`, `.p10k.zsh` | zinit bootstrap, 9 plugins, tuned prompt | old |
+| `.config/gpu-screen-recorder/config_ui` | GPU Screen Recorder's overlay settings — hotkeys, 10-min replay buffer in RAM, 40 Mbit at `very_high`, opus, `focused_monitor`. Written by the overlay itself, so captured rather than authored. **Holds five empty stream-key fields** — see its own section below | dec |
 
 **Onboard audio is disabled in UEFI** (ulu, 2026-08-11). Worth stating because
 nothing in this repo can set it and the audio inventory depends on it: on X870
@@ -145,7 +148,13 @@ puts the password field on the main monitor instead of the TV.
 
 **Refreshed by `scripts/greeter-screens.sh <host>`, not by stage 3 alone.**
 Stage 3 calls it at install time; nothing else refreshes that copy, so it must
-be run by hand after any change to the screen layout. It FILTERS while copying —
+be run by hand after any change to the screen layout. **That call was missing
+until 2026-09-01** — this paragraph and a comment in stage 3 both asserted it
+for weeks while no stage invoked the script at all, so a fresh machine reached
+its first graphical start with no greeter layout whatsoever. Found by reading
+the two files against each other during the pre-flight for the third reinstall;
+it had never shown up in a run, because the machine it was tested on always had
+a greeter config left over from a previous install. It FILTERS while copying —
 see below — and refuses rather than installing an empty layout, which would be a
 black login screen.
 
@@ -214,6 +223,7 @@ selection, not guessed.
 | Strawberry | `strawberry.conf` | `PlaylistSequence/shuffle_mode`, `repeat_mode` | `1` (shuffle all), `3` (repeat playlist) | dec |
 | Strawberry | `strawberry.conf` | `MainWindow/do_not_show_sponsor_message` | `true` — otherwise shown on **every** start | dec |
 | KeePassXC | `~/.config/autostart/…KeePassXC.desktop` | — | starts at login, **visible**, not minimised to tray | dec |
+| GPU Screen Recorder | `~/.config/autostart/gpu-screen-recorder-ui.desktop` | — | overlay daemon starts at login; the repo owns this file, see below | dec |
 | KeePassXC | `keepassxc.ini` | `Browser/Enabled` | `true` | dec |
 | KeePassXC | `keepassxc.ini` | `GUI/ApplicationTheme` | `dark` | dec |
 | KeePassXC | `keepassxc.ini` | `GUI/TrayIconAppearance` | `monochrome-light` | dec |
@@ -651,6 +661,40 @@ Everything else in his profile is window and toolbar state (`WindowState`,
 `DockPos`, `SplitWindow`, `Visible`), the registered dictionary languages, and
 `UseOpenCL=false`, which is LibreOffice's own default.
 
+## GPU Screen Recorder (stage 3)
+
+Two package lines in `packages/apps.txt`: `gpu-screen-recorder` (the encoder)
+and `gpu-screen-recorder-ui` (the fullscreen overlay ulu operates). The overlay
+pulls the encoder and `gpu-screen-recorder-notification` in as dependencies, so
+only those two are decisions.
+
+| Setting | Value | Origin |
+|---|---|---|
+| Replay buffer | 10 minutes, held in **RAM** — only a save touches the disk | dec |
+| Quality | 40 Mbit, `very_high`, 60 fps, opus audio, `focused_monitor` | dec |
+| Hotkeys | full custom set: record, pause, replay save 1 min / 10 min, screenshot, region, window | dec |
+| Save directories | `~/Videos` and `~/Pictures` — the **system SSD**, not `/mnt/Video` | dec |
+| Autostart | repo-owned `.desktop` running `gsr-ui launch-daemon` | dec |
+| `gpu-screen-recorder.service` | deliberately **not** enabled | dec |
+
+**The autostart entry cannot be the packaged file.** Discord's entry is
+installed straight from `/usr/share/applications` precisely because the packaged
+file and the one KDE writes agree. Here they do not: the packaged
+`gpu-screen-recorder.desktop` runs `gsr-ui launch-hide-announce`, while the
+entry the overlay writes when its own autostart box is ticked runs
+`gsr-ui launch-daemon`. So the repo owns `system/applications/gpu-screen-recorder-ui.desktop`
+and stage 3 installs that. Enabling the packaged systemd user unit as well would
+start the same daemon a second time, which is why section 10 leaves it alone.
+
+**`config_ui` holds five stream-key fields** — `streaming.twitch.key`,
+`.youtube.key`, `.kick.key`, `.rumble.key` and `streaming.custom.key`. All five
+are empty as captured (2026-08-30) and must stay that way in the repo. This is
+the same shape of hazard as `keepassxc.ini`'s KeeShare private key, with one
+difference: that file is never captured whole, this one is. The defence is that
+`check-drift.sh` compares it byte for byte — so a key entered in the overlay
+shows up as drift on the next check, rather than riding into git unnoticed on a
+capture round.
+
 ## mpc-qt (stage 4 only)
 
 haruna was evaluated and rejected 2026-07-31; mpc-qt stays.
@@ -881,8 +925,15 @@ the data disk and a line in the script. The key costs nothing per project.
 - ~~`kglobalshortcutsrc` is not managed.~~ Done 2026-07-31 — media keys and
   Spectacle are written as deviations. Any future shortcut change is found the
   same way: compare field 1 against field 2 in that file.
-- **`kwinoutputconfig.json` is a provisional state**, carrying the 144 Hz
-  experiment on DP-1. See `STATUS.md`.
+- **`kwinoutputconfig.json` seeds the refresh rates, it does not track them**
+  (2026-09-01). The repo carries DP-1 @170, DP-2 @144, DP-3 @180 (stored as
+  `179999`, the mode's real rate), HDMI-A-1 @120 — what a FRESH machine is to
+  come up with, from the console phase onwards. ulu's own machine runs DP-1 and
+  DP-3 at 144 and is staying there, so repo and live differ here by design.
+  `check-drift.sh` therefore drops the rates from the structural compare and
+  prints both numbers per connector underneath it instead — visible, not
+  counted. The 144 Hz experiment on DP-1 that this entry used to describe is
+  over and was answered negatively; see `STATUS.md`.
 - **Console keymap has no variant.** `KEYMAP=de` means the text console keeps
   dead keys while X11 and Plasma do not. Deliberate for now — on the vconsole
   the no-dead-key layout is a different keymap *name* (`de-latin1-nodeadkeys`),

@@ -23,4 +23,14 @@ ddcutil               # DDC/CI over i2c — drives scripts/monitor-switch.sh, wh
                       # monitors between this machine and the laptop. Brings its own prerequisites:
                       # modules-load.d loads i2c-dev and its udev rule tags the graphics i2c devices
                       # with uaccess, so NO i2c group membership and no rule of ours is needed.
+wireguard-tools       # `wg` and `wg-quick` — DIAGNOSTICS, not a building block. The split tunnel
+                      # runs entirely on NetworkManager's native WireGuard (stage 3 section 7b
+                      # imports the profiles with nmcli); the kernel does the tunnelling and
+                      # nothing in this repo calls `wg`. wg-quick@.service stays disabled.
+                      # It is carried because 7b is the most intricate construction here —
+                      # nftables mark, vpnonly group, dnsmasq forwarder, four docs sections —
+                      # and `wg show` is the one command that says whether a handshake even
+                      # happened. Without it the first thing you need while debugging a dead
+                      # tunnel is a download over that dead tunnel. Same reasoning that keeps
+                      # nftables explicit in apps.txt. 267 KB.
 # cpupower rejected — redundant next to gamemode (auto) + power-profiles-daemon (KDE click)

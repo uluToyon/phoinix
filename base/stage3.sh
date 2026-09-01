@@ -311,6 +311,19 @@ case "${CAPTURED_CONFIGS:-}" in
         fi
     fi
 
+    # GPU Screen Recorder's overlay settings. Written by the overlay itself, so
+    # it is captured rather than authored: hotkeys, the 10-minute replay buffer
+    # in RAM, 40 Mbit at very_high, opus, focused_monitor. None of it is a
+    # default, and none of it comes back with the package alone.
+    #
+    # This file also has FIVE EMPTY STREAM-KEY FIELDS (twitch, youtube, kick,
+    # rumble, custom). They are empty today and must stay that way in the repo.
+    # If ulu ever streams, the next capture round would carry a live key into
+    # git — check-drift.sh compares this file byte for byte precisely so that
+    # shows up as drift instead of arriving unannounced.
+    install -Dm644 "$CFG/.config/gpu-screen-recorder/config_ui" \
+                   "$HOME/.config/gpu-screen-recorder/config_ui"
+
     # wireplumber state: the analog-surround-51 pin and the -26dB route fix.
     for f in default-profile default-routes default-nodes stream-properties; do
         install -Dm644 "$CFG/.local/state/wireplumber/$f" "$HOME/.local/state/wireplumber/$f"
@@ -386,6 +399,39 @@ for greeter_user in plasmalogin sddm; do
         HOME="$greeter_home" XDG_CONFIG_HOME="$greeter_home/.config" \
         kwriteconfig6 --file kcminputrc --group Keyboard --key NumLock 0
 done
+
+# The screen layout itself, which the loop above deliberately leaves alone
+# because it has to be FILTERED rather than copied (see the note in the loop).
+#
+# ADDED 2026-09-01, and it had never been here. The comment in the loop claimed
+# this call was made "after this loop" and SETTINGS.md claimed "stage 3 calls it
+# at install time" — both described an invocation that did not exist anywhere in
+# the repo. A fresh machine therefore reached its first graphical start with NO
+# greeter screen config at all, which is precisely the black login screen the
+# loop above exists to prevent. Found by reading the two files against each
+# other during the pre-flight for the third reinstall; no run had ever failed in
+# a way that pointed at it, because the machine it was tested on always had a
+# greeter config left over from before.
+#
+# Loud but NOT fatal, deliberately: a missing greeter layout is one command to
+# repair, while aborting stage 3 at this point leaves a half-built machine that
+# still has no greeter layout. Failing here must not cost the rest of the stage.
+if [[ -n "$(getent passwd plasmalogin || true)$(getent passwd sddm || true)" ]]; then
+    if "$REPO_DIR/scripts/greeter-screens.sh" "$HOST"; then
+        echo "greeter: filtered screen layout installed"
+    else
+        echo "############################################################"
+        echo "WARNING: the greeter did NOT get a screen layout."
+        echo "         The first login screen can come up BLACK, or put the"
+        echo "         password field on the wrong monitor."
+        echo "         Repair before rebooting:"
+        echo "           $REPO_DIR/scripts/greeter-screens.sh $HOST"
+        echo "############################################################"
+    fi
+else
+    echo "greeter: no greeter user exists yet — run this after the reboot:"
+    echo "         $REPO_DIR/scripts/greeter-screens.sh $HOST"
+fi
 
 # ------------------------------------------------- 6. Plasma settings (explicit)
 # Written key by key rather than captured as whole files: each of these is a
@@ -643,6 +689,19 @@ EOF
 else
     echo "libreoffice: profile exists — left alone"
 fi
+
+# --- GPU Screen Recorder ----------------------------------------------------
+# The overlay daemon at login. Unlike Discord's entry this CANNOT be the
+# packaged file: /usr/share/applications/gpu-screen-recorder.desktop runs
+# `gsr-ui launch-hide-announce`, while the entry the overlay writes when you
+# tick its own autostart box runs `gsr-ui launch-daemon`. Copying the packaged
+# one would autostart the overlay in the wrong mode, so the repo owns this file.
+#
+# The packaged gpu-screen-recorder.service is deliberately NOT enabled in
+# section 10: it starts the same daemon, and the two together start it twice.
+install -Dm644 "$REPO_DIR/system/applications/gpu-screen-recorder-ui.desktop" \
+               "$HOME/.config/autostart/gpu-screen-recorder-ui.desktop"
+echo "gpu-screen-recorder: overlay autostart installed"
 
 # --- mpc-qt: REMOVED 2026-08-01 (ulu) ---------------------------------------
 # Stage 3 used to repair a half-written mpc-qt profile and then write two

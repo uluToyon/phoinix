@@ -1,6 +1,61 @@
 # STATUS
 
-_Last updated: 2026-09-01 (session 18 — the split tunnel's DNS reached no application)_
+_Last updated: 2026-09-01 (session 19 — the pre-flight for the third reinstall)_
+
+## Session 19 — the pre-flight, and two things that would have cost the weekend
+
+**The first distro hop is due at the weekend**, and this session was the read
+through everything before it. `REINSTALL.md` is still the file to follow; what
+changed is below. Full account in `LOG.md`.
+
+**The rescue copy of `~/.claude` was a month old.** Sessions 13 to 18 existed
+only on the disk stage 1 formats. The cause was a command in this repo:
+`REINSTALL.md` §0 said `cp -a ~/.claude $PHOINIX_DATA/rescue/claude`, which is
+right exactly once — on the second run `cp` copies *into* the existing directory
+and leaves the old copy untouched, exiting 0. Now `rsync -a --delete` with a
+verification line. **Refreshed: 53 MB, transcripts up to today.**
+
+**`scripts/greeter-screens.sh` was called by nothing.** Not misconfigured —
+absent. `stage3.sh` claimed the call happened "after this loop" and
+`SETTINGS.md` claimed "stage 3 calls it at install time"; no stage invoked it.
+Without it the greeter has no screen config, and `SETTINGS.md` says two lines
+above the false claim what that costs: *"without it the first login screen goes
+black."* No run had ever caught it, because both supervised reinstalls happened
+on a machine that still had a greeter config in `/var/lib/plasmalogin/` from
+before — wiping `/home` does not touch it. **A hop away and back is exactly the
+case that opens the gap.** The call is now in stage 3, loud but not fatal.
+
+**The 144 Hz experiment on DP-1 is answered: the flashes kept happening.** The
+bandwidth theory is disproven, per the terms the 2026-07-31 entry set itself.
+The flash stays open; next step is DRM debug logging.
+
+**The monitor rates are now seeded by the repo** (ulu, this session): DP-1
+**170 Hz**, DP-2 **144 Hz**, DP-3 **180 Hz**, HDMI-A-1 **120 Hz**, applied from
+the console phase onward so a fresh machine has them at first start. His own
+machine stays at 144 on DP-1 and DP-3 — repo and live differ here BY DESIGN, and
+`check-drift.sh` prints both numbers instead of counting it as drift.
+
+> **If a fresh install goes black at the first graphical login, look at
+> `KERNEL_PARAMS` first.** Raising DP-1 and DP-3 increases aggregate link
+> bandwidth at init, which is the exact condition the DP-2 cap exists for.
+> DP-2's 144 is untouched and is not a preference — it is the fix.
+
+**WirePlumber's three state files reported drift with zero findings.** The card's
+HDMI audio had moved from PCI `0b:00.1` to `03:00.1` and each file had grown the
+new path. Re-captured as they are; `check-drift.sh` gained `normalise_wp`, tested
+against seven mutations so it still catches a changed channel map, mute flag,
+vanished line or default sink.
+
+**Two features that sat uncommitted and unlogged are now recorded**: GPU Screen
+Recorder (with its five empty stream-key fields watched byte for byte) and
+`wireguard-tools` as a diagnostic.
+
+**Open, not blocking the hop:** `mesa` reached `1:26.2.1`, so the trigger for
+removing `~/.config/brave-flags.conf` has fired (session 17's condition). And
+`p7zip` only resolves through `7zip`'s virtual provide — works, worth renaming
+after the weekend.
+
+_Previously: 2026-09-01 (session 18 — the split tunnel's DNS reached no application)_
 
 ## Session 18 — the names were leaking the whole time
 
@@ -977,10 +1032,18 @@ Still open:
    value the old transcripts document as tested glitch-free, or test upward
    deliberately to find where the glitching actually starts. See the entry under
    "Still open".
-4. **Watch the 144 Hz experiment** on DP-1 — a few days without a black flash
-   confirms the bandwidth diagnosis. Running since 2026-07-31.
+4. ~~**Watch the 144 Hz experiment** on DP-1 — a few days without a black flash
+   confirms the bandwidth diagnosis. Running since 2026-07-31.~~ **ANSWERED
+   2026-09-01, negatively** (ulu): the flashes kept happening at 144 Hz, so
+   bandwidth was never the cause and the cap is withdrawn — DP-1 is back to
+   170 Hz in the repo. **The black flash itself is still open**, and the next
+   step is the one `LOG.md` named on 2026-07-31: DRM debug logging.
 5. **Quick wins**, none blocking: the `[KeeShare]` private key, the stale
    `~/.config/pipewire/pipewire.conf`, the `konsolerc` re-check.
 6. **Re-run the QEMU test after changes to stages 1-4**:
    `scripts/qemu-test.sh --fresh`, then `--installed` after the reboot.
-8. Re-capture `kwinoutputconfig.json` once the monitor tuning is final.
+8. ~~Re-capture `kwinoutputconfig.json` once the monitor tuning is final.~~
+   **DONE 2026-09-01.** It turned out not to depend on the tuning at all: the
+   only real difference was the Hisense's EDID hash, since repo and live already
+   carried the same modes. The refresh rates are now seeded deliberately instead
+   — see the session 19 section at the top.

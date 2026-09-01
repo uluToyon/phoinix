@@ -9,9 +9,6 @@ noto-fonts-cjk        # CJK glyphs — without it Japanese track titles in Straw
                       # Consumer is Strawberry today, but it fixes CJK everywhere (browser, file names).
 # mpc-qt moved to aur.txt — not in official repos (learned during stage 3)
 keepassxc             # password vault ("denk"); database lives on FilesMusic and survives reinstalls
-# lact removed 2026-08-14 — added the day before, uninstalled again by ulu (LOG.md).
-# The card runs on its defaults; nothing in the build depended on it. Adding it
-# back is the package line plus `lactd` on the enable line in stage 3 section 10.
 obsidian              # notes; official `extra` package, no AUR variant needed. The vault is a folder
                       # inside one of ulu's own project repos, so it survives a reinstall by being on
                       # GitHub — nothing for phoinix to carry. Settings live in `.obsidian/` INSIDE the
@@ -19,6 +16,14 @@ obsidian              # notes; official `extra` package, no AUR variant needed. 
                       # vault and no configuration yet, so there is nothing to capture. Revisit when a
                       # second vault exists and it becomes clear which settings should be shared.
                       # Post-install: open Obsidian once and select the vault folder.
+gpu-screen-recorder    # ShadowPlay-like recorder; the piece that does the encoding
+gpu-screen-recorder-ui # the fullscreen overlay ulu actually operates. It pulls the recorder and
+                      # gpu-screen-recorder-notification in as dependencies — only these two lines
+                      # are decisions. Its settings are NOT in this repo's own files: the overlay
+                      # keeps them in ~/.config/gpu-screen-recorder/config_ui, captured under
+                      # hosts/desktop/home/ (hotkeys, 10-min RAM replay, 40 Mbit). The packaged
+                      # gpu-screen-recorder.service stays DISABLED — the daemon comes from the
+                      # autostart entry in stage 3 section 7, and both together would start it twice.
 # networkmanager-openvpn removed 2026-07-31 — ProtonVPN now runs on WireGuard,
 # which NetworkManager speaks natively. The plugin (and openvpn with it) bought
 # nothing except an import that could never be unattended: Proton's OpenVPN

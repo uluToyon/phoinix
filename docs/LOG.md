@@ -5069,3 +5069,207 @@ launcher was prepared as the counter-measure and NOT applied — after the
 rate limit expired the parallel pattern was clean, so it would have been a fix
 for a symptom that no longer exists. Recorded here so the next person who sees
 5-second lookups in the group has somewhere to start.
+
+## 2026-09-01 — Session 19: the pre-flight for the third reinstall
+
+ulu asked one question — "passt noch alles?" — with the first distro hop of this
+repo's life due at the weekend, and the intention to keep using the scripts
+afterwards. What follows is what a full read-through of the repo, the stages,
+the package lists, `PHOINIX_DATA` and the live machine turned up. Two of the
+findings would have cost real work at the weekend; one of them was not
+recoverable.
+
+### The rescue copy of `~/.claude` was a month old
+
+`REINSTALL.md` said, and still says, that there is no second copy of the session
+transcripts anywhere. The copy on the data disk was made on 2026-08-01 and had
+not moved since: everything from sessions 13 to 18 — GitHub over SSH, the
+USB-controller hunt, the distortion measurement, the DNS leak — existed only on
+the system disk that stage 1 formats.
+
+**The cause is a command in this repo, not forgetfulness.** `REINSTALL.md` §0
+carried
+
+```
+cp -a ~/.claude $PHOINIX_DATA/rescue/claude
+```
+
+which is correct exactly once. On the second run the destination already exists,
+so `cp` copies *into* it — leaving `rescue/claude/.claude` beside the untouched
+old copy, exiting 0, with a directory that looks populated. Nothing about the
+result says "this is a month stale".
+
+Replaced with `rsync -a --delete` and a trailing slash on both sides, plus a
+verification line that counts recent transcripts in the copy rather than
+trusting the exit status. Refreshed the same day: 53 MB, no nesting, newest file
+from today, and `claude.json` in step.
+
+Recorded because the shape generalises: **a backup command that is only correct
+on a fresh destination is a backup command that silently stops working.** It is
+the same class as the `if [[ -d "$BACKUP" ]]` guard found on 2026-07-31 — an
+operation that succeeds loudly while doing nothing.
+
+### `scripts/greeter-screens.sh` was called by nothing
+
+`stage3.sh` said the call happened "after this loop". `SETTINGS.md` said "stage 3
+calls it at install time". Neither was true: no stage, no script and no unit in
+this repo invoked `greeter-screens.sh`, and the greeter loop in stage 3 ends and
+goes straight into section 6.
+
+What that costs is written two lines above the false claim, in `SETTINGS.md`:
+*"without it the first login screen goes black."* The greeter's own
+`kwinoutputconfig.json` is what keeps the login manager from coming up black and
+what puts the password field on the main monitor rather than the television.
+
+**Why no run ever caught it.** Both supervised reinstalls happened on a machine
+that already had a greeter config from a previous install, sitting in
+`/var/lib/plasmalogin/.config/` — which `/home` being wiped does not touch. The
+gap only opens on a machine that has never had one, which is precisely what a
+distro hop to something else and back would have produced. It was found by
+reading `stage3.sh` and `SETTINGS.md` against each other, not by a failure.
+
+The call now sits in stage 3 directly after the greeter loop. Deliberately loud
+but **not fatal**: a missing greeter layout costs one command to repair, while
+aborting stage 3 at that point leaves a half-built machine that still has no
+greeter layout. On failure it prints a framed warning naming the repair command;
+where no greeter user exists yet it says so and names the same command.
+
+### The 144 Hz experiment on DP-1 is answered, and the answer is no
+
+The entry of 2026-07-31 set the terms itself: *"If the flash stays away for a few
+days the bandwidth theory is confirmed […]; if it returns, bandwidth was never it
+and the next step is DRM debug logging."* ulu, asked directly: the black flashes
+kept happening.
+
+**So the bandwidth theory is disproven.** The link-utilisation reasoning (4 lanes
+at HBR3, no DSC, no FEC, ~82 % at 170 Hz, a retrain costing a black frame) was
+sound and is not the cause. The answer had been available for weeks while
+`STATUS.md` still listed the experiment as "running since 2026-07-31" and
+`config.sh` still described the cap as "PROVISIONAL: a running experiment". Both
+corrected.
+
+The flash itself stays open. Next step remains DRM debug logging, and it is now
+recorded as such rather than as a live test.
+
+### The monitor rates are seeded by the repo, not tracked from the machine
+
+ulu's call, given the above: DP-1 170 Hz, DP-2 144 Hz, DP-3 180 Hz,
+HDMI-A-1 120 Hz — **and applied from the first start after a reinstall**, while
+his running machine stays as it is.
+
+That splits the repo from the live system on purpose for the first time on this
+file, so it needed a mechanism rather than an edit:
+
+- `KERNEL_PARAMS` now names all four outputs instead of two. Stating a value
+  that is already the panel maximum is not redundant: an output missing from
+  that line cannot be told apart from one that was forgotten, and this is the
+  line that decides what the FIRST graphical start sees.
+- The repo's `kwinoutputconfig.json` carries DP-1 at `170000` and DP-3 at
+  `179999`. The odd number is the mode's real rate — the Acer's "180 Hz" mode is
+  179.999 Hz, and KWin matches modes on that value.
+- `check-drift.sh` drops the refresh rates from the structural compare and
+  prints them underneath instead, per connector, both numbers:
+  `DP-1: repo seeds 170 Hz, live runs 144 Hz`. Same "seeded, not maintained"
+  trade as the soundbar volume, with one difference that mattered enough to
+  build differently: the rates are *shown*, not hidden. Hiding them outright
+  would also hide DP-2's 144, which is not a preference but the fix that keeps a
+  fresh install from booting to a black screen.
+
+**Stated once and left standing, because it is ulu's call and he has it:**
+raising DP-1 and DP-3 increases aggregate link bandwidth at init, which is the
+exact condition the DP-2 fix exists for. If a fresh install goes black at the
+first graphical login, `KERNEL_PARAMS` is the first place to look. The note is in
+`config.sh` next to the values.
+
+### WirePlumber's state files: three drift reports, zero findings
+
+All three (`default-nodes`, `default-profile`, `default-routes`) reported drift.
+Not one carried a changed setting. The card's HDMI audio had moved from PCI
+`0000:0b:00.1` to `0000:03:00.1` — most likely the UEFI onboard-audio switch of
+2026-08-11 renumbering the bus, inferred and not proven — and each file had
+simply grown the new path beside the old.
+
+One reading error is worth recording because it nearly produced a wrong
+decision: `default.configured.audio.sink.0` naming the Focusrite looked like the
+soundbar had been demoted. It had not. The unnumbered
+`default.configured.audio.sink` is the setting and names the Concept 12 on both
+sides; the numbered keys are WirePlumber's history of everything ever configured.
+`wpctl status` settled it in one line. **A key that looks like a priority list is
+not one until something confirms it.**
+
+Re-captured as they are — no hand-trimming of the dead `0b:00.1` entries, same
+line as Strawberry's database: phoinix does not edit the state another
+application owns, and a snapshot may be a snapshot. `stream-properties` was
+deliberately left at its old capture; it is `VOLATILE` and re-capturing it would
+have added 93 lines of per-application noise to the commit.
+
+`check-drift.sh` gained `normalise_wp`, which drops the numbered history and any
+key naming a device the capture does not know, and keeps the JSON re-serialising
+the old `normalise_routes` did. Tested against seven mutations rather than
+assumed: a changed channel map, a changed mute flag, a vanished captured line and
+a changed default sink are all still caught; a turned volume knob, a new device
+and a grown history are all still ignored.
+
+### Also found, smaller
+
+- **`check_pair` reported the raw line count even in normalised modes.**
+  `kwinoutputconfig.json` was announced as "171 changed lines" when the
+  normalised difference was a single EDID hash. A count that overstates by two
+  orders of magnitude trains the reader to skim, which is the one thing this
+  script must not do. Fixed as part of the screens work.
+- **The Hisense's EDID hash changed** (`dac28a1b…` → `df94c8eb…`). Cause not
+  determinable after the fact — firmware, a different input, or a picture mode
+  altering the reported blocks. It matters because the hash is KWin's key for
+  matching a saved arrangement to physical hardware; a stale one means the
+  television comes up unplaced. Re-captured.
+- **`REINSTALL.md` §0 did not list `kde-theme/` or `Wallpapers/`**, both of which
+  stage 3 and stage 4 read out of `PHOINIX_DATA`. Present on the disk, absent
+  from the pre-flight list.
+- **`claude-settings.local.json` on the data disk was one line stale.** Exactly
+  the drift `REINSTALL.md` warns about for that file.
+- **`p7zip` no longer exists as a package**; `7zip` provides it, so
+  `pacman -S --noconfirm p7zip` still resolves. Works, but it is a virtual
+  provide standing where a package name is meant. Left alone for the weekend,
+  noted for after.
+- **`mesa` is at `1:26.2.1`**, so the condition session 17 wrote down for
+  removing `~/.config/brave-flags.conf` is met. Not part of the build by design,
+  so it does not touch the reinstall — but the trigger has fired.
+- Everything else checked out: all four stages parse, every package in the
+  official lists resolves, `DISK` by-id is present, `xlcore-backup/` was refreshed
+  this morning, a secret scan over the whole repo is clean, and the newly
+  captured `config_ui` carries five EMPTY stream-key fields.
+
+### Two features that were in the working tree and had never been logged
+
+Both had been built in an earlier session, left uncommitted, and carried no
+`LOG.md` entry at all. Recorded now with the commits.
+
+**GPU Screen Recorder.** Two package lines, `gpu-screen-recorder` (encoder) and
+`gpu-screen-recorder-ui` (the overlay ulu operates); the notification helper
+arrives as a dependency. Its settings live in
+`~/.config/gpu-screen-recorder/config_ui`, written by the overlay itself, so they
+are captured rather than authored: hotkeys, a 10-minute replay buffer in RAM,
+40 Mbit at `very_high`, opus, `focused_monitor`, saving to `~/Videos` and
+`~/Pictures`.
+
+Two decisions inside it are not obvious. The autostart entry **cannot** be the
+packaged file — `/usr/share/applications/gpu-screen-recorder.desktop` runs
+`gsr-ui launch-hide-announce`, while the entry the overlay writes when its own
+autostart box is ticked runs `gsr-ui launch-daemon`. Copying the packaged one
+would start the overlay in the wrong mode, so the repo owns the file. And the
+packaged `gpu-screen-recorder.service` stays disabled: it starts the same daemon,
+and the two together start it twice.
+
+`config_ui` also holds **five stream-key fields** (twitch, youtube, kick, rumble,
+custom), all empty as captured. Same hazard shape as `keepassxc.ini`'s KeeShare
+private key with one difference — that file is never captured whole, this one is.
+The defence is that `check-drift.sh` compares it byte for byte, so a key entered
+in the overlay surfaces as drift instead of riding into git on a capture round.
+
+**`wireguard-tools`.** Diagnostics, not a building block. The split tunnel runs
+entirely on NetworkManager's native WireGuard; nothing in this repo calls `wg`
+and `wg-quick@.service` stays disabled. It is carried because section 7b is the
+most intricate construction here — nftables mark, `vpnonly` group, dnsmasq
+forwarder, four documentation sections — and `wg show` is the one command that
+says whether a handshake happened at all. Without it, the first thing needed
+while debugging a dead tunnel is a download over that dead tunnel. 267 KB.

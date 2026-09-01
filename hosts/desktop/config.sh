@@ -3,17 +3,37 @@
 DISK="/dev/disk/by-id/nvme-Samsung_SSD_980_1TB_S649NX0T343303X"
 
 # --- Kernel parameters (stage 2, boot entry) -------------------------------
-# Two refresh-rate caps, same mechanism, two different reasons:
-#   DP-2 @144 — monitor-bug fix: the TCL 27" 4K must never init at native
-#     180Hz (DP bandwidth/DSC → black screen with all 4 displays).
-#     See docs/LOG.md 2026-07-30.
-#   DP-1 @144 — the ultrawide's link runs 4 lanes at HBR3 with no DSC and no
-#     FEC; at 170Hz it sits at ~82% utilisation, where a single bit error costs
-#     a retrain (= the sporadic black flash). See docs/LOG.md 2026-07-31.
-#     PROVISIONAL: a running experiment, not a settled decision.
+# One mode per monitor, so a fresh machine runs the intended rate from the very
+# first console frame onwards rather than from the first Plasma session — ulu's
+# call, 2026-09-01. All four are stated even where the value is the panel's own
+# maximum: an output missing from this line is indistinguishable from one that
+# was forgotten, and this is the line that decides what the FIRST graphical
+# start sees.
+#
+#   DP-2 @144 — THE MONITOR-BUG FIX, and the one value here that is not a
+#     preference. The TCL 27" 4K must never init at its native rate: with all
+#     four displays up, amdgpu's bandwidth validation fails and the login
+#     manager comes up BLACK on every fresh distro. Proven, not theorised.
+#     Do not raise it without reading docs/LOG.md 2026-07-30 first.
+#   DP-1 @170 — back to the panel's native rate. It sat at 144 from 2026-07-31
+#     as a test of the bandwidth theory for the sporadic black flash (4 lanes
+#     at HBR3, no DSC, no FEC, ~82% utilisation at 170Hz → link retrain). The
+#     test has ANSWERED, and negatively: the flash kept happening at 144
+#     (ulu, 2026-09-01). Bandwidth was never it, so the cap bought nothing and
+#     is withdrawn. The flash itself stays open — next step is DRM debug
+#     logging, per docs/LOG.md 2026-07-31.
+#   DP-3 @180 — the Acer's maximum. It had been sitting at 144 with no reason
+#     recorded anywhere in this repo; ulu set it to 180 on 2026-09-01.
+#   HDMI-A-1 @120 — the television's maximum, unchanged.
+#
+# WORTH KNOWING before the next black screen: raising DP-1 and DP-3 increases
+# the aggregate link bandwidth at init, which is the exact condition the DP-2
+# fix exists for. If a fresh install goes black at the first graphical login,
+# this line is the first place to look — not the last.
+#
 # These are caps for THIS machine's monitors — which is why they belong here
 # and not in stage 2, where every other host used to inherit them.
-KERNEL_PARAMS="video=DP-2:3840x2160@144 video=DP-1:3440x1440@144"
+KERNEL_PARAMS="video=DP-1:3440x1440@170 video=DP-2:3840x2160@144 video=DP-3:2560x1440@180 video=HDMI-A-1:3840x2160@120"
 
 # Data disks, mounted by filesystem label under /mnt/<label>.
 # These are NEVER formatted by any stage script — they only get fstab entries.
