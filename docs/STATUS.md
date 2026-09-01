@@ -23,6 +23,13 @@ with DNS isolated from connectivity: in `vpnonly` the resolver is now
 Vodafone. `check-drift.sh` watches the line and flags a `.pacnew`, because that
 is how the leak comes back — silently, with everything else still looking right.
 
+**Fail-closed verified the same day**, with ulu taking the tunnel down: by raw
+IP and by name the group is blocked (silent, as a `drop` should be) while
+everything else keeps working, and name resolution now fails instead of falling
+back to the ISP. The counters carry the finding in one number — `dns_out` stood
+at **1 packet** in an hour and a half this morning and at **515** after the fix,
+with 41 packets dropped once the tunnel was gone.
+
 **The 2026-08-06 entry claiming this was closed stands corrected in `LOG.md`.**
 It verified against the rule instead of against an application, and everything
 that speaks straight to `127.0.0.53` takes the path that already worked.

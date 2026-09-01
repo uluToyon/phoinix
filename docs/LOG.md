@@ -5016,6 +5016,38 @@ the token name resolved:
 Both halves now leave through the tunnel. Ten real names resolve in 0.00–0.14 s
 from inside the group, no timeouts.
 
+### Verified closed, with the tunnel down
+
+ulu took `proton0` down so the other half could be measured. NetworkManager
+removes the policy rule with the connection and table 51 empties, so the group's
+packets fall back to the main table and would leave over `enp11s0` — which is
+exactly the case the postrouting rule exists for.
+
+| | ordinary | in `vpnonly` |
+|---|---|---|
+| by raw IP | `http=200` | blocked, 12 s silent timeout |
+| by name | `http=200` | blocked, immediately |
+| `getent` | — | no answer |
+
+Silent rather than refused is correct: a `drop` sends no ICMP. The name half
+fails closed too, and now for a structural reason — `hosts:` is
+`mymachines files myhostname dns`, `dns` goes through the stub into the rewrite,
+and dnsmasq has `--no-resolv` with only `10.2.0.1` upstream. Before today
+`resolve` would have caught it here and resolved would have answered over the
+ordinary line, tunnel or no tunnel.
+
+The counters, read afterwards, close the chain:
+
+    meta mark 0x52          counter packets 4135  return      # the tunnel's own
+    meta skgid 967          counter packets 4570  mark 0x51   # the group, steered
+    dns_out ... dport 53    counter packets  515  dnat        # was 1 this morning
+    skgid 967 oifname != proton0  counter packets 41  drop    # fail-closed, firing
+
+**515 against 1** is the whole finding in one number. Same rule, same counter,
+same machine: this morning it had seen a single packet in an hour and a half —
+the test query that found the defect — because no application ever addressed the
+stub. It is now the path the group's name lookups take.
+
 ### One measurement was ruined, and by me
 
 Between those two states the reliability figures were worthless. Testing the
