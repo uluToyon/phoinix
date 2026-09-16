@@ -11,9 +11,8 @@ it live; the session only carried it. Full account in `LOG.md` 2026-09-16.
   `10-clock.conf`: PipeWire's combine stream joins the Concept 12 (5.1) and any
   `bluez_output.*` node (stereo) into `combine_sink`, latency-compensated, and
   makes it the default. Host tree rather than `system/` because it names the
-  bar's node. **The live copy still carries the German header** — check-drift
-  shows exactly that as ten changed lines until the repo's file is copied over
-  it. No restart needed for that; only the comment differs.
+  bar's node. Live and repo are identical (the English header was copied over
+  the live file at the end of the session; only the comment differed).
 - **WirePlumber state re-captured**: `combine_sink` as configured default, the
   JBL's SBC-XQ profile pin and its 20 ms offset under `bluez_card.<MAC>`. From
   now on `normalise_wp` knows the JBL and watches those lines. The Concept 12's
@@ -29,7 +28,7 @@ it live; the session only carried it. Full account in `LOG.md` 2026-09-16.
 
 **Open:** why SBC-XQ rather than another codec is not recorded; ulu chose it
 today and the session did not ask. The offset was measured under it, so the two
-belong together either way. And the header copy above.
+belong together either way.
 
 _Previously: 2026-09-01 (session 19 — the pre-flight for the third reinstall)_
 
