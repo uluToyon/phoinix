@@ -292,6 +292,14 @@ case "${CAPTURED_CONFIGS:-}" in
     install -Dm644 "$CFG/.config/pipewire/pipewire.conf.d/10-clock.conf" \
                    "$HOME/.config/pipewire/pipewire.conf.d/10-clock.conf"
 
+    # The combine sink: bar plus Bluetooth as one default output (LOG.md
+    # 2026-09-16). An authored decision like the USB headroom below, but it
+    # names the Concept 12's node, so it sits in the host tree with the other
+    # hardware-bound files rather than in system/. Unnumbered because the live
+    # file is — check-drift.sh pairs the two by path, so the names must match.
+    install -Dm644 "$CFG/.config/pipewire/pipewire.conf.d/combine.conf" \
+                   "$HOME/.config/pipewire/pipewire.conf.d/combine.conf"
+
     # The downloaded KDE theme. Copied BEFORE the captured kdeglobals below is
     # installed, because that file is what selects it — a kdeglobals naming a
     # look-and-feel package that is not on disk gives a half-applied desktop at
