@@ -5273,3 +5273,118 @@ most intricate construction here — nftables mark, `vpnonly` group, dnsmasq
 forwarder, four documentation sections — and `wg show` is the one command that
 says whether a handshake happened at all. Without it, the first thing needed
 while debugging a dead tunnel is a download over that dead tunnel. 267 KB.
+
+## 2026-09-16 — Session 20: one default sink for the bar and the JBL
+
+ulu paired a JBL Bluetooth device and wanted it to play together with the
+Concept 12 — one output, one slider, no re-routing when the headphones come
+and go. He built it live during the day; this session carried it into the repo,
+one commit per part. What was decided, and why:
+
+### A combine stream in PipeWire, not PulseAudio's module
+
+Two ways exist to join sinks here. `pactl load-module module-combine-sink` is
+the PulseAudio way and pipewire-pulse accepts it, but a module loaded through
+`pactl` lives only until the daemon restarts and would need an autostart hook
+to come back. `libpipewire-module-combine-stream` is the native equivalent:
+declared in a `pipewire.conf.d` drop-in, loaded with the daemon, and its
+`stream.rules` attach members by **pattern** — `~bluez_output.*` — so a device
+that appears and disappears joins and leaves on its own, without ever being
+named. The bar is named, by the node name PipeWire derives from its USB vendor
+and product string; the same kind of identifier the wireplumber state has used
+since the start, stable across ports and reboots, not an index.
+
+The node carries `priority.session = 2000`, which is what makes it the default
+without anybody selecting it, and a 5.1 channel map: the bar takes all six
+channels, the Bluetooth member takes FL/FR of the same stream.
+
+### Latency compensation, and why the offset belongs to the codec
+
+`combine.latency-compensate = true` delays the faster member so both play in
+step — otherwise the bar leads the headphones by however long the Bluetooth
+stack buffers. That compensation works from the latency each member *reports*,
+and Bluetooth's reported figure is not the acoustic one; the missing part is
+set by hand as `latencyOffsetNsec` on the JBL's route, **20 ms** today.
+
+That offset sits in `default-routes` under `bluez_card.<MAC>`, next to the
+profile pin `a2dp-sink-sbc_xq` in `default-profile`. The two are one setting:
+the encoder and its buffering are part of the latency, so an offset measured
+under SBC-XQ is only right under SBC-XQ. Pinning the profile rather than
+leaving the codec to negotiation is what keeps the offset valid. Why SBC-XQ was
+the codec chosen is not recorded — ulu decided it today and the session did not
+ask; noted in STATUS as open.
+
+### Why the combine sink counts as a virtual device
+
+Plasma's volume applet did not show it at first. Verified with `pactl`: the
+node reports `node.virtual = "true"` and its flags lack `HARDWARE`, while the
+bar reports `HARDWARE HW_MUTE_CTRL HW_VOLUME_CTRL`. The applet hides such sinks
+unless `showVirtualDevices` is on (which of the two the applet keys on is
+inferred, not read from its source). Consequence on a fresh install: the
+default sink is invisible, the slider moves a member sink nothing plays on.
+Hence stage 4 now sets the flag.
+
+### The MAC as an identifier
+
+The JBL is keyed by `bluez_card.18_90_67_55_1D_66` in both state files. That is
+the device's address, the same category as the Focusrite's serial or the bar's
+USB string in the same files: a property of the hardware, not of this
+installation's detection order. The identifier rule forbids the latter, not the
+former.
+
+### What could NOT be carried: the pairing
+
+Link keys live in `/var/lib/bluetooth/<adapter>/<MAC>/info`, root-owned and
+secrets by nature. Pairing is a manual post-install step now, beside KDE
+Connect. Everything downstream applies on its own once it exists, because the
+card name is derived from the MAC: the profile pin, the offset, and the combine
+sink's pattern match. `bluez-utils` joined `packages/kde.txt` — installed
+explicitly today, required by nothing, the kcalc gap again. `bluez` itself
+arrives through `bluedevil → bluez-qt` and needs no line.
+
+### Host tree or `system/`: both criteria apply, one wins
+
+Stage 3's own comment puts authored decisions into `system/` ("decisions, not
+captured state") — that is where the USB headroom drop-in lives. `combine.conf`
+is authored too. But it names the bar's node, and `DESIGN.md` reserves
+`hosts/<host>/home/` for what is bound to this machine; `10-clock.conf` sits
+there for the same reason. Hardware binding won: the host tree, walked by
+`check-drift.sh` without a hand-written pairing. Stated here so it is not read
+later as an inconsistency. The file keeps the live name `combine.conf`, no
+number prefix, because check-drift pairs by path and ulu asked that the live
+system stay as it is.
+
+### The state re-captured as it is — including a louder bar
+
+Per the 2026-09-01 rule, all three state files were taken verbatim.
+`default-nodes` now names `combine_sink`; the other two carry the JBL for the
+first time, so `normalise_wp` knows it from here on — confirmed by mutating the
+offset and the profile in a copy, both caught.
+
+One seed changed by it: the Concept 12's route volume went from `0.140611` to
+`1.000000`. Deliberate (ulu). The level theory died on 2026-08-01, and the
+value is the bar's own `HW_VOLUME_CTRL`; with the bar at full and the slider on
+the combine sink, the attenuation happens in PipeWire before the USB link and
+the bar's DAC sees the full signal instead of −26 dB that its amplifier then
+makes back up along with its own noise — the arrangement the 2026-08-01 entry
+described as the better model. `stream-properties` stayed at its old capture,
+VOLATILE as before.
+
+### Stage 4: by type, one level deeper, shell stopped first
+
+The tray builds the volume applet itself, so its group is
+`[Containments][C][Applets][TRAY][Applets][A]` with numbers generated per
+install; the live desktop has three of them (two panels, one twice). Stage 4
+finds every `plugin=org.kde.plasma.volume` group and writes the flag to each —
+the standing by-type rule, applied to a nested applet.
+
+Two things learned in the doing. The tray's child applets reach the file only
+when plasmashell flushes its layout, which it does on exit — so the search runs
+**after** the stop, unlike the folder-view block, which can search the file of
+a running shell because the containments it looks for exist from the first
+second. And a group path cannot be handed to `kwriteconfig6` in one piece:
+`--group "[Containments][25][Applets][30]…"` escapes the brackets and creates a
+top-level group literally named `\x5bContainments\x5d…` — seen live today.
+Nested `--group` arguments, one per level, address the real group. The block
+was tested on a copy of the live layout with the flag stripped: three found,
+three written, result byte-identical to the live file.

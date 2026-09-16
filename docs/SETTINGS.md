@@ -129,7 +129,8 @@ Packages, `paru` (built from source), DZGUI, then:
 | `.config/kwinrc` | see table below | old |
 | `.config/kdeglobals` | see table below | old |
 | `.config/pipewire/pipewire.conf.d/10-clock.conf` | graph pinned to 48 kHz | old |
-| `.local/state/wireplumber/*` | 5.1 profile pin, the route volume as a **seed only** (2026-08-10 — it is the bar's own hardware volume, so the knob rewrites it; the drift check ignores it and compares the channel map and mute state instead; **extended 2026-09-01** to the whole `wireplumber/` state — the numbered `default.configured.audio.sink.N` history and any device the capture does not know are dropped too, after the card's HDMI audio moved from PCI `0b:00.1` to `03:00.1` and made all three files report drift without one changed setting between them). **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
+| `.config/pipewire/pipewire.conf.d/combine.conf` | the combine sink: Concept 12 (5.1) plus any `bluez_output.*` node (stereo), `latency-compensate`, session priority 2000 so it is the default. Authored, but host-bound through the Concept 12's node name, hence the host tree (2026-09-16) | dec |
+| `.local/state/wireplumber/*` | 5.1 profile pin, `combine_sink` as the configured default, the JBL's `a2dp-sink-sbc_xq` profile and its 20 ms `latencyOffsetNsec` under `bluez_card.<MAC>` (2026-09-16), the route volume as a **seed only** (2026-08-10 — it is the bar's own hardware volume, so the knob rewrites it; the drift check ignores it and compares the channel map and mute state instead; **extended 2026-09-01** to the whole `wireplumber/` state — the numbered `default.configured.audio.sink.N` history and any device the capture does not know are dropped too, after the card's HDMI audio moved from PCI `0b:00.1` to `03:00.1` and made all three files report drift without one changed setting between them). **Corrected 2026-08-01:** the sink carries `HW_VOLUME_CTRL`, so this is the *device's own* volume, not a digital attenuation — what phoinix puts on the wire is untouched by it (measured peak −20.5 dBFS during a game) | old |
 | `.zshrc`, `.p10k.zsh` | zinit bootstrap, 9 plugins, tuned prompt | old |
 | `.config/gpu-screen-recorder/config_ui` | GPU Screen Recorder's overlay settings — hotkeys, 10-min replay buffer in RAM, 40 Mbit at `very_high`, opus, `focused_monitor`. Written by the overlay itself, so captured rather than authored. **Holds five empty stream-key fields** — see its own section below | dec |
 
@@ -309,6 +310,7 @@ Fires once, guarded by `~/.local/state/phoinix/stage4.done`.
 | Window rule: KeePassXC | `KEEPASSXC_CONNECTOR` + `KEEPASSXC_OFFSET`, size `1920,1053` — below qBittorrent | dec |
 | Window rule: FFXIV | origin **and size** of `FFXIV_CONNECTOR`; matched on class **plus title** | dec |
 | Strawberry playlist | `PLAYLIST_FILE` imported as `PLAYLIST_NAME`, **Strawberry started and waited for**, import retried, result verified in the database | dec |
+| Volume applet | `showVirtualDevices=true` on every `org.kde.plasma.volume` group, found by type inside the tray, written with nested `--group` arguments while the shell is stopped — the combine sink is `node.virtual` and would otherwise be hidden (2026-09-16) | dec |
 | Final step | `systemctl --user restart plasma-plasmashell.service` | dec |
 
 **All window rules live in stage 4, none in stage 3.** `count` and `rules` in

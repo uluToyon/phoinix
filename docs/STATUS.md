@@ -1,6 +1,37 @@
 # STATUS
 
-_Last updated: 2026-09-01 (session 19 — the pre-flight for the third reinstall)_
+_Last updated: 2026-09-16 (session 20 — one default sink for the bar and the JBL)_
+
+## Session 20 — the bar and the JBL as one output
+
+**Today's audio setup is in the repo, in four commits plus this one.** ulu built
+it live; the session only carried it. Full account in `LOG.md` 2026-09-16.
+
+- **`combine.conf`** in the host tree, installed by stage 3 beside
+  `10-clock.conf`: PipeWire's combine stream joins the Concept 12 (5.1) and any
+  `bluez_output.*` node (stereo) into `combine_sink`, latency-compensated, and
+  makes it the default. Host tree rather than `system/` because it names the
+  bar's node. **The live copy still carries the German header** — check-drift
+  shows exactly that as ten changed lines until the repo's file is copied over
+  it. No restart needed for that; only the comment differs.
+- **WirePlumber state re-captured**: `combine_sink` as configured default, the
+  JBL's SBC-XQ profile pin and its 20 ms offset under `bluez_card.<MAC>`. From
+  now on `normalise_wp` knows the JBL and watches those lines. The Concept 12's
+  route volume moved from 0.14 to **1.0** in the seed — deliberate (ulu): the
+  attenuation now happens upstream in the combine sink, the bar's DAC sees the
+  full signal.
+- **Stage 4 sets `showVirtualDevices=true`** on every volume applet, by type,
+  shell stopped, nested `--group` arguments. Without it the default sink is
+  invisible in the tray.
+- **`bluez-utils`** is in `kde.txt`; it was installed today and stood in no
+  list. **Bluetooth pairing is a manual post-install step** now, beside KDE
+  Connect — the link keys are secrets.
+
+**Open:** why SBC-XQ rather than another codec is not recorded; ulu chose it
+today and the session did not ask. The offset was measured under it, so the two
+belong together either way. And the header copy above.
+
+_Previously: 2026-09-01 (session 19 — the pre-flight for the third reinstall)_
 
 ## Session 19 — the pre-flight, and two things that would have cost the weekend
 

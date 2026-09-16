@@ -1,6 +1,8 @@
 # Audio stack (docs/LOG.md). WirePlumber state restore in stage 3 brings back
 # the Teufel soundbar fix: ~/.local/state/wireplumber/ (surround-5.1 profile,
 # -26dB route limit) + ~/.config/pipewire/pipewire.conf.d/10-clock.conf.
+# Since 2026-09-16 the default sink is combine.conf in that same conf.d: the bar
+# plus any paired Bluetooth device as one output, latency-compensated (LOG.md).
 pipewire
 pipewire-alsa
 pipewire-pulse
