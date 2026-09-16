@@ -820,6 +820,52 @@ elif [[ -n "${PLAYLIST_FILE:-}" ]]; then
     echo "playlist: $PLAYLIST_FILE not present — skipped"
 fi
 
+# ------------------------------------------------- 7b. virtual devices in the volume applet
+# The default output is the combine sink (hosts/desktop/.../combine.conf), and
+# the volume applet hides it: PipeWire's combine stream reports no device, so
+# Plasma files it under "virtual devices", which are off by default. Without
+# this flag the applet shows the bar and the headphones as two separate sinks
+# and the default one is nowhere to be seen — moving the slider then adjusts
+# a sink nothing plays on. Added 2026-09-16, LOG.md.
+#
+# The applet is NOT placed by panels.js. The system tray creates it itself,
+# inside its own containment, so its group is
+# [Containments][C][Applets][TRAY][Applets][A] with numbers that differ on
+# every installation — the by-type rule at the top of this file, one level
+# deeper than usual. Every group carrying plugin=org.kde.plasma.volume is
+# written; the live desktop has three (two panels, one of them twice).
+#
+# Stop FIRST, then search: the tray writes its child applets to the file only
+# when plasmashell flushes the layout, which it does on exit. Searching a
+# running shell's file, as the icon block above can afford to do for the
+# folder containments, would find nothing on a fresh install where the tray
+# was built seconds ago. Same cache trap for the write itself: stop, write,
+# start.
+#
+# The group path is handed to kwriteconfig6 as NESTED --group arguments. A
+# single --group "[Containments][25][Applets][30]…" does not address that
+# group — kwriteconfig6 escapes the brackets and creates a top-level group
+# literally named "\x5bContainments\x5d…" (seen live, 2026-09-16).
+systemctl --user stop plasma-plasmashell.service || true
+applets="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+vol_n=0
+while IFS= read -r sec; do
+    grp_args=()
+    while IFS= read -r part; do
+        [[ -n "$part" ]] && grp_args+=(--group "$part")
+    done < <(printf '%s\n' "$sec" | tr -d '[' | tr ']' '\n')
+    kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc "${grp_args[@]}" \
+        --group Configuration --group General --key showVirtualDevices true
+    vol_n=$((vol_n + 1))
+done < <(awk '/^\[/ { sec = $0; next }
+              sec != "" && $0 == "plugin=org.kde.plasma.volume" { print sec }' "$applets")
+systemctl --user start plasma-plasmashell.service || true
+if (( vol_n > 0 )); then
+    echo "volume applet: showVirtualDevices=true on $vol_n instance(s)"
+else
+    echo "WARNING: no volume applet found in the layout — the combine sink stays hidden in the tray"
+fi
+
 # ------------------------------------------------- 8. restart the shell
 # Freshly created task-manager widgets read their launcher list once, when
 # they are built — writing the config afterwards reaches the file but not the
