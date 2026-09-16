@@ -26,9 +26,9 @@ it live; the session only carried it. Full account in `LOG.md` 2026-09-16.
   list. **Bluetooth pairing is a manual post-install step** now, beside KDE
   Connect — the link keys are secrets.
 
-**Open:** why SBC-XQ rather than another codec is not recorded; ulu chose it
-today and the session did not ask. The offset was measured under it, so the two
-belong together either way.
+**SBC-XQ stays** (ulu, 2026-09-16, asked and answered): his choice, no
+rationale given for the record. Not open. The offset was measured under it, so
+the two belong together either way.
 
 _Previously: 2026-09-01 (session 19 — the pre-flight for the third reinstall)_
 
