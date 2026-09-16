@@ -464,8 +464,8 @@ copy remade — see `REINSTALL.md`, which is the file to follow.
 Steam: log in → Settings → Storage → add `/mnt/Games/SteamLibrary` → quit
 Steam → delete `~/Desktop/steam.desktop`. **No stage 3 re-run needed** — the
 DZGUI entry is a desktop icon now, placed on the first run. Then the
-Strawberry music folder, Brave sync, KDE Connect pairing, pCloud login,
-printer switched on before stage 3.
+Strawberry music folder, Brave sync, KDE Connect pairing, Bluetooth pairing
+(the JBL), pCloud login, printer switched on before stage 3.
 
 ### Was NOT reproduced by a script and must not be forgotten
 
@@ -776,6 +776,13 @@ this topology — until proven, the cap stays.
   `config.sh` used to claim it expires and pointed here for a date that was
   never written; both are corrected. Nothing rots on a timer, and the trade is
   the usual one: a leaked token stays valid until revoked by hand at GitHub.
+- **Bluetooth: pair the JBL by hand** (2026-09-16). The link keys live in
+  `/var/lib/bluetooth/<adapter>/<MAC>/info`, root-owned and secrets by nature,
+  so they are never carried. The Plasma applet is enough; `bluetoothctl` is
+  there for looking. Nothing else is needed: the card name `bluez_card.<MAC>`
+  is derived from the device address, so the captured WirePlumber state — the
+  SBC-XQ profile and the 20 ms offset — applies the moment the pairing exists.
+  So does the combine sink, which matches any `bluez_output.*` node.
 - **KDE Connect: pair the phone by hand.** The pairing exchanges keys between
   the two devices and is confirmed on the phone, so it cannot be scripted from
   here. Nothing else is needed — the package is in `packages/kde.txt` and our

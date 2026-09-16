@@ -8,6 +8,11 @@ plasma-nm
 powerdevil
 kscreen
 bluedevil
+# bluez-utils: bluetoothctl. bluez itself arrives through bluedevil -> bluez-qt,
+# so the daemon needs no line; the CLI does. Explicitly installed 2026-09-16 while
+# pairing the JBL and required by nothing — the kcalc pattern, a reinstall would
+# have lost it in silence. The Plasma applet pairs fine on its own; this is for
+# seeing what the applet does not show (codec, connection state, `info <MAC>`).
 breeze-gtk
 kde-gtk-config
 xdg-desktop-portal-kde
